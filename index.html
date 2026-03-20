@@ -5,65 +5,233 @@ layout: compress
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>NEURAL_OVERRIDE // V9.0</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NEURAL_OVERRIDE // V9.0_FINAL_LAYOUT</title>
+    
     <style>
-        /* [Copia aquí todo el CSS de tu archivo original] */
+        :root {
+            --neon-cyan: #00f3ff;
+            --neon-magenta: #ff0055;
+            --bg-dark: #050505;
+            --terminal-green: #00ff41;
+            --admin-red: #ff0033; 
+            --font-main: 'Courier New', Courier, monospace;
+        }
+
+        /* --- PANTALLA DE INTRODUCCIÓN --- */
+        #splash-screen {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-color: #000;
+            background-image: url('/assets/images/Introduccion.png'); /* Ajusta la ruta a tu repo */
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.6s ease-out;
+        }
+
+        #btn-entrar {
+            padding: 20px 60px; font-family: var(--font-main); font-size: 2rem;
+            background: rgba(0, 0, 0, 0.8); color: var(--neon-cyan);
+            border: 4px solid var(--neon-cyan); cursor: pointer;
+            text-transform: uppercase; letter-spacing: 12px;
+            box-shadow: 0 0 25px var(--neon-cyan); transition: all 0.3s ease;
+            font-weight: bold;
+        }
+
+        .glitch-active {
+            animation: glitch-anim 0.25s infinite;
+            filter: hue-rotate(90deg) contrast(200%);
+            pointer-events: none;
+        }
+
+        @keyframes glitch-anim {
+            0% { transform: translate(0); clip-path: inset(10% 0 30% 0); }
+            50% { transform: translate(-5px, 5px); clip-path: inset(30% 0 10% 0); }
+            100% { transform: translate(0); }
+        }
+
+        /* --- ESTILOS GENERALES --- */
+        body {
+            background-color: var(--bg-dark);
+            background-image: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
+                              linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+            background-size: 100% 4px, 3px 100%;
+            color: var(--neon-cyan); font-family: var(--font-main);
+            margin: 0; display: flex; flex-direction: column; min-height: 100vh;
+        }
+
+        header { text-align: center; padding: 40px 0; }
+        .glitch-title { 
+            text-shadow: 2px 2px var(--neon-magenta); 
+            border: 2px solid var(--neon-cyan); 
+            padding: 10px 40px; 
+            letter-spacing: 8px; 
+            display: inline-block; 
+            font-size: 1.8rem; 
+            text-decoration: none;
+            color: var(--neon-cyan);
+        }
+        
+        /* --- CONTENEDOR DE 5 COLUMNAS --- */
+        .main-container { 
+            display: grid; 
+            grid-template-columns: 280px 1px 1fr 1px 280px; 
+            gap: 0; 
+            padding: 0 20px 40px 20px; 
+            flex-grow: 1; 
+        }
+
+        .side-panel { padding: 0 20px; }
+        #center-zone { padding: 0 40px; }
+
+        /* --- LÍNEAS DIVISORIAS CIAN --- */
+        .divider-line {
+            background-color: var(--neon-cyan);
+            width: 1px;
+            height: 100%;
+            box-shadow: 0 0 15px var(--neon-cyan), 0 0 5px var(--neon-cyan);
+        }
+
+        .module-box { background: rgba(0, 0, 0, 0.9); border: 1px solid var(--neon-cyan); padding: 15px; margin-bottom: 20px; }
+        
+        /* --- BOTONES DE CATEGORÍA (MAGENTA) --- */
+        .category-btn {
+            display: block; width: 100%; background: transparent; color: var(--neon-magenta);
+            border: 1px solid var(--neon-magenta); padding: 15px 10px; margin-bottom: 20px;
+            font-family: var(--font-main); font-size: 1rem; text-align: center;
+            text-transform: uppercase; cursor: pointer; transition: all 0.3s ease;
+        }
+
+        .category-btn:hover {
+            background: rgba(255, 0, 85, 0.1);
+            box-shadow: 0 0 15px var(--neon-magenta), inset 0 0 5px var(--neon-magenta);
+            color: #fff;
+        }
+
+        /* --- POSTS (VISTA PREVIA) --- */
+        .post { 
+            background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(0, 243, 255, 0.1); 
+            padding: 30px; margin-bottom: 40px; text-align: center;
+            transition: transform 0.3s ease;
+        }
+        .post:hover { border-color: var(--neon-cyan); background: rgba(0, 243, 255, 0.05); }
+
+        .post-tag { font-size: 0.7rem; color: var(--terminal-green); text-transform: uppercase; display: block; margin-bottom: 10px; }
+        .post-title { color: var(--neon-cyan); font-size: 1.6rem; letter-spacing: 4px; margin: 10px 0; text-transform: uppercase; }
+        .timestamp { font-size: 0.7rem; color: #666; display: block; margin-bottom: 20px; }
+        
+        .btn-access {
+            display: inline-block; padding: 10px 20px; border: 1px solid var(--neon-magenta);
+            color: var(--neon-magenta); text-decoration: none; font-size: 0.8rem;
+            margin-top: 15px; transition: all 0.3s;
+        }
+        .btn-access:hover { background: var(--neon-magenta); color: #000; box-shadow: 0 0 10px var(--neon-magenta); }
+
+        #auth-corner-panel { position: fixed; bottom: 20px; left: 20px; z-index: 1000; width: 240px; }
+
+        @media (max-width: 1100px) {
+            .main-container { grid-template-columns: 1fr; }
+            .divider-line { display: none; }
+        }
     </style>
 </head>
 <body onload="initSystem()">
+
+    <audio id="glitch-sound" src="https://codeskulptor-demos.commondatastorage.googleapis.com/GalaxyInvaders/pause.wav" preload="auto"></audio>
 
     <div id="splash-screen">
         <button id="btn-entrar" onclick="startSequence()">ENTRAR</button>
     </div>
 
     <header>
-        <div class="glitch-title">NEURAL_OVERRIDE_V9</div>
+        <a href="/" class="glitch-title">NEURAL_OVERRIDE_V9</a>
     </header>
 
     <div class="main-container">
+        
         <div class="side-panel">
             <div class="module-box">
-                <div style="color: var(--neon-magenta); font-size: 0.7rem;">> NODE_INFO</div>
+                <div style="color: var(--neon-magenta); font-size: 0.7rem; margin-bottom: 10px;">> NODE_INFO</div>
+                <div style="font-size: 0.8rem;">USER: <span style="color: var(--admin-red);">ADMIN</span></div>
                 <div style="font-size: 0.8rem;">STATUS: <span style="color: var(--terminal-green);">ONLINE</span></div>
             </div>
+
+            <div class="module-box">
+                <button class="category-btn" style="padding: 10px; font-size: 0.7rem; border-color: var(--neon-cyan); color: var(--neon-cyan);" onclick="toggleAudio()" id="pBtn">CONNECT AUDIO</button>
+                <audio id="player" loop src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"></audio>
+            </div>
+
+            <img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExNHJueXp4bmZ4bmZ4bmZ4bmZ4bmZ4bmZ4bmZ4bmZ4bmZ4bmZ4bmZ4JmVwPXYxX2ludGVybmFsX2dpZl9ieV9pZCZjdD1z/Paw.gif" style="width: 100px; margin-top: 20px; filter: drop-shadow(0 0 5px var(--neon-magenta));">
         </div>
 
+        <div class="divider-line"></div>
+
         <div id="center-zone">
+            <div style="text-align: center; color: var(--terminal-green); font-size: 0.8rem; margin-bottom: 30px;">> LISTING_ALL_LOGS...</div>
+            
             <div id="feed">
                 {% for post in site.posts %}
-                <div class="post">
-                    <div class="post-header">
-                        <span class="post-tag">{{ post.category }}</span>
-                        <span class="timestamp">[{{ post.date | date: "%d/%m/%Y" }}]</span>
-                    </div>
-                    <div class="post-title">{{ post.title }}</div>
-                    <p style="font-size: 0.8rem; color: #888;">{{ post.excerpt | strip_html | truncate: 150 }}</p>
-                    <a href="{{ post.url }}" class="btn" style="background: var(--neon-cyan); color: #000; text-decoration: none; display: inline-block; padding: 5px 15px;">ACCEDER_DATOS</a>
-                </div>
+                <article class="post">
+                    <span class="post-tag">> {{ post.category }}</span>
+                    <h2 class="post-title">{{ post.title }}</h2>
+                    <span class="timestamp">FECHA_TRANSMISION: {{ post.date | date: "%Y-%m-%d" }}</span>
+                    <a href="{{ post.url }}" class="btn-access">[ CLICK PARA ACCEDER ]</a>
+                </article>
+                {% else %}
+                <div style="text-align:center; color:#444; padding:20px;">[ SIN DATOS EN LA RED ]</div>
                 {% endfor %}
             </div>
         </div>
 
+        <div class="divider-line"></div>
+
         <div class="side-panel">
             <div class="module-box" style="border-color: var(--terminal-green);">
-                <div style="color: var(--terminal-green); font-size: 0.7rem;">> UPLINK_ESTATUS</div>
+                <div style="color: var(--terminal-green); font-size: 0.7rem;">> SYSTEM_UPLINK</div>
+                <div style="font-size: 0.6rem; color: #555; margin-top: 5px;">DB_STATUS: CONNECTED</div>
             </div>
-            {% assign categories = "PROYECTOS,PENSAMIENTOS,ARTES,SISTEMAS" | split: "," %}
-            {% for cat in categories %}
-                <button class="category-btn">{{ cat }}</button>
-            {% endfor %}
+
+            <button class="category-btn">PROYECTOS</button>
+            <button class="category-btn">PENSAMIENTOS</button>
+            <button class="category-btn">ARTES</button>
+            <button class="category-btn">SISTEMAS</button>
+            
+            <button class="category-btn" style="border-color: #333; color: #444; font-size: 0.7rem;">RESET_FILTER</button>
         </div>
     </div>
 
+    <div id="auth-corner-panel" class="module-box" style="border-color: var(--terminal-green);">
+        <div style="color: var(--terminal-green); font-size: 0.6rem; margin-bottom: 10px;">> AUTH_LOGIN</div>
+        <input type="text" placeholder="USER_ID" style="background:transparent; border:none; border-bottom:1px solid var(--terminal-green); color:#fff; width:100%; font-size:0.7rem; outline:none; margin-bottom:10px;">
+        <input type="password" placeholder="PASS_PHRASE" style="background:transparent; border:none; border-bottom:1px solid var(--terminal-green); color:#fff; width:100%; font-size:0.7rem; outline:none; margin-bottom:15px;">
+        <button style="width:100%; background:var(--terminal-green); border:none; padding:5px; font-weight:bold; cursor:pointer;">LOGIN</button>
+    </div>
+
     <script>
-        // Mantenemos solo la lógica visual (Splash y Audio)
         function startSequence() {
+            const sound = document.getElementById('glitch-sound');
             const splash = document.getElementById('splash-screen');
+            sound.play();
             splash.classList.add('glitch-active');
             setTimeout(() => {
                 splash.style.opacity = '0';
                 setTimeout(() => splash.style.display = 'none', 600);
             }, 400);
+        }
+
+        const audio = document.getElementById('player');
+        function toggleAudio() { 
+            const pBtn = document.getElementById('pBtn');
+            audio.paused ? (audio.play(), pBtn.innerText="DISCONNECT") : (audio.pause(), pBtn.innerText="CONNECT"); 
+        }
+
+        function initSystem() {
+            console.log("NEURAL_OVERRIDE_V9: System Linked via Jekyll.");
         }
     </script>
 </body>
