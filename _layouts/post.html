@@ -1,75 +1,34 @@
+---
+layout: default
+---
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ page.title }} // NEURAL_OVERRIDE</title>
-    
     <style>
-        :root {
-            --neon-cyan: #00f3ff;
-            --neon-magenta: #ff0055;
-            --bg-dark: #050505;
-            --terminal-green: #00ff41;
-            --admin-red: #ff0033; 
-            --font-main: 'Courier New', Courier, monospace;
-        }
-
-        body {
-            background-color: var(--bg-dark);
-            background-image: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
-                              linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
-            background-size: 100% 4px, 3px 100%;
-            color: var(--neon-cyan); font-family: var(--font-main);
-            margin: 0; display: flex; flex-direction: column; min-height: 100vh;
-        }
-
-        header { text-align: center; padding: 30px; border-bottom: 1px solid var(--neon-cyan); }
-        .glitch-title { text-shadow: 2px 2px var(--neon-magenta); border: 2px solid var(--neon-cyan); padding: 10px 40px; letter-spacing: 8px; display: inline-block; font-size: 1.5rem; text-decoration: none; color: var(--neon-cyan); }
-        
-        .main-container { display: grid; grid-template-columns: 250px 1fr 250px; gap: 20px; padding: 20px; flex-grow: 1; }
-        .module-box { background: rgba(0, 0, 0, 0.9); border: 1px solid var(--neon-cyan); padding: 15px; margin-bottom: 15px; }
-
-        /* --- ESTILO DEL POST --- */
-        .post-content { 
-            background: rgba(255, 255, 255, 0.03); border: 1px solid var(--neon-cyan); 
-            padding: 30px; border-left: 4px solid var(--neon-cyan); 
-            line-height: 1.6; text-align: justify; color: #ccc;
-        }
-        .post-title-header { color: var(--neon-magenta); text-transform: uppercase; letter-spacing: 4px; margin-bottom: 20px; border-bottom: 1px solid var(--neon-magenta); padding-bottom: 10px; }
-
-        @media (max-width: 900px) { .main-container { grid-template-columns: 1fr; } }
+        /* Estilos base mantenidos del original */
+        :root { --neon-cyan: #00f3ff; --neon-magenta: #ff0055; --bg-dark: #050505; --font-main: 'Courier New', monospace; }
+        body { background-color: var(--bg-dark); color: var(--neon-cyan); font-family: var(--font-main); margin: 0; }
+        .post-container { max-width: 800px; margin: 40px auto; padding: 20px; border: 1px solid var(--neon-cyan); background: rgba(0,0,0,0.9); }
+        .post-content { line-height: 1.6; text-align: justify; color: #ccc; }
+        .glitch-title { text-shadow: 2px 2px var(--neon-magenta); border: 2px solid var(--neon-cyan); padding: 10px; display: inline-block; }
     </style>
 </head>
 <body>
-
-    <header>
-        <a href="/" class="glitch-title">NEURAL_OVERRIDE_V9</a>
+    <header style="text-align:center; padding:30px;">
+        <a href="/" style="text-decoration:none;"><div class="glitch-title">VOLVER_AL_NODO</div></a>
     </header>
 
-    <div class="main-container">
-        <div class="side-panel">
-            <div class="module-box">
-                <div style="color: var(--neon-magenta); font-size: 0.7rem; margin-bottom: 10px;">> NODE_INFO</div>
-                <div style="font-size: 0.8rem;">STATUS: <span style="color: var(--terminal-green);">ONLINE</span></div>
-                <div style="font-size: 0.8rem;">CATEGORY: {{ page.category }}</div>
-            </div>
+    <main class="post-container">
+        <div class="post-header">
+            <span class="post-tag">{{ page.category }}</span>
+            <span class="timestamp">[{{ page.date | date: "%Y-%m-%d" }}]</span>
         </div>
-
-        <div id="center-zone">
-            <article class="post-content">
-                <h1 class="post-title-header">{{ page.title }}</h1>
-                {{ content }}
-            </article>
+        <h1 class="post-title">{{ page.title }}</h1>
+        <div class="post-content">
+            {{ content }}
         </div>
-
-        <div class="side-panel">
-            <div class="module-box" style="border-color: var(--terminal-green);">
-                <div style="color: var(--terminal-green); font-size: 0.7rem;">> UPLINK_ESTABLISHED</div>
-                <div style="font-size: 0.6rem; color: #555; margin-top: 5px;">DATE: {{ page.date | date: "%Y-%m-%d" }}</div>
-            </div>
-        </div>
-    </div>
-
+    </main>
 </body>
 </html>
