@@ -14,7 +14,45 @@ layout: default
             --neon-magenta: #ff0055;
             --bg-dark: #050505;
             --terminal-green: #00ff41;
+            --admin-red: #ff0033; 
             --font-main: 'Courier New', Courier, monospace;
+        }
+
+        /* --- PANTALLA DE INTRODUCCIÓN --- */
+        #splash-screen {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-color: #000;
+            background-image: url('IMAGENES/Introduccion.png');
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: opacity 0.6s ease-out;
+        }
+
+        #btn-entrar {
+            padding: 20px 60px; font-family: var(--font-main); font-size: 2rem;
+            background: rgba(0, 0, 0, 0.8); color: var(--neon-cyan);
+            border: 4px solid var(--neon-cyan); cursor: pointer;
+            text-transform: uppercase; letter-spacing: 12px;
+            box-shadow: 0 0 25px var(--neon-cyan); transition: all 0.3s ease;
+            font-weight: bold;
+        }
+
+        .glitch-active {
+            animation: glitch-anim 0.25s infinite;
+            filter: hue-rotate(90deg) contrast(200%);
+            pointer-events: none;
+        }
+
+        @keyframes glitch-anim {
+            0% { transform: translate(0); clip-path: inset(10% 0 30% 0); }
+            50% { transform: translate(-5px, 5px); clip-path: inset(30% 0 10% 0); }
+            100% { transform: translate(0); }
         }
 
         body {
@@ -31,21 +69,31 @@ layout: default
         
         .main-container { display: grid; grid-template-columns: 250px 1fr 250px; gap: 20px; padding: 20px; flex-grow: 1; }
         .module-box { background: rgba(0, 0, 0, 0.9); border: 1px solid var(--neon-cyan); padding: 15px; margin-bottom: 15px; }
-
-        /* --- LISTA DE POSTS --- */
-        .post-link-box { 
+        
+        /* --- ESTILO DE LOS LINKS A LOS POSTS --- */
+        .post-entry { 
             background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(0, 243, 255, 0.1); 
             padding: 20px; margin-bottom: 20px; border-left: 4px solid var(--neon-cyan); 
             transition: all 0.3s ease; text-decoration: none; display: block;
         }
-        .post-link-box:hover { background: rgba(0, 243, 255, 0.05); box-shadow: 0 0 15px var(--neon-cyan); transform: scale(1.02); }
-        .post-title { color: var(--neon-cyan); font-size: 1.2rem; font-weight: bold; text-transform: uppercase; margin: 0; }
-        .post-date { font-size: 0.7rem; color: #666; margin-top: 5px; }
+        .post-entry:hover { 
+            background: rgba(0, 243, 255, 0.05); 
+            box-shadow: 0 0 15px var(--neon-cyan), inset 0 0 10px var(--neon-cyan); 
+            transform: translateX(10px);
+        }
+        .post-entry-title { color: var(--neon-cyan); font-size: 1.2rem; font-weight: bold; text-transform: uppercase; margin: 0; }
+        .post-entry-date { font-size: 0.65rem; color: #666; margin-top: 5px; }
 
         @media (max-width: 900px) { .main-container { grid-template-columns: 1fr; } }
     </style>
 </head>
-<body>
+<body onload="initSystem()">
+
+    <audio id="glitch-sound" src="https://codeskulptor-demos.commondatastorage.googleapis.com/GalaxyInvaders/pause.wav" preload="auto"></audio>
+
+    <div id="splash-screen">
+        <button id="btn-entrar" onclick="startSequence()">ENTRAR</button>
+    </div>
 
     <header>
         <div class="glitch-title">NEURAL_OVERRIDE_V9</div>
@@ -56,25 +104,46 @@ layout: default
             <div class="module-box">
                 <div style="color: var(--neon-magenta); font-size: 0.7rem; margin-bottom: 10px;">> NODE_INFO</div>
                 <div style="font-size: 0.8rem;">USER: <span style="color: var(--neon-magenta);">ADMIN</span></div>
+                <div style="font-size: 0.8rem;">STATUS: <span style="color: var(--terminal-green);">ONLINE</span></div>
             </div>
         </div>
 
         <div id="center-zone">
+            <div style="color: var(--terminal-green); font-size: 0.8rem; margin-bottom: 20px;">> LISTING_ALL_LOGS...</div>
+            
             {% for post in site.posts %}
-                <a href="{{ post.url }}" class="post-link-box">
-                    <div class="post-title">{{ post.title }}</div>
-                    <div class="post-date">FECHA_UPLINK: {{ post.date | date: "%Y-%m-%d" }}</div>
+                <a href="{{ post.url }}" class="post-entry">
+                    <div class="post-entry-title">{{ post.title }}</div>
+                    <div class="post-entry-date">FECHA_TRANSMISION: {{ post.date | date: "%Y-%m-%d" }}</div>
+                    <div style="color: var(--neon-magenta); font-size: 0.6rem; margin-top: 5px;">[ CLICK PARA ACCEDER ]</div>
                 </a>
             {% endfor %}
+
+            {% if site.posts.size == 0 %}
+                <div style="text-align:center; color:#444; padding:20px;">[ NO SE ENCONTRARON TRANSMISIONES ]</div>
+            {% endif %}
         </div>
 
         <div class="side-panel">
             <div class="module-box" style="border-color: var(--terminal-green);">
                 <div style="color: var(--terminal-green); font-size: 0.7rem;">> SYSTEM_UPLINK</div>
-                <div style="font-size: 0.6rem; color: #555; margin-top: 5px;">ESTATUS: ONLINE</div>
+                <div style="font-size: 0.6rem; color: #555; margin-top: 5px;">DB_STATUS: CONNECTED</div>
             </div>
         </div>
     </div>
 
+    <script>
+        function startSequence() {
+            const sound = document.getElementById('glitch-sound');
+            const splash = document.getElementById('splash-screen');
+            sound.play();
+            splash.classList.add('glitch-active');
+            setTimeout(() => {
+                splash.style.opacity = '0';
+                setTimeout(() => splash.style.display = 'none', 600);
+            }, 400);
+        }
+        function initSystem() { console.log("System Initialized..."); }
+    </script>
 </body>
 </html>
