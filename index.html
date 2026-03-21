@@ -1,609 +1,351 @@
 ---
-
 layout: null
-
 ---
-
 <!DOCTYPE html>
-
 <html lang="es">
-
 <head>
-
     <meta charset="UTF-8">
-
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>NEURAL_OVERRIDE // V10.1 :: MAINFRAME_ACCESS</title>
-
     
-
     <style>
-
         :root {
-
             --neon-cyan: #00f3ff;
-
             --neon-magenta: #ff0055;
-
             --neon-yellow: #fcee0a;
-
             --bg-dark: #020202;
-
             --terminal-green: #00ff41;
-
             --font-main: 'Courier New', Courier, monospace;
-
         }
-
-
 
         * { box-sizing: border-box; cursor: crosshair; scrollbar-width: thin; scrollbar-color: var(--neon-cyan) var(--bg-dark); }
 
-
-
         body {
-
             background-color: var(--bg-dark); color: var(--neon-cyan);
-
             font-family: var(--font-main); margin: 0; height: 100vh; overflow: hidden;
-
         }
-
-
 
         /* EFECTOS CRT OPTIMIZADOS (Capas combinadas) */
-
         #crt-screen {
-
             position: relative; width: 100vw; height: 100vh; display: flex; flex-direction: column;
-
             overflow: hidden; animation: turn-on 1s ease-out forwards;
-
         }
-
-
 
         #matrix-canvas { position: absolute; inset: 0; z-index: -2; opacity: 0.15; }
 
-
-
         .crt-overlay {
-
             position: absolute; inset: 0; z-index: 9998; pointer-events: none;
-
             /* Combina Scanlines y Viñeta en una sola capa */
-
             background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), radial-gradient(circle, transparent 50%, #000 120%);
-
             background-size: 100% 4px, 100% 100%;
-
             animation: flicker 0.2s infinite;
-
         }
 
-
-
         /* ANIMACIONES SIMPLIFICADAS */
-
         @keyframes turn-on { 0%, 40% { transform: scaleY(0.001); filter: brightness(5); } 100% { transform: scaleY(1); filter: brightness(1); } }
-
         @keyframes flicker { 0%, 10% { opacity: 0.95; } 5%, 100% { opacity: 1; } }
-
         @keyframes text-decrypt { 0% { color: var(--neon-magenta); letter-spacing: 2px; } 100% { color: var(--neon-cyan); letter-spacing: normal; } }
-
         
-
         /* Glitch por transform (Mucho más barato que clip-path) */
-
         @keyframes glitch-simple { 0%, 100% { transform: translate(0); } 25% { transform: translate(-2px, 2px); } 75% { transform: translate(2px, -2px); } }
-
         .global-glitch { animation: glitch-simple 0.2s infinite; filter: hue-rotate(90deg); }
 
-
-
         /* UI BASE */
-
         header { text-align: center; padding: 20px 0; border-bottom: 1px solid rgba(0,243,255,0.3); }
-
         .glitch-box { font-size: 2.5rem; font-weight: 900; letter-spacing: 10px; color: var(--neon-cyan); text-shadow: 2px 2px var(--neon-magenta); }
-
         .subtitle-header { font-size: 0.8rem; color: var(--neon-yellow); margin-top: 5px; }
 
-
-
         .main-wrapper { display: grid; grid-template-columns: 300px 1px 1fr 1px 300px; gap: 15px; padding: 20px; height: calc(100vh - 100px); max-width: 1600px; margin: auto; }
-
         .cyan-line { background: var(--neon-cyan); opacity: 0.3; }
 
-
-
         /* PANELES */
-
         .side-panel { display: flex; flex-direction: column; gap: 15px; overflow-y: auto; }
-
         .module { background: rgba(5, 5, 5, 0.9); border: 1px solid rgba(0,243,255,0.3); padding: 15px; position: relative; transition: 0.2s; }
-
         .module:hover { border-color: var(--neon-cyan); }
-
         .module-header { color: var(--neon-yellow); font-size: 0.85rem; margin-bottom: 10px; border-bottom: 1px dashed rgba(0,243,255,0.3); padding-bottom: 5px; }
 
-
-
         /* BOTONES */
-
         .btn-cyber { background: rgba(0,0,0,0.5); border: 1px solid rgba(0,243,255,0.3); color: var(--neon-cyan); width: 100%; padding: 10px; cursor: pointer; font-weight: bold; font-family: inherit; margin-bottom: 8px; transition: 0.2s; text-align: left; }
-
         .btn-cyber:hover, .btn-cyber.active { background: rgba(0, 243, 255, 0.1); border-color: var(--neon-cyan); padding-left: 20px; }
-
         .btn-cyber.active { border-color: var(--neon-magenta); color: #fff; background: rgba(255,0,85,0.15); }
 
-
-
         /* ZONA CENTRAL */
-
         #center-zone { padding: 0 20px; overflow-y: auto; }
-
         .category-container { display: block; margin-bottom: 30px; transition: opacity 0.3s; }
-
         .category-header { color: var(--neon-magenta); font-size: 1.2rem; margin-bottom: 15px; text-shadow: 0 0 5px rgba(255,0,85,0.5); }
-
         
-
         .post-card { background: rgba(0,0,0,0.8); border: 1px solid rgba(0,243,255,0.2); padding: 15px; margin-bottom: 10px; border-left: 3px solid var(--neon-cyan); transition: 0.2s; }
-
         .post-card:hover { border-color: var(--neon-cyan); border-left-color: var(--neon-magenta); transform: translateX(5px); background: rgba(0,243,255,0.05); }
-
         .post-card:hover .post-title { animation: text-decrypt 0.3s forwards; }
-
         .post-title { font-size: 1.1rem; color: #fff; margin-bottom: 5px; text-transform: uppercase; }
-
         .post-date { color: var(--terminal-green); font-size: 0.8rem; margin-bottom: 10px; }
-
         
-
         .btn-action { background: var(--neon-cyan); color: var(--bg-dark); text-decoration: none; padding: 4px 10px; font-size: 0.8rem; font-weight: bold; }
-
         .btn-action:hover { background: #fff; }
 
-
-
         /* TERMINAL & SPLASH */
-
         .sys-log { font-size: 0.75rem; color: #aaa; height: 120px; overflow-y: auto; }
-
         .terminal-input-wrapper { display: flex; margin-top: 10px; border-top: 1px dashed rgba(0,243,255,0.3); padding-top: 10px; }
-
         .terminal-input-wrapper input { background: transparent; border: none; color: var(--terminal-green); font-family: inherit; width: 100%; outline: none; }
-
         
-
         #splash { position: fixed; inset: 0; background: var(--bg-dark); z-index: 10000; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: 0.3s; }
-
-        #boot-text { color: var(--terminal-green); font-size: 1rem; width: 60vw; height: 200px; }
-
-        #enter-btn { background: transparent; color: var(--neon-cyan); border: 2px solid var(--neon-cyan); padding: 15px 40px; font-size: 1.5rem; cursor: pointer; font-family: inherit; display: none; transition: 0.2s; }
-
+        #boot-text { color: var(--terminal-green); font-size: 1rem; width: 60vw; height: 200px; text-align: center; }
+        
+        /* LOGIN UI AÑADIDO */
+        .cyber-input { background: rgba(0,0,0,0.5); border: 1px solid var(--neon-cyan); color: var(--terminal-green); padding: 10px; font-family: inherit; text-align: center; outline: none; width: 250px; margin-bottom: 10px; font-size: 1rem; transition: 0.2s; }
+        .cyber-input:focus { box-shadow: 0 0 10px rgba(0,243,255,0.5); border-color: #fff; }
+        
+        #enter-btn { background: transparent; color: var(--neon-cyan); border: 2px solid var(--neon-cyan); padding: 15px 40px; font-size: 1.5rem; cursor: pointer; font-family: inherit; display: none; transition: 0.2s; margin-top: 10px; }
         #enter-btn:hover { background: var(--neon-cyan); color: #000; }
 
-
-
         @media (max-width: 900px) { .main-wrapper { grid-template-columns: 1fr; overflow: auto; height: auto; } .cyan-line { display: none; } }
-
     </style>
-
 </head>
-
 <body>
 
-
-
 <div id="crt-screen">
-
     <canvas id="matrix-canvas"></canvas>
-
     <div class="crt-overlay"></div>
 
-
-
     <div id="splash">
-
         <div id="boot-text"></div>
-
+        <div id="login-form" style="display: none; flex-direction: column; align-items: center;">
+            <input type="text" id="login-user" placeholder="USER_ID" class="cyber-input" autocomplete="off">
+            <input type="password" id="login-pass" placeholder="PASSWORD" class="cyber-input" autocomplete="off">
+            <div id="login-error" style="color: var(--neon-magenta); font-size: 0.8rem; height: 20px; margin-bottom: 5px;"></div>
+        </div>
         <button id="enter-btn">INICIAR_ENLACE</button>
-
     </div>
-
-
 
     <header>
-
         <div class="glitch-box">NEURAL_OVERRIDE_V10</div>
-
         <div class="subtitle-header">SECURE CONDUIT // LITE MATRIX</div>
-
     </header>
 
-
-
     <div class="main-wrapper">
-
         <div class="side-panel">
-
             <div class="module">
-
                 <div class="module-header">> NODE_DIAGNOSTICS</div>
-
                 <div style="font-size: 0.8rem; line-height: 1.5;">
-
-                    USR: <span style="color:var(--neon-magenta)">GUEST_GHOST</span><br>
-
+                    USR: <span style="color:var(--neon-magenta)" id="diag-user">GUEST_GHOST</span><br>
                     NET: <span style="color:var(--terminal-green)">LINK_ESTABLISHED</span><br>
-
                     PING: <span id="ping-ms">12</span>ms
-
                 </div>
-
                 <div style="margin-top:10px; font-size:0.7rem;">
-
                     <div>CPU: <span id="cpu-val">12%</span></div>
-
                     <div style="height:3px; background:#222;"><div id="cpu-meter" style="height:100%; width:12%; background:var(--neon-cyan); transition:0.5s;"></div></div>
-
                     <div style="margin-top:5px;">RAM: <span id="ram-val">45%</span></div>
-
                     <div style="height:3px; background:#222;"><div id="ram-meter" style="height:100%; width:45%; background:var(--neon-magenta); transition:0.5s;"></div></div>
-
                 </div>
-
             </div>
-
             
-
             <div class="module">
-
                 <div class="module-header">> AUDIO_SUBSYSTEM</div>
-
                 <button class="btn-cyber active" id="audioBtn">SYS.AUDIO_MUTE()</button>
-
                 <audio id="bgm" loop src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"></audio>
-
             </div>
-
         </div>
 
-
-
         <div class="cyan-line"></div>
-
-
 
         <div id="center-zone">
-
             <div class="category-container" id="cat-PROYECTOS">
-
                 <div class="category-header">SYS.DIR // PROYECTOS</div>
-
                 {% for post in site.categories.PROYECTOS %}
-
                 <div class="post-card">
-
                     <div class="post-title">{{ post.title }}</div>
-
                     <div class="post-date">TS: {{ post.date | date: "%Y-%m-%d" }}</div>
-
                     <a href="{{ post.url }}" class="btn-action btn-hover-sfx">EJECUTAR_ARCHIVO</a>
-
                 </div>
-
                 {% endfor %}
-
             </div>
-
-
 
             <div class="category-container" id="cat-PENSAMIENTOS">
-
                 <div class="category-header">SYS.DIR // PENSAMIENTOS</div>
-
                 {% for post in site.categories.PENSAMIENTOS %}
-
                 <div class="post-card">
-
                     <div class="post-title">{{ post.title }}</div>
-
                     <div class="post-date">TS: {{ post.date | date: "%Y-%m-%d" }}</div>
-
                     <a href="{{ post.url }}" class="btn-action btn-hover-sfx">EXTRAER_MEMORIA</a>
-
                 </div>
-
                 {% endfor %}
-
             </div>
-
             
-
             <div class="category-container" id="cat-ARTES">
-
                 <div class="category-header">SYS.DIR // ARTES</div>
-
                 {% for post in site.categories.ARTES %}
-
                 <div class="post-card">
-
                     <div class="post-title">{{ post.title }}</div>
-
                     <div class="post-date">TS: {{ post.date | date: "%Y-%m-%d" }}</div>
-
                     <a href="{{ post.url }}" class="btn-action btn-hover-sfx">VISUALIZAR_RENDER</a>
-
                 </div>
-
                 {% endfor %}
-
             </div>
-
         </div>
-
-
 
         <div class="cyan-line"></div>
 
-
-
         <div class="side-panel">
-
             <div class="module">
-
                 <div class="module-header">> QUERY_FILTERS</div>
-
                 <button class="btn-cyber active btn-hover-sfx" data-filter="ALL">SELECT * FROM DATA</button>
-
                 <button class="btn-cyber btn-hover-sfx" data-filter="PROYECTOS">/PROYECTOS/</button>
-
                 <button class="btn-cyber btn-hover-sfx" data-filter="PENSAMIENTOS">/PENSAMIENTOS/</button>
-
                 <button class="btn-cyber btn-hover-sfx" data-filter="ARTES">/ARTES/</button>
-
             </div>
-
-
 
             <div class="module" style="flex-grow:1; display:flex; flex-direction:column;">
-
                 <div class="module-header">> SYSTEM_TERMINAL</div>
-
                 <div class="sys-log" id="sys-log-container"></div>
-
                 <div class="terminal-input-wrapper">
-
                     <span style="color:var(--neon-magenta); margin-right:5px;">$</span>
-
                     <input type="text" id="cmd-input" placeholder="Comando (ej: help)" autocomplete="off">
-
                 </div>
-
             </div>
-
         </div>
-
     </div>
-
 </div>
 
-
-
 <script>
-
 /** NEURAL_OVERRIDE CORE - LITE EDITION **/
 
+// HASHES SHA-256 PARA AUTENTICACIÓN
+const HASH_USER = "49f0dc617de8412ee1ba0ed179c323ee84742e947d78a8dccbc8c863cc412574"; // 'sergio'
+const HASH_PASS = "0a5a4c5ce7628178a9c2ca23d242f3fb0400b14798e1694f4882199f1c71ddab"; // 'root12'
 
+async function generateHash(str) {
+    const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
 
 // 1. Audio simplificado (Solo beeps de UI, música gestionada por HTML5)
-
 const audioCtx = window.AudioContext ? new AudioContext() : null;
-
 const playBeep = (freq, type) => {
-
     if(!audioCtx || audioCtx.state !== 'running') return;
-
     const osc = audioCtx.createOscillator(), gainNode = audioCtx.createGain();
-
     osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-
     gainNode.gain.setValueAtTime(0.02, audioCtx.currentTime);
-
     gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
-
     osc.connect(gainNode); gainNode.connect(audioCtx.destination);
-
     osc.start(); osc.stop(audioCtx.currentTime + 0.05);
-
 };
-
-
 
 const bgm = document.getElementById('bgm');
-
 const audioBtn = document.getElementById('audioBtn');
-
 audioBtn.onclick = () => {
-
     if (bgm.paused) { bgm.play(); audioBtn.innerText = "SYS.AUDIO_MUTE()"; audioBtn.classList.add('active'); } 
-
     else { bgm.pause(); audioBtn.innerText = "SYS.AUDIO_PLAY()"; audioBtn.classList.remove('active'); }
-
 };
-
-
 
 // 2. Control de Terminal unificado
-
 const terminalLogs = document.getElementById('sys-log-container');
-
 const printLog = (txt, err = false) => {
-
     const d = new Date().toLocaleTimeString('en-US',{hour12:false});
-
     terminalLogs.innerHTML += `<div style="color:${err ? '#ff0055' : '#00f3ff'}">[${d}] ${txt}</div>`;
-
     terminalLogs.scrollTop = terminalLogs.scrollHeight;
-
     if(terminalLogs.childElementCount > 15) terminalLogs.firstElementChild.remove();
-
 };
-
-
 
 document.getElementById('cmd-input').onkeydown = e => {
-
     if (e.key === 'Enter' && e.target.value.trim() !== '') {
-
         const cmd = e.target.value.toLowerCase(); e.target.value = '';
-
         printLog(`> ${cmd}`, false);
-
         if(cmd === 'help') printLog("CMDS: clear, reboot, hack");
-
         else if(cmd === 'clear') terminalLogs.innerHTML = '';
-
         else if(cmd === 'reboot') location.reload();
-
         else if(cmd === 'hack') document.getElementById('crt-screen').classList.add('global-glitch');
-
         else printLog("COMANDO_NO_RECONOCIDO", true);
-
     }
-
 };
-
-
 
 // 3. UI y Filtros
-
 document.querySelectorAll('.btn-hover-sfx').forEach(btn => btn.onmouseenter = () => playBeep(800, 'square'));
-
 document.querySelectorAll('[data-filter]').forEach(btn => {
-
     btn.onclick = e => {
-
         playBeep(150, 'sawtooth');
-
         document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('active'));
-
         e.target.classList.add('active');
-
         
-
         const cat = e.target.dataset.filter;
-
         document.getElementById('crt-screen').classList.add('global-glitch');
-
         setTimeout(() => document.getElementById('crt-screen').classList.remove('global-glitch'), 200);
 
-
-
         document.querySelectorAll('.category-container').forEach(c => {
-
             c.style.display = (cat === 'ALL' || c.id === `cat-${cat}`) ? 'block' : 'none';
-
         });
-
     };
-
 });
 
-
-
 // 4. Matrix Canvas Optimizado
-
 const canvas = document.getElementById('matrix-canvas'), ctx = canvas.getContext('2d');
-
 let w, h, drops;
-
 const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
-
 const initMatrix = () => {
-
     w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight;
-
     drops = Array(Math.floor(w / 14)).fill(1);
-
 };
-
 window.onresize = initMatrix; initMatrix();
 
-
-
 setInterval(() => {
-
     ctx.fillStyle = 'rgba(2, 2, 2, 0.1)'; ctx.fillRect(0, 0, w, h);
-
     ctx.fillStyle = '#00ff41'; ctx.font = '14px monospace';
-
     drops.forEach((y, i) => {
-
         ctx.fillText(chars[Math.floor(Math.random() * chars.length)], i * 14, y * 14);
-
         if (y * 14 > h && Math.random() > 0.975) drops[i] = 0;
-
         drops[i]++;
-
     });
-
 }, 50); // Frame rate reducido a 50ms (suficiente para el efecto)
 
-
-
-// 5. Arranque y Telemetría
-
-const bootSeq = ["> CARGANDO KERNEL_LITE...", "> MEMORIA ASIGNADA...", "> SISTEMA LISTO."];
-
+// 5. Arranque y Telemetría Modificado para Login
+const bootSeq = ["> CARGANDO KERNEL_LITE...", "> ASIGNANDO MEMORIA...", "> INICIANDO PROTOCOLO DE SEGURIDAD...", "> ESPERANDO CREDENCIALES..."];
 let bIdx = 0;
-
 const boot = setInterval(() => {
-
     if(bIdx < bootSeq.length) { document.getElementById('boot-text').innerHTML += bootSeq[bIdx++] + "<br>"; } 
-
-    else { clearInterval(boot); document.getElementById('enter-btn').style.display = 'inline-block'; }
-
+    else { 
+        clearInterval(boot); 
+        document.getElementById('login-form').style.display = 'flex';
+        document.getElementById('enter-btn').style.display = 'inline-block'; 
+    }
 }, 300);
 
+// Validación de Entrada
+document.getElementById('enter-btn').onclick = async () => {
+    const userIn = document.getElementById('login-user').value;
+    const passIn = document.getElementById('login-pass').value;
 
+    const uHash = await generateHash(userIn);
+    const pHash = await generateHash(passIn);
 
-document.getElementById('enter-btn').onclick = () => {
-
-    document.getElementById('splash').style.opacity = '0';
-
-    setTimeout(() => document.getElementById('splash').style.display = 'none', 300);
-
-    printLog("ENLACE ESTABLECIDO.");
-
-    if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-
-    bgm.play().catch(e => printLog("AUTO-PLAY RESTRINGIDO", true));
-
+    if (uHash === HASH_USER && pHash === HASH_PASS) {
+        document.getElementById('splash').style.opacity = '0';
+        setTimeout(() => document.getElementById('splash').style.display = 'none', 300);
+        
+        // Actualizar el nombre en la terminal interna una vez conectado
+        document.getElementById('diag-user').innerText = "ROOT_SERGIO";
+        document.getElementById('diag-user').style.color = "var(--terminal-green)";
+        
+        printLog("ENLACE ESTABLECIDO. AUTH_OK.");
+        if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+        bgm.play().catch(e => printLog("AUTO-PLAY RESTRINGIDO", true));
+    } else {
+        document.getElementById('login-error').innerText = "> ERR: CREDENCIALES INVALIDAS";
+        document.getElementById('login-user').value = '';
+        document.getElementById('login-pass').value = '';
+        if(audioCtx && audioCtx.state === 'running') playBeep(150, 'sawtooth'); // Beep de error
+        
+        // Efecto glitch en la pantalla al fallar
+        document.getElementById('splash').classList.add('global-glitch');
+        setTimeout(() => document.getElementById('splash').classList.remove('global-glitch'), 200);
+    }
 };
 
-
-
 // Telemetría más lenta (cada 2 segundos)
-
 setInterval(() => {
-
     document.getElementById('cpu-val').innerText = (document.getElementById('cpu-meter').style.width = Math.floor(Math.random()*40+10)+'%');
-
     document.getElementById('ram-val').innerText = (document.getElementById('ram-meter').style.width = Math.floor(Math.random()*30+40)+'%');
-
     document.getElementById('ping-ms').innerText = Math.floor(Math.random()*20+10);
-
 }, 2000);
 
-
-
 </script>
-
 </body>
-
 </html>
