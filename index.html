@@ -6,7 +6,7 @@ layout: null
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NEURAL_OVERRIDE // V10.1 :: MAINFRAME_ACCESS</title>
+    <title>NEURAL_OVERRIDE // V10.2 :: MAINFRAME_ACCESS</title>
     
     <style>
         :root {
@@ -25,7 +25,6 @@ layout: null
             font-family: var(--font-main); margin: 0; height: 100vh; overflow: hidden;
         }
 
-        /* EFECTOS CRT OPTIMIZADOS (Capas combinadas) */
         #crt-screen {
             position: relative; width: 100vw; height: 100vh; display: flex; flex-direction: column;
             overflow: hidden; animation: turn-on 1s ease-out forwards;
@@ -35,22 +34,18 @@ layout: null
 
         .crt-overlay {
             position: absolute; inset: 0; z-index: 9998; pointer-events: none;
-            /* Combina Scanlines y Viñeta en una sola capa */
             background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), radial-gradient(circle, transparent 50%, #000 120%);
             background-size: 100% 4px, 100% 100%;
             animation: flicker 0.2s infinite;
         }
 
-        /* ANIMACIONES SIMPLIFICADAS */
         @keyframes turn-on { 0%, 40% { transform: scaleY(0.001); filter: brightness(5); } 100% { transform: scaleY(1); filter: brightness(1); } }
         @keyframes flicker { 0%, 10% { opacity: 0.95; } 5%, 100% { opacity: 1; } }
         @keyframes text-decrypt { 0% { color: var(--neon-magenta); letter-spacing: 2px; } 100% { color: var(--neon-cyan); letter-spacing: normal; } }
-        
-        /* Glitch por transform (Mucho más barato que clip-path) */
         @keyframes glitch-simple { 0%, 100% { transform: translate(0); } 25% { transform: translate(-2px, 2px); } 75% { transform: translate(2px, -2px); } }
-        .global-glitch { animation: glitch-simple 0.2s infinite; filter: hue-rotate(90deg); }
+        
+        .global-glitch { animation: glitch-simple 0.2s infinite; filter: hue-rotate(90deg) contrast(200%); }
 
-        /* UI BASE */
         header { text-align: center; padding: 20px 0; border-bottom: 1px solid rgba(0,243,255,0.3); }
         .glitch-box { font-size: 2.5rem; font-weight: 900; letter-spacing: 10px; color: var(--neon-cyan); text-shadow: 2px 2px var(--neon-magenta); }
         .subtitle-header { font-size: 0.8rem; color: var(--neon-yellow); margin-top: 5px; }
@@ -58,40 +53,49 @@ layout: null
         .main-wrapper { display: grid; grid-template-columns: 300px 1px 1fr 1px 300px; gap: 15px; padding: 20px; height: calc(100vh - 100px); max-width: 1600px; margin: auto; }
         .cyan-line { background: var(--neon-cyan); opacity: 0.3; }
 
-        /* PANELES */
         .side-panel { display: flex; flex-direction: column; gap: 15px; overflow-y: auto; }
-        .module { background: rgba(5, 5, 5, 0.9); border: 1px solid rgba(0,243,255,0.3); padding: 15px; position: relative; transition: 0.2s; }
-        .module:hover { border-color: var(--neon-cyan); }
-        .module-header { color: var(--neon-yellow); font-size: 0.85rem; margin-bottom: 10px; border-bottom: 1px dashed rgba(0,243,255,0.3); padding-bottom: 5px; }
+        
+        /* Modificación: Backdrop filter añadido */
+        .module { 
+            background: rgba(5, 5, 5, 0.7); border: 1px solid rgba(0,243,255,0.3); padding: 15px; position: relative; transition: 0.2s;
+            backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+        }
+        .module:hover { border-color: var(--neon-cyan); box-shadow: 0 0 10px rgba(0,243,255,0.1); }
+        .module-header { color: var(--neon-yellow); font-size: 0.85rem; margin-bottom: 10px; border-bottom: 1px dashed rgba(0,243,255,0.3); padding-bottom: 5px; display: flex; justify-content: space-between;}
 
-        /* BOTONES */
         .btn-cyber { background: rgba(0,0,0,0.5); border: 1px solid rgba(0,243,255,0.3); color: var(--neon-cyan); width: 100%; padding: 10px; cursor: pointer; font-weight: bold; font-family: inherit; margin-bottom: 8px; transition: 0.2s; text-align: left; }
         .btn-cyber:hover, .btn-cyber.active { background: rgba(0, 243, 255, 0.1); border-color: var(--neon-cyan); padding-left: 20px; }
         .btn-cyber.active { border-color: var(--neon-magenta); color: #fff; background: rgba(255,0,85,0.15); }
 
-        /* ZONA CENTRAL */
-        #center-zone { padding: 0 20px; overflow-y: auto; }
+        #center-zone { padding: 0 20px; overflow-y: auto; position: relative; transition: filter 0.1s, transform 0.1s; }
         .category-container { display: block; margin-bottom: 30px; transition: opacity 0.3s; }
         .category-header { color: var(--neon-magenta); font-size: 1.2rem; margin-bottom: 15px; text-shadow: 0 0 5px rgba(255,0,85,0.5); }
         
-        .post-card { background: rgba(0,0,0,0.8); border: 1px solid rgba(0,243,255,0.2); padding: 15px; margin-bottom: 10px; border-left: 3px solid var(--neon-cyan); transition: 0.2s; }
+        .post-card { background: rgba(0,0,0,0.7); backdrop-filter: blur(3px); border: 1px solid rgba(0,243,255,0.2); padding: 15px; margin-bottom: 10px; border-left: 3px solid var(--neon-cyan); transition: border-color 0.2s, background 0.2s, transform 0.2s; }
         .post-card:hover { border-color: var(--neon-cyan); border-left-color: var(--neon-magenta); transform: translateX(5px); background: rgba(0,243,255,0.05); }
         .post-card:hover .post-title { animation: text-decrypt 0.3s forwards; }
         .post-title { font-size: 1.1rem; color: #fff; margin-bottom: 5px; text-transform: uppercase; }
-        .post-date { color: var(--terminal-green); font-size: 0.8rem; margin-bottom: 10px; }
+        .post-date { color: var(--terminal-green); font-size: 0.8rem; margin-bottom: 5px; }
+        .post-meta { font-size: 0.65rem; color: #666; font-family: monospace; margin-bottom: 10px; }
         
         .btn-action { background: var(--neon-cyan); color: var(--bg-dark); text-decoration: none; padding: 4px 10px; font-size: 0.8rem; font-weight: bold; }
         .btn-action:hover { background: #fff; }
 
-        /* TERMINAL & SPLASH */
-        .sys-log { font-size: 0.75rem; color: #aaa; height: 120px; overflow-y: auto; }
+        /* Clase Shiver para Micro-glitches en hover */
+        .shiver { animation: shiver-anim 0.1s infinite alternate; }
+        @keyframes shiver-anim {
+            0% { transform: matrix3d(1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1) translateX(5px); }
+            100% { transform: matrix3d(1.01,0.01,0,0, -0.01,0.99,0,0, 0,0,1,0, 0,0,0,1) translateX(3px); filter: hue-rotate(45deg); }
+        }
+
+        .sys-log { font-size: 0.75rem; color: #aaa; height: 120px; overflow-y: auto; word-wrap: break-word; }
         .terminal-input-wrapper { display: flex; margin-top: 10px; border-top: 1px dashed rgba(0,243,255,0.3); padding-top: 10px; }
         .terminal-input-wrapper input { background: transparent; border: none; color: var(--terminal-green); font-family: inherit; width: 100%; outline: none; }
         
         #splash { position: fixed; inset: 0; background: var(--bg-dark); z-index: 10000; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: 0.3s; }
         #boot-text { color: var(--terminal-green); font-size: 1rem; width: 60vw; height: 200px; }
         #enter-btn { background: transparent; color: var(--neon-cyan); border: 2px solid var(--neon-cyan); padding: 15px 40px; font-size: 1.5rem; cursor: pointer; font-family: inherit; display: none; transition: 0.2s; }
-        #enter-btn:hover { background: var(--neon-cyan); color: #000; }
+        #enter-btn:hover { background: var(--neon-cyan); color: #000; box-shadow: 0 0 15px var(--neon-cyan); }
 
         @media (max-width: 900px) { .main-wrapper { grid-template-columns: 1fr; overflow: auto; height: auto; } .cyan-line { display: none; } }
     </style>
@@ -115,15 +119,15 @@ layout: null
     <div class="main-wrapper">
         <div class="side-panel">
             <div class="module">
-                <div class="module-header">> NODE_DIAGNOSTICS</div>
+                <div class="module-header">> NODE_DIAGNOSTICS <span id="scroll-hex" style="color:var(--neon-cyan)">0x0000</span></div>
                 <div style="font-size: 0.8rem; line-height: 1.5;">
-                    USR: <span style="color:var(--neon-magenta)">GUEST_GHOST</span><br>
+                    USR: <span id="ui-user-name" style="color:var(--neon-magenta)"></span><br>
                     NET: <span style="color:var(--terminal-green)">LINK_ESTABLISHED</span><br>
                     PING: <span id="ping-ms">12</span>ms
                 </div>
                 <div style="margin-top:10px; font-size:0.7rem;">
                     <div>CPU: <span id="cpu-val">12%</span></div>
-                    <div style="height:3px; background:#222;"><div id="cpu-meter" style="height:100%; width:12%; background:var(--neon-cyan); transition:0.5s;"></div></div>
+                    <div style="height:3px; background:#222;"><div id="cpu-meter" style="height:100%; width:12%; background:var(--neon-cyan); transition:0.1s;"></div></div>
                     <div style="margin-top:5px;">RAM: <span id="ram-val">45%</span></div>
                     <div style="height:3px; background:#222;"><div id="ram-meter" style="height:100%; width:45%; background:var(--neon-magenta); transition:0.5s;"></div></div>
                 </div>
@@ -132,7 +136,6 @@ layout: null
             <div class="module">
                 <div class="module-header">> AUDIO_SUBSYSTEM</div>
                 <button class="btn-cyber active" id="audioBtn">SYS.AUDIO_MUTE()</button>
-                <audio id="bgm" loop src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"></audio>
             </div>
         </div>
 
@@ -141,35 +144,25 @@ layout: null
         <div id="center-zone">
             <div class="category-container" id="cat-PROYECTOS">
                 <div class="category-header">SYS.DIR // PROYECTOS</div>
-                {% for post in site.categories.PROYECTOS %}
                 <div class="post-card">
-                    <div class="post-title">{{ post.title }}</div>
-                    <div class="post-date">TS: {{ post.date | date: "%Y-%m-%d" }}</div>
-                    <a href="{{ post.url }}" class="btn-action btn-hover-sfx">EJECUTAR_ARCHIVO</a>
+                    <div class="post-title">Proyecto_Arachnid</div>
+                    <div class="post-date">TS: 2026-03-21</div>
+                    <a href="#" class="btn-action btn-hover-sfx">EJECUTAR_ARCHIVO</a>
                 </div>
-                {% endfor %}
+                <div class="post-card">
+                    <div class="post-title">Subrutina_Protocol_Zero</div>
+                    <div class="post-date">TS: 2026-02-14</div>
+                    <a href="#" class="btn-action btn-hover-sfx">EJECUTAR_ARCHIVO</a>
+                </div>
             </div>
 
             <div class="category-container" id="cat-PENSAMIENTOS">
                 <div class="category-header">SYS.DIR // PENSAMIENTOS</div>
-                {% for post in site.categories.PENSAMIENTOS %}
                 <div class="post-card">
-                    <div class="post-title">{{ post.title }}</div>
-                    <div class="post-date">TS: {{ post.date | date: "%Y-%m-%d" }}</div>
-                    <a href="{{ post.url }}" class="btn-action btn-hover-sfx">EXTRAER_MEMORIA</a>
+                    <div class="post-title">Ghost_in_the_Shell_Review</div>
+                    <div class="post-date">TS: 2026-01-10</div>
+                    <a href="#" class="btn-action btn-hover-sfx">EXTRAER_MEMORIA</a>
                 </div>
-                {% endfor %}
-            </div>
-            
-            <div class="category-container" id="cat-ARTES">
-                <div class="category-header">SYS.DIR // ARTES</div>
-                {% for post in site.categories.ARTES %}
-                <div class="post-card">
-                    <div class="post-title">{{ post.title }}</div>
-                    <div class="post-date">TS: {{ post.date | date: "%Y-%m-%d" }}</div>
-                    <a href="{{ post.url }}" class="btn-action btn-hover-sfx">VISUALIZAR_RENDER</a>
-                </div>
-                {% endfor %}
             </div>
         </div>
 
@@ -181,7 +174,6 @@ layout: null
                 <button class="btn-cyber active btn-hover-sfx" data-filter="ALL">SELECT * FROM DATA</button>
                 <button class="btn-cyber btn-hover-sfx" data-filter="PROYECTOS">/PROYECTOS/</button>
                 <button class="btn-cyber btn-hover-sfx" data-filter="PENSAMIENTOS">/PENSAMIENTOS/</button>
-                <button class="btn-cyber btn-hover-sfx" data-filter="ARTES">/ARTES/</button>
             </div>
 
             <div class="module" style="flex-grow:1; display:flex; flex-direction:column;">
@@ -197,53 +189,238 @@ layout: null
 </div>
 
 <script>
-/** NEURAL_OVERRIDE CORE - LITE EDITION **/
+/** NEURAL_OVERRIDE CORE - V10.2 ADVANCED EDITION **/
 
-// 1. Audio simplificado (Solo beeps de UI, música gestionada por HTML5)
-const audioCtx = window.AudioContext ? new AudioContext() : null;
-const playBeep = (freq, type) => {
-    if(!audioCtx || audioCtx.state !== 'running') return;
-    const osc = audioCtx.createOscillator(), gainNode = audioCtx.createGain();
-    osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-    gainNode.gain.setValueAtTime(0.02, audioCtx.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
-    osc.connect(gainNode); gainNode.connect(audioCtx.destination);
-    osc.start(); osc.stop(audioCtx.currentTime + 0.05);
+// ==========================================
+// MÓDULO 1 & 3: ESTADO, TERMINAL Y RENDIMIENTO
+// ==========================================
+const DOM = {
+    logs: document.getElementById('sys-log-container'),
+    input: document.getElementById('cmd-input'),
+    center: document.getElementById('center-zone'),
+    cpuVal: document.getElementById('cpu-val'),
+    cpuMeter: document.getElementById('cpu-meter'),
+    userName: document.getElementById('ui-user-name')
 };
 
-const bgm = document.getElementById('bgm');
-const audioBtn = document.getElementById('audioBtn');
-audioBtn.onclick = () => {
-    if (bgm.paused) { bgm.play(); audioBtn.innerText = "SYS.AUDIO_MUTE()"; audioBtn.classList.add('active'); } 
-    else { bgm.pause(); audioBtn.innerText = "SYS.AUDIO_PLAY()"; audioBtn.classList.remove('active'); }
-};
+// Persistencia de Usuario
+let sysUser = localStorage.getItem('sys_user') || 'GUEST_GHOST';
+DOM.userName.innerText = sysUser;
 
-// 2. Control de Terminal unificado
-const terminalLogs = document.getElementById('sys-log-container');
-const printLog = (txt, err = false) => {
+const printLog = (txt, type = 'info') => {
     const d = new Date().toLocaleTimeString('en-US',{hour12:false});
-    terminalLogs.innerHTML += `<div style="color:${err ? '#ff0055' : '#00f3ff'}">[${d}] ${txt}</div>`;
-    terminalLogs.scrollTop = terminalLogs.scrollHeight;
-    if(terminalLogs.childElementCount > 15) terminalLogs.firstElementChild.remove();
+    const colors = { info: '#00f3ff', err: '#ff0055', warn: '#fcee0a' };
+    DOM.logs.innerHTML += `<div style="color:${colors[type] || colors.info}">[${d}] ${txt}</div>`;
+    DOM.logs.scrollTop = DOM.logs.scrollHeight;
+    if(DOM.logs.childElementCount > 25) DOM.logs.firstElementChild.remove();
 };
 
-document.getElementById('cmd-input').onkeydown = e => {
-    if (e.key === 'Enter' && e.target.value.trim() !== '') {
-        const cmd = e.target.value.toLowerCase(); e.target.value = '';
-        printLog(`> ${cmd}`, false);
-        if(cmd === 'help') printLog("CMDS: clear, reboot, hack");
-        else if(cmd === 'clear') terminalLogs.innerHTML = '';
-        else if(cmd === 'reboot') location.reload();
-        else if(cmd === 'hack') document.getElementById('crt-screen').classList.add('global-glitch');
-        else printLog("COMANDO_NO_RECONOCIDO", true);
+// Diccionario de Comandos (Lookup Table)
+const terminalCommands = {
+    'help': () => printLog('CMDS: clear, reboot, hack, override --color [hex/name], login [name], fetch_logs'),
+    'clear': () => DOM.logs.innerHTML = '',
+    'reboot': () => location.reload(),
+    'hack': () => document.getElementById('crt-screen').classList.add('global-glitch'),
+    'override': (args) => {
+        if(args[0] === '--color' && args[1]) {
+            document.documentElement.style.setProperty('--neon-cyan', args[1]);
+            printLog(`[SYS] CSS_MUTATION: var(--neon-cyan) -> ${args[1]}`, 'warn');
+        } else { printLog('SYNTAX_ERR: override --color [value]', 'err'); }
+    },
+    'login': (args) => {
+        if(args[0]) {
+            sysUser = args[0].toUpperCase();
+            localStorage.setItem('sys_user', sysUser);
+            DOM.userName.innerText = sysUser;
+            printLog(`[SYS] CREDENTIALS_UPDATED: ${sysUser}`, 'warn');
+        } else { printLog('SYNTAX_ERR: login [username]', 'err'); }
+    },
+    'fetch_logs': async () => {
+        printLog('ESTABLISHING_EXTERNAL_LINK...', 'warn');
+        try {
+            // Usando JSONPlaceholder como API de pruebas simulando logs de intrusión
+            const res = await fetch('https://jsonplaceholder.typicode.com/users?_limit=3');
+            const data = await res.json();
+            data.forEach(user => {
+                setTimeout(() => printLog(`[INTRUSION_DETECTED] IP_SPOOF: ${user.website} // LOC: ${user.address.city}`, 'err'), Math.random() * 1000);
+            });
+        } catch(e) { printLog('API_CONNECTION_REFUSED', 'err'); }
     }
 };
 
-// 3. UI y Filtros
-document.querySelectorAll('.btn-hover-sfx').forEach(btn => btn.onmouseenter = () => playBeep(800, 'square'));
+DOM.input.addEventListener('keydown', (e) => {
+    handleTypingAudio(); // Llama al foley digital
+    if (e.key === 'Enter' && e.target.value.trim() !== '') {
+        const raw = e.target.value.trim().split(' ');
+        const cmd = raw[0].toLowerCase();
+        const args = raw.slice(1);
+        e.target.value = '';
+        printLog(`> ${cmd} ${args.join(' ')}`);
+        
+        if (terminalCommands[cmd]) terminalCommands[cmd](args);
+        else printLog(`ERR_UNKNOWN_COMMAND: ${cmd}`, 'err');
+    }
+});
+
+// ==========================================
+// MÓDULO 2: CAPA DE AUDIO DE ALTA FIDELIDAD
+// ==========================================
+let audioCtx = null, biquadFilter = null, masterGain = null;
+let lastTypingTime = 0;
+
+const initAudioSubsystem = () => {
+    if(audioCtx) return;
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    audioCtx = new AudioContext();
+    
+    // Nodos Principales
+    masterGain = audioCtx.createGain();
+    masterGain.gain.value = 0.3;
+    biquadFilter = audioCtx.createBiquadFilter();
+    biquadFilter.type = 'lowpass';
+    biquadFilter.frequency.value = 20000; // Abierto por defecto
+
+    // Crear Reverb procedimental (Impulse Response)
+    const convolver = audioCtx.createConvolver();
+    const len = audioCtx.sampleRate * 1.5; 
+    const impulse = audioCtx.createBuffer(2, len, audioCtx.sampleRate);
+    for (let i = 0; i < 2; i++) {
+        let channel = impulse.getChannelData(i);
+        for (let j = 0; j < len; j++) {
+            channel[j] = (Math.random() * 2 - 1) * Math.pow(1 - j / len, 3);
+        }
+    }
+    convolver.buffer = impulse;
+
+    // Enrutamiento: Fuente -> Master -> Convolver -> Filtro -> Destino
+    masterGain.connect(convolver);
+    convolver.connect(biquadFilter);
+    biquadFilter.connect(audioCtx.destination);
+};
+
+const playProceduralSound = (freq, type = 'sine', duration = 0.05) => {
+    if(!audioCtx || audioCtx.state !== 'running') return;
+    const osc = audioCtx.createOscillator();
+    const env = audioCtx.createGain();
+    
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+    
+    env.gain.setValueAtTime(0.5, audioCtx.currentTime);
+    env.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+    
+    osc.connect(env);
+    env.connect(masterGain);
+    
+    osc.start();
+    osc.stop(audioCtx.currentTime + duration);
+};
+
+// Foley Digital basado en velocidad de escritura
+const handleTypingAudio = () => {
+    const now = performance.now();
+    const diff = now - lastTypingTime;
+    lastTypingTime = now;
+    
+    // A mayor velocidad (menor diff), frecuencia más alta
+    let freq = 400;
+    if (diff < 100) freq = 800;
+    if (diff < 50) freq = 1200;
+    
+    playProceduralSound(freq, 'square', 0.03);
+};
+
+// Toggle de Filtro Biquad para cambios de Modal/Categoría
+const triggerFilterSweep = () => {
+    if(!audioCtx) return;
+    biquadFilter.frequency.cancelScheduledValues(audioCtx.currentTime);
+    biquadFilter.frequency.setValueAtTime(500, audioCtx.currentTime);
+    biquadFilter.frequency.exponentialRampToValueAtTime(20000, audioCtx.currentTime + 0.8);
+    playProceduralSound(150, 'sawtooth', 0.3);
+};
+
+// ==========================================
+// MÓDULO 3: TELEMETRÍA Y MICRO-GLITCHES
+// ==========================================
+let currentLoad = 12;
+
+const updateTelemetry = () => {
+    // Generación de carga simulada con posibilidad de "Picos" (Spikes)
+    if (Math.random() > 0.95) currentLoad = Math.floor(Math.random() * 70 + 30);
+    else currentLoad = Math.max(5, currentLoad - 2); // Cool-down gradual
+
+    DOM.cpuVal.innerText = `${currentLoad}%`;
+    DOM.cpuMeter.style.width = `${currentLoad}%`;
+
+    // Alterar visuales según carga
+    if (currentLoad > 85) {
+        DOM.center.style.filter = `blur(${Math.random() * 2}px)`;
+        DOM.center.style.transform = `skewX(${Math.random() > 0.5 ? 2 : -2}deg)`;
+    } else {
+        DOM.center.style.filter = 'none';
+        DOM.center.style.transform = 'none';
+    }
+
+    // Usar rAF en lugar de setInterval para rendimiento a 60fps
+    setTimeout(() => requestAnimationFrame(updateTelemetry), 200);
+};
+
+// Aplicar transformaciones matrix3d aleatorias en Hover
+document.querySelectorAll('.post-card').forEach(card => {
+    card.addEventListener('mouseenter', function() {
+        this.classList.add('shiver');
+        playProceduralSound(900, 'triangle', 0.05);
+    });
+    card.addEventListener('mouseleave', function() {
+        this.classList.remove('shiver');
+    });
+});
+
+// ==========================================
+// MÓDULO 4: METADATOS INYECTADOS E INTERSECTION OBSERVER
+// ==========================================
+// Función de Hashing simple y rápida
+const cyrb53 = (str, seed = 0) => {
+    let h1 = 0xdeadbeef ^ seed, h2 = 0x41c6ce57 ^ seed;
+    for (let i = 0, ch; i < str.length; i++) {
+        ch = str.charCodeAt(i);
+        h1 = Math.imul(h1 ^ ch, 2654435761);
+        h2 = Math.imul(h2 ^ ch, 1597334677);
+    }
+    h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507); h1 ^= Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+    h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507); h2 ^= Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+    return 4294967296 * (2097151 & h2) + (h1 >>> 0);
+};
+
+let visibleNodes = 0;
+const hexDisplay = document.getElementById('scroll-hex');
+
+const cardObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) visibleNodes++;
+        else visibleNodes = Math.max(0, visibleNodes - 1);
+    });
+    // Actualizar progreso en Hexadecimal
+    const hexVal = (visibleNodes * 0x1A4).toString(16).toUpperCase().padStart(4, '0');
+    hexDisplay.innerText = `0x${hexVal}`;
+}, { threshold: 0.2 });
+
+document.querySelectorAll('.post-card').forEach(card => {
+    // 1. Inyectar Metadatos dinámicos
+    const titleText = card.querySelector('.post-title').innerText;
+    const hashID = cyrb53(titleText).toString(16).toUpperCase().substring(0, 8);
+    card.insertAdjacentHTML('beforeend', `<div class="post-meta">ENCRYPT_ID: ${hashID} // CLUSTER: [SEC-${Math.floor(Math.random()*99)}]</div>`);
+    
+    // 2. Observar para el progreso Hexadecimal
+    cardObserver.observe(card);
+});
+
+// ==========================================
+// CORE SYSTEM & EVENT LISTENERS
+// ==========================================
 document.querySelectorAll('[data-filter]').forEach(btn => {
     btn.onclick = e => {
-        playBeep(150, 'sawtooth');
+        triggerFilterSweep(); // Activa el BiquadFilter
         document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('active'));
         e.target.classList.add('active');
         
@@ -257,7 +434,7 @@ document.querySelectorAll('[data-filter]').forEach(btn => {
     };
 });
 
-// 4. Matrix Canvas Optimizado
+// Matrix Canvas Logic (Mantenido y ligeramente pulido)
 const canvas = document.getElementById('matrix-canvas'), ctx = canvas.getContext('2d');
 let w, h, drops;
 const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
@@ -275,10 +452,10 @@ setInterval(() => {
         if (y * 14 > h && Math.random() > 0.975) drops[i] = 0;
         drops[i]++;
     });
-}, 50); // Frame rate reducido a 50ms (suficiente para el efecto)
+}, 50);
 
-// 5. Arranque y Telemetría
-const bootSeq = ["> CARGANDO KERNEL_LITE...", "> MEMORIA ASIGNADA...", "> SISTEMA LISTO."];
+// Secuencia de Boot
+const bootSeq = ["> INITIALIZING KERNEL_V10.2...", "> MOUNTING FILE SYSTEM...", "> ALLOCATING AUDIO BUFFERS...", "> SYSTEM READY."];
 let bIdx = 0;
 const boot = setInterval(() => {
     if(bIdx < bootSeq.length) { document.getElementById('boot-text').innerHTML += bootSeq[bIdx++] + "<br>"; } 
@@ -286,20 +463,25 @@ const boot = setInterval(() => {
 }, 300);
 
 document.getElementById('enter-btn').onclick = () => {
+    initAudioSubsystem(); // Inicializa audio solo bajo interacción del usuario (políticas del navegador)
+    if(audioCtx.state === 'suspended') audioCtx.resume();
+    
     document.getElementById('splash').style.opacity = '0';
     setTimeout(() => document.getElementById('splash').style.display = 'none', 300);
+    
     printLog("ENLACE ESTABLECIDO.");
-    if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-    bgm.play().catch(e => printLog("AUTO-PLAY RESTRINGIDO", true));
+    printLog("Escriba 'help' para comandos.");
+    
+    // Iniciar bucles de telemetría visual
+    requestAnimationFrame(updateTelemetry);
 };
 
-// Telemetría más lenta (cada 2 segundos)
-setInterval(() => {
-    document.getElementById('cpu-val').innerText = (document.getElementById('cpu-meter').style.width = Math.floor(Math.random()*40+10)+'%');
-    document.getElementById('ram-val').innerText = (document.getElementById('ram-meter').style.width = Math.floor(Math.random()*30+40)+'%');
-    document.getElementById('ping-ms').innerText = Math.floor(Math.random()*20+10);
-}, 2000);
-
+// Botón de Audio Mute UI Update
+document.getElementById('audioBtn').onclick = function() {
+    if(!audioCtx) return;
+    if (audioCtx.state === 'running') { audioCtx.suspend(); this.innerText = "SYS.AUDIO_PLAY()"; this.classList.remove('active'); } 
+    else { audioCtx.resume(); this.innerText = "SYS.AUDIO_MUTE()"; this.classList.add('active'); }
+};
 </script>
 </body>
 </html>
