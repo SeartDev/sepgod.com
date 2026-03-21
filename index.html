@@ -31,7 +31,6 @@ layout: null
             overflow-x: hidden;
         }
 
-        /* --- HEADER --- */
         header {
             text-align: center;
             padding: 50px 0;
@@ -48,7 +47,6 @@ layout: null
             box-shadow: 0 0 15px rgba(0, 243, 255, 0.3);
         }
 
-        /* --- LAYOUT --- */
         .main-wrapper {
             display: grid;
             grid-template-columns: 260px 2px 1fr 2px 260px;
@@ -75,12 +73,14 @@ layout: null
             padding: 30px;
         }
 
-        /* --- MÓDULOS Y CATEGORÍAS --- */
+        /* --- FILTRO DE CATEGORÍAS --- */
         .category-container {
             margin-bottom: 50px;
             border: 1px solid rgba(255, 0, 85, 0.2);
             padding: 20px;
             background: rgba(255, 0, 85, 0.02);
+            display: block; /* Por defecto visibles */
+            transition: opacity 0.5s ease;
         }
 
         .category-header {
@@ -121,20 +121,18 @@ layout: null
             margin-bottom: 10px;
         }
 
-        .category-btn:hover {
+        .category-btn:hover, .category-btn.active {
             background: rgba(255, 0, 85, 0.2);
             box-shadow: 0 0 15px var(--neon-magenta);
             color: white;
         }
 
-        /* --- POSTS --- */
         .post-card {
             border: 1px solid rgba(0, 243, 255, 0.1);
             background: rgba(0, 0, 0, 0.3);
             padding: 15px;
             margin-bottom: 15px;
             transition: 0.3s;
-            text-align: left;
         }
 
         .post-card:hover {
@@ -144,6 +142,7 @@ layout: null
 
         .post-title { font-size: 1.1rem; margin: 5px 0; color: #fff; }
         .post-date { color: #555; font-size: 0.7rem; }
+        
         .btn-link {
             display: inline-block;
             margin-top: 10px;
@@ -155,23 +154,16 @@ layout: null
         }
 
         #splash {
-            position: fixed;
-            inset: 0;
-            background: #000;
-            z-index: 10000;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            position: fixed; inset: 0;
+            background: #000; z-index: 10000;
+            display: flex; justify-content: center; align-items: center;
         }
 
         #splash button {
-            background: black;
-            color: var(--neon-cyan);
+            background: black; color: var(--neon-cyan);
             border: 2px solid var(--neon-cyan);
-            padding: 20px 40px;
-            font-size: 2rem;
-            cursor: pointer;
-            font-family: var(--font-main);
+            padding: 20px 40px; font-size: 2rem;
+            cursor: pointer; font-family: var(--font-main);
             box-shadow: 0 0 20px var(--neon-cyan);
         }
 
@@ -211,7 +203,7 @@ layout: null
 
         <div id="center-zone">
             
-            <div class="category-container">
+            <div class="category-container" id="cat-PROYECTOS">
                 <div class="category-header">[ CATEGORIA: PROYECTOS ]</div>
                 {% for post in site.categories.PROYECTOS %}
                 <div class="post-card">
@@ -222,7 +214,7 @@ layout: null
                 {% endfor %}
             </div>
 
-            <div class="category-container">
+            <div class="category-container" id="cat-PENSAMIENTOS">
                 <div class="category-header">[ CATEGORIA: PENSAMIENTOS ]</div>
                 {% for post in site.categories.PENSAMIENTOS %}
                 <div class="post-card">
@@ -233,7 +225,7 @@ layout: null
                 {% endfor %}
             </div>
 
-            <div class="category-container">
+            <div class="category-container" id="cat-ARTES">
                 <div class="category-header">[ CATEGORIA: ARTES ]</div>
                 {% for post in site.categories.ARTES %}
                 <div class="post-card">
@@ -244,7 +236,7 @@ layout: null
                 {% endfor %}
             </div>
 
-            <div class="category-container">
+            <div class="category-container" id="cat-SISTEMAS">
                 <div class="category-header">[ CATEGORIA: SISTEMAS ]</div>
                 {% for post in site.categories.SISTEMAS %}
                 <div class="post-card">
@@ -254,7 +246,6 @@ layout: null
                 </div>
                 {% endfor %}
             </div>
-
         </div>
 
         <div class="cyan-line"></div>
@@ -262,17 +253,36 @@ layout: null
         <div class="side-panel">
             <div class="module">
                 <div class="module-header">> SYSTEM_UPLINK</div>
-                <div style="font-size: 0.6rem; color: #444;">ESTATUS: TODO_OK</div>
+                <div style="font-size: 0.6rem; color: #444;">SELECT_PROTOCOL</div>
             </div>
 
-            <button class="category-btn">PROYECTOS</button>
-            <button class="category-btn">PENSAMIENTOS</button>
-            <button class="category-btn">ARTES</button>
-            <button class="category-btn">SISTEMAS</button>
+            <button class="category-btn" onclick="filterCat('ALL')">MOSTRAR_TODO</button>
+            <button class="category-btn" onclick="filterCat('PROYECTOS')">PROYECTOS</button>
+            <button class="category-btn" onclick="filterCat('PENSAMIENTOS')">PENSAMIENTOS</button>
+            <button class="category-btn" onclick="filterCat('ARTES')">ARTES</button>
+            <button class="category-btn" onclick="filterCat('SISTEMAS')">SISTEMAS</button>
         </div>
     </div>
 
     <script>
+        // Función para filtrar categorías
+        function filterCat(category) {
+            const containers = document.querySelectorAll('.category-container');
+            
+            containers.forEach(container => {
+                if (category === 'ALL') {
+                    container.style.display = 'block';
+                } else {
+                    // Si el ID del contenedor coincide con la categoría seleccionada
+                    if (container.id === 'cat-' + category) {
+                        container.style.display = 'block';
+                    } else {
+                        container.style.display = 'none';
+                    }
+                }
+            });
+        }
+
         function toggleAudio() {
             const a = document.getElementById('bgm');
             const b = document.getElementById('audioBtn');
