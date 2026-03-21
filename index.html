@@ -48,10 +48,10 @@ layout: null
             box-shadow: 0 0 15px rgba(0, 243, 255, 0.3);
         }
 
-        /* --- LAYOUT DE 5 COLUMNAS --- */
+        /* --- LAYOUT --- */
         .main-wrapper {
             display: grid;
-            grid-template-columns: 260px 2px 1fr 2px 260px; /* Paneles y Líneas */
+            grid-template-columns: 260px 2px 1fr 2px 260px;
             gap: 0;
             flex-grow: 1;
             padding: 0 20px;
@@ -64,7 +64,6 @@ layout: null
             gap: 20px;
         }
 
-        /* LAS LÍNEAS CIAN */
         .cyan-line {
             background: var(--neon-cyan);
             box-shadow: 0 0 20px var(--neon-cyan), 0 0 5px #fff;
@@ -74,10 +73,26 @@ layout: null
 
         #center-zone {
             padding: 30px;
-            text-align: center;
         }
 
-        /* --- MÓDULOS --- */
+        /* --- MÓDULOS Y CATEGORÍAS --- */
+        .category-container {
+            margin-bottom: 50px;
+            border: 1px solid rgba(255, 0, 85, 0.2);
+            padding: 20px;
+            background: rgba(255, 0, 85, 0.02);
+        }
+
+        .category-header {
+            color: var(--neon-magenta);
+            font-weight: bold;
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            border-bottom: 1px solid var(--neon-magenta);
+            display: inline-block;
+            padding-right: 20px;
+        }
+
         .module {
             background: rgba(0, 0, 0, 0.8);
             border: 1px solid var(--neon-cyan);
@@ -92,7 +107,6 @@ layout: null
             text-transform: uppercase;
         }
 
-        /* --- BOTONES MAGENTA --- */
         .category-btn {
             background: transparent;
             border: 1px solid var(--neon-magenta);
@@ -113,32 +127,33 @@ layout: null
             color: white;
         }
 
-        /* --- ESTILO DE LOS POSTS (CENTRO) --- */
+        /* --- POSTS --- */
         .post-card {
-            border: 1px solid rgba(0, 243, 255, 0.3);
-            background: rgba(255, 255, 255, 0.02);
-            padding: 25px;
-            margin-bottom: 30px;
+            border: 1px solid rgba(0, 243, 255, 0.1);
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            margin-bottom: 15px;
             transition: 0.3s;
+            text-align: left;
         }
 
         .post-card:hover {
             border-color: var(--neon-cyan);
-            box-shadow: 0 0 20px rgba(0, 243, 255, 0.1);
+            box-shadow: 0 0 10px rgba(0, 243, 255, 0.2);
         }
 
-        .post-title { font-size: 1.5rem; margin: 10px 0; }
-        .post-date { color: #555; font-size: 0.8rem; }
+        .post-title { font-size: 1.1rem; margin: 5px 0; color: #fff; }
+        .post-date { color: #555; font-size: 0.7rem; }
         .btn-link {
             display: inline-block;
-            margin-top: 15px;
-            color: var(--neon-magenta);
+            margin-top: 10px;
+            color: var(--neon-cyan);
             text-decoration: none;
-            border: 1px solid var(--neon-magenta);
-            padding: 5px 15px;
+            border: 1px solid var(--neon-cyan);
+            padding: 3px 10px;
+            font-size: 0.8rem;
         }
 
-        /* --- SPLASH SCREEN --- */
         #splash {
             position: fixed;
             inset: 0;
@@ -189,23 +204,57 @@ layout: null
                 <button onclick="toggleAudio()" id="audioBtn" style="background:var(--neon-cyan); border:none; width:100%; padding:10px; cursor:pointer; font-weight:bold;">CONNECT AUDIO</button>
                 <audio id="bgm" loop src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"></audio>
             </div>
-
             <img src="https://i.gifer.com/1kt1.gif" style="width: 80px; align-self: center; margin-top: 20px;">
         </div>
 
         <div class="cyan-line"></div>
 
         <div id="center-zone">
-            <div style="color:var(--terminal-green); font-size: 0.8rem; margin-bottom: 20px;">[ LISTANDO_LOGS_DEL_SISTEMA ]</div>
             
-            {% for post in site.posts %}
-            <div class="post-card">
-                <div style="color: var(--neon-cyan); font-size: 0.7rem;">{{ post.category }}</div>
-                <div class="post-title">{{ post.title }}</div>
-                <div class="post-date">TRANSMISION: {{ post.date | date: "%Y-%m-%d" }}</div>
-                <a href="{{ post.url }}" class="btn-link">ACCEDER_DATOS</a>
+            <div class="category-container">
+                <div class="category-header">[ CATEGORIA: PROYECTOS ]</div>
+                {% for post in site.categories.PROYECTOS %}
+                <div class="post-card">
+                    <div class="post-title">{{ post.title }}</div>
+                    <div class="post-date">{{ post.date | date: "%Y-%m-%d" }}</div>
+                    <a href="{{ post.url }}" class="btn-link">ACCEDER_DATOS</a>
+                </div>
+                {% endfor %}
             </div>
-            {% endfor %}
+
+            <div class="category-container">
+                <div class="category-header">[ CATEGORIA: PENSAMIENTOS ]</div>
+                {% for post in site.categories.PENSAMIENTOS %}
+                <div class="post-card">
+                    <div class="post-title">{{ post.title }}</div>
+                    <div class="post-date">{{ post.date | date: "%Y-%m-%d" }}</div>
+                    <a href="{{ post.url }}" class="btn-link">ACCEDER_DATOS</a>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="category-container">
+                <div class="category-header">[ CATEGORIA: ARTES ]</div>
+                {% for post in site.categories.ARTES %}
+                <div class="post-card">
+                    <div class="post-title">{{ post.title }}</div>
+                    <div class="post-date">{{ post.date | date: "%Y-%m-%d" }}</div>
+                    <a href="{{ post.url }}" class="btn-link">ACCEDER_DATOS</a>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="category-container">
+                <div class="category-header">[ CATEGORIA: SISTEMAS ]</div>
+                {% for post in site.categories.SISTEMAS %}
+                <div class="post-card">
+                    <div class="post-title">{{ post.title }}</div>
+                    <div class="post-date">{{ post.date | date: "%Y-%m-%d" }}</div>
+                    <a href="{{ post.url }}" class="btn-link">ACCEDER_DATOS</a>
+                </div>
+                {% endfor %}
+            </div>
+
         </div>
 
         <div class="cyan-line"></div>
