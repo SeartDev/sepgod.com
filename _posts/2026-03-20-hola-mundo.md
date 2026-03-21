@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "MI PRIMER VLOG CYBERPUNK"
+title: "MI PRIMER BLOG CYBERPUNK"
 category: PENSAMIENTOS
 ---
 
