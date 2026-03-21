@@ -6,11 +6,11 @@ layout: null
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NEURAL_OVERRIDE // V9.0 :: MAINFRAME_ACCESS</title>
+    <title>NEURAL_OVERRIDE // V10.0 :: MAINFRAME_ACCESS</title>
     
     <style>
         /* ==========================================================================
-           VARIABLES DEL SISTEMA CORE
+           VARIABLES DEL SISTEMA CORE V10
            ========================================================================== */
         :root {
             --neon-cyan: #00f3ff;
@@ -22,29 +22,17 @@ layout: null
             --terminal-green: #00ff41;
             --terminal-green-glow: rgba(0, 255, 65, 0.5);
             --font-main: 'Courier New', Courier, monospace;
-            --font-display: 'Impact', sans-serif;
-            --hud-border: 1px solid var(--neon-cyan-dim);
+            --scanline-color: rgba(0, 255, 65, 0.05);
         }
 
         /* ==========================================================================
-           REINICIO Y ESTILOS BASE
+           REINICIO Y EFECTOS CRT AVANZADOS
            ========================================================================== */
         * {
             box-sizing: border-box;
             scrollbar-width: thin;
             scrollbar-color: var(--neon-cyan) var(--bg-dark);
-        }
-
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: var(--bg-dark);
-            border-left: 1px solid var(--neon-cyan-dim);
-        }
-        ::-webkit-scrollbar-thumb {
-            background: var(--neon-cyan);
-            box-shadow: 0 0 10px var(--neon-cyan);
+            cursor: crosshair;
         }
 
         body {
@@ -52,552 +40,280 @@ layout: null
             color: var(--neon-cyan);
             font-family: var(--font-main);
             margin: 0;
-            min-height: 100vh;
+            height: 100vh;
+            overflow: hidden; /* Evitamos scroll en el body, lo manejamos internamente */
+            perspective: 1000px;
+        }
+
+        /* Contenedor principal que simula la pantalla curva del monitor */
+        #crt-screen {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
             display: flex;
             flex-direction: column;
-            overflow-x: hidden;
-            position: relative;
+            transform: scale(1.02);
+            transition: transform 0.1s ease-out;
+            border-radius: 20px;
+            box-shadow: inset 0 0 100px rgba(0, 0, 0, 0.9);
+            overflow: hidden;
+            animation: turn-on 1s ease-out forwards;
         }
 
-        /* ==========================================================================
-           EFECTOS CRT Y MATRIX BACKGROUND
-           ========================================================================== */
         #matrix-canvas {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
             z-index: -2;
-            opacity: 0.15;
+            opacity: 0.12;
+            transform: scale(1.1);
         }
 
+        /* Capas de Overlay CRT mejoradas */
         .crt-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
             z-index: 9998;
             pointer-events: none;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
-                        linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-            background-size: 100% 4px, 3px 100%;
-            box-shadow: inset 0 0 100px rgba(0,0,0,0.9);
-            animation: flicker 0.15s infinite;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+            background-size: 100% 4px;
+            animation: flicker 0.15s infinite, scanlines 10s linear infinite;
+        }
+
+        .crt-rgb {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 9997;
+            pointer-events: none;
+            background: linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+            background-size: 3px 100%;
         }
 
         .crt-vignette {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            z-index: 9997;
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: 9999;
             pointer-events: none;
-            background: radial-gradient(circle at center, transparent 50%, rgba(0,0,0,0.8) 100%);
+            background: radial-gradient(circle at center, transparent 40%, rgba(0,0,0,0.9) 100%);
+            box-shadow: inset 0 0 50px rgba(0, 243, 255, 0.1);
         }
 
         /* ==========================================================================
-           ANIMACIONES CORE
+           ANIMACIONES CORE V10
            ========================================================================== */
+        @keyframes turn-on {
+            0% { transform: scale(1, 0.001) translate3d(0, 0, 0); filter: brightness(10); }
+            40% { transform: scale(1, 0.001) translate3d(0, 0, 0); filter: brightness(10); }
+            100% { transform: scale(1, 1) translate3d(0, 0, 0); filter: brightness(1); }
+        }
+
+        @keyframes scanlines {
+            0% { background-position: 0 0; }
+            100% { background-position: 0 100vh; }
+        }
+
         @keyframes flicker {
             0% { opacity: 0.95; }
             5% { opacity: 0.85; }
             10% { opacity: 0.95; }
-            15% { opacity: 1; }
             100% { opacity: 1; }
         }
 
+        @keyframes text-decrypt {
+            0% { color: var(--neon-magenta); filter: blur(2px); letter-spacing: -2px; }
+            50% { color: #fff; filter: blur(0px); letter-spacing: 5px; }
+            100% { color: var(--neon-cyan); letter-spacing: normal; }
+        }
+
+        /* Animaciones Glitch (optimizadas) */
         @keyframes glitch-anim-1 {
-            0% { clip-path: inset(20% 0 80% 0); transform: translate(-2px, 2px); }
+            0%, 100% { clip-path: inset(20% 0 80% 0); transform: translate(-2px, 2px); }
             20% { clip-path: inset(60% 0 10% 0); transform: translate(2px, -2px); }
             40% { clip-path: inset(40% 0 50% 0); transform: translate(-2px, 2px); }
             60% { clip-path: inset(80% 0 5% 0); transform: translate(2px, -2px); }
             80% { clip-path: inset(10% 0 70% 0); transform: translate(-2px, 2px); }
-            100% { clip-path: inset(30% 0 50% 0); transform: translate(2px, -2px); }
         }
-
         @keyframes glitch-anim-2 {
-            0% { clip-path: inset(10% 0 60% 0); transform: translate(2px, -2px); }
+            0%, 100% { clip-path: inset(10% 0 60% 0); transform: translate(2px, -2px); }
             20% { clip-path: inset(80% 0 5% 0); transform: translate(-2px, 2px); }
             40% { clip-path: inset(30% 0 20% 0); transform: translate(2px, -2px); }
             60% { clip-path: inset(70% 0 10% 0); transform: translate(-2px, 2px); }
             80% { clip-path: inset(20% 0 50% 0); transform: translate(2px, -2px); }
-            100% { clip-path: inset(50% 0 30% 0); transform: translate(-2px, 2px); }
-        }
-
-        @keyframes blink {
-            0%, 49% { opacity: 1; }
-            50%, 100% { opacity: 0; }
-        }
-
-        @keyframes pulse-border {
-            0% { box-shadow: 0 0 5px var(--neon-cyan), inset 0 0 5px var(--neon-cyan); }
-            50% { box-shadow: 0 0 20px var(--neon-cyan), inset 0 0 10px var(--neon-cyan); }
-            100% { box-shadow: 0 0 5px var(--neon-cyan), inset 0 0 5px var(--neon-cyan); }
-        }
-
-        @keyframes rotate-slow {
-            100% { transform: rotate(360deg); }
         }
 
         /* ==========================================================================
-           HEADER & GLITCH TEXT
+           ESTRUCTURA Y COMPONENTES UI
            ========================================================================== */
         header {
-            text-align: center;
-            padding: 40px 0;
-            flex-shrink: 0;
-            position: relative;
-            z-index: 10;
-            border-bottom: 2px solid var(--neon-cyan-dim);
-            background: linear-gradient(180deg, rgba(0,243,255,0.05) 0%, transparent 100%);
+            text-align: center; padding: 30px 0; flex-shrink: 0; position: relative; z-index: 10;
+            border-bottom: 1px solid var(--neon-cyan-dim);
+            background: linear-gradient(180deg, rgba(0,243,255,0.08) 0%, transparent 100%);
         }
 
         .glitch-box {
-            position: relative;
-            display: inline-block;
-            font-size: 3rem;
-            font-weight: 900;
-            letter-spacing: 15px;
-            color: var(--neon-cyan);
-            text-transform: uppercase;
+            position: relative; display: inline-block; font-size: 3rem; font-weight: 900;
+            letter-spacing: 15px; color: var(--neon-cyan); text-transform: uppercase;
             text-shadow: 4px 4px 0px var(--neon-magenta), -2px -2px 0px var(--terminal-green);
         }
-
         .glitch-box::before, .glitch-box::after {
-            content: "NEURAL_OVERRIDE_V9";
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: var(--bg-dark);
+            content: "NEURAL_OVERRIDE_V10"; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: transparent; pointer-events: none;
         }
+        .glitch-box::before { left: 3px; text-shadow: -2px 0 var(--neon-magenta); animation: glitch-anim-1 2.5s infinite linear alternate-reverse; }
+        .glitch-box::after { left: -3px; text-shadow: -2px 0 var(--neon-cyan); animation: glitch-anim-2 3s infinite linear alternate-reverse; }
 
-        .glitch-box::before {
-            left: 3px;
-            text-shadow: -2px 0 var(--neon-magenta);
-            animation: glitch-anim-1 2.5s infinite linear alternate-reverse;
-        }
+        .subtitle-header { font-size: 0.8rem; color: var(--neon-yellow); letter-spacing: 5px; margin-top: 10px; }
 
-        .glitch-box::after {
-            left: -3px;
-            text-shadow: -2px 0 var(--neon-cyan);
-            animation: glitch-anim-2 3s infinite linear alternate-reverse;
-        }
-
-        .subtitle-header {
-            font-size: 0.8rem;
-            color: var(--neon-yellow);
-            letter-spacing: 5px;
-            margin-top: 10px;
-        }
-
-        /* ==========================================================================
-           ESTRUCTURA DE CUADRÍCULA (GRID) DEL MAINFRAME
-           ========================================================================== */
         .main-wrapper {
-            display: grid;
-            grid-template-columns: 300px 4px 1fr 4px 300px;
-            gap: 10px;
-            flex-grow: 1;
-            padding: 20px 40px;
-            position: relative;
-            z-index: 10;
-            max-width: 1800px;
-            margin: 0 auto;
-            width: 100%;
+            display: grid; grid-template-columns: 320px 2px 1fr 2px 320px; gap: 15px;
+            flex-grow: 1; padding: 20px 40px; position: relative; z-index: 10;
+            max-width: 1900px; margin: 0 auto; width: 100%; height: calc(100vh - 120px);
         }
 
-        .cyan-line {
-            background: var(--neon-cyan);
-            box-shadow: 0 0 15px var(--neon-cyan), 0 0 5px #fff;
-            height: 100%;
-            width: 100%;
-            position: relative;
-            opacity: 0.8;
-        }
+        .cyan-line { background: var(--neon-cyan); opacity: 0.5; box-shadow: 0 0 10px var(--neon-cyan); }
 
-        .cyan-line::after {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: repeating-linear-gradient(
-                0deg,
-                transparent,
-                transparent 10px,
-                rgba(0,0,0,0.8) 10px,
-                rgba(0,0,0,0.8) 20px
-            );
-        }
-
-        /* ==========================================================================
-           PANELES LATERALES Y MÓDULOS HUD
-           ========================================================================== */
-        .side-panel {
-            padding: 10px;
-            display: flex;
-            flex-direction: column;
-            gap: 25px;
-        }
-
+        /* Paneles LATERALES */
+        .side-panel { display: flex; flex-direction: column; gap: 20px; overflow-y: auto; padding-right: 5px; }
+        
         .module {
-            background: rgba(5, 5, 5, 0.85);
-            border: 1px solid var(--neon-cyan);
-            padding: 20px;
-            position: relative;
-            backdrop-filter: blur(5px);
-            box-shadow: inset 0 0 20px rgba(0, 243, 255, 0.05);
+            background: rgba(5, 5, 5, 0.7); border: 1px solid var(--neon-cyan-dim); padding: 20px;
+            position: relative; backdrop-filter: blur(8px); box-shadow: inset 0 0 20px rgba(0, 243, 255, 0.02);
+            transition: border-color 0.3s, box-shadow 0.3s;
         }
+        .module:hover { border-color: var(--neon-cyan); box-shadow: inset 0 0 30px rgba(0, 243, 255, 0.1); }
+        .module::before { content: ''; position: absolute; top: -2px; left: -2px; width: 15px; height: 15px; border-top: 2px solid var(--neon-magenta); border-left: 2px solid var(--neon-magenta); }
+        .module::after { content: ''; position: absolute; bottom: -2px; right: -2px; width: 15px; height: 15px; border-bottom: 2px solid var(--neon-magenta); border-right: 2px solid var(--neon-magenta); }
 
-        /* Decoración de esquinas tecnológicas */
-        .module::before {
-            content: '';
-            position: absolute;
-            top: -2px; left: -2px;
-            width: 15px; height: 15px;
-            border-top: 2px solid var(--neon-magenta);
-            border-left: 2px solid var(--neon-magenta);
-        }
-        .module::after {
-            content: '';
-            position: absolute;
-            bottom: -2px; right: -2px;
-            width: 15px; height: 15px;
-            border-bottom: 2px solid var(--neon-magenta);
-            border-right: 2px solid var(--neon-magenta);
-        }
-
-        .module-header {
-            color: var(--neon-yellow);
-            font-size: 0.85rem;
-            margin-bottom: 15px;
-            text-transform: uppercase;
-            border-bottom: 1px dashed var(--neon-cyan-dim);
-            padding-bottom: 5px;
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .module-data {
-            font-size: 0.9rem;
-            line-height: 1.6;
-        }
-
-        .status-indicator {
-            display: inline-block;
-            width: 10px;
-            height: 10px;
-            background-color: var(--terminal-green);
-            border-radius: 50%;
-            box-shadow: 0 0 10px var(--terminal-green);
-            margin-right: 5px;
-            animation: blink 2s infinite;
-        }
-
-        .audio-btn-wrapper {
-            position: relative;
-            margin-top: 10px;
-        }
-
-        #audioBtn {
-            background: transparent;
-            border: 1px solid var(--neon-cyan);
-            color: var(--neon-cyan);
-            width: 100%;
-            padding: 15px;
-            cursor: pointer;
-            font-weight: bold;
-            font-family: var(--font-main);
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        #audioBtn:hover {
-            background: var(--neon-cyan-dim);
-            box-shadow: 0 0 15px var(--neon-cyan);
-            text-shadow: 0 0 5px #fff;
-        }
-
-        #audioBtn.active-audio {
-            border-color: var(--neon-magenta);
-            color: var(--neon-magenta);
-            text-shadow: 0 0 10px var(--neon-magenta);
-        }
+        .module-header { color: var(--neon-yellow); font-size: 0.85rem; margin-bottom: 15px; text-transform: uppercase; border-bottom: 1px dashed var(--neon-cyan-dim); padding-bottom: 5px; display: flex; justify-content: space-between; align-items: center; }
         
-        #audioBtn.active-audio:hover {
-            background: var(--neon-magenta-dim);
-        }
+        /* Audio Visualizer Simulado */
+        .audio-waves { display: flex; align-items: flex-end; height: 30px; gap: 3px; margin: 15px 0; justify-content: center; opacity: 0; transition: opacity 0.5s;}
+        .audio-waves.active { opacity: 1; }
+        .bar { width: 5px; background: var(--neon-magenta); animation: wave-pulse 1s ease-in-out infinite alternate; box-shadow: 0 0 5px var(--neon-magenta); }
+        .bar:nth-child(1) { animation-delay: 0.0s; } .bar:nth-child(2) { animation-delay: 0.2s; }
+        .bar:nth-child(3) { animation-delay: 0.4s; } .bar:nth-child(4) { animation-delay: 0.1s; }
+        .bar:nth-child(5) { animation-delay: 0.5s; } .bar:nth-child(6) { animation-delay: 0.3s; }
+        @keyframes wave-pulse { 0% { height: 5px; } 100% { height: 25px; } }
 
-        .sys-log {
-            font-size: 0.7rem;
-            color: #666;
-            height: 150px;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-end;
+        /* Botones del HUD */
+        .btn-cyber {
+            background: rgba(0,0,0,0.5); border: 1px solid var(--neon-cyan-dim); color: var(--neon-cyan);
+            width: 100%; padding: 12px; cursor: pointer; font-weight: bold; font-family: var(--font-main);
+            letter-spacing: 2px; text-transform: uppercase; transition: all 0.2s ease;
+            position: relative; overflow: hidden; text-align: left; margin-bottom: 10px;
         }
+        .btn-cyber::before { content: '>'; position: absolute; left: -20px; opacity: 0; transition: 0.2s; color: var(--neon-magenta); }
+        .btn-cyber:hover { border-color: var(--neon-cyan); background: rgba(0, 243, 255, 0.1); padding-left: 25px; text-shadow: 0 0 8px var(--neon-cyan); box-shadow: inset 5px 0 0 var(--neon-cyan); }
+        .btn-cyber:hover::before { left: 10px; opacity: 1; }
+        
+        .btn-cyber.active { background: rgba(255, 0, 85, 0.15); border-color: var(--neon-magenta); color: #fff; padding-left: 25px; box-shadow: inset 5px 0 0 var(--neon-magenta), 0 0 10px var(--neon-magenta-dim); }
+        .btn-cyber.active::before { content: '>'; left: 10px; opacity: 1; color: #fff; }
 
-        /* ==========================================================================
-           ZONA CENTRAL (POSTS Y CATEGORÍAS)
-           ========================================================================== */
-        #center-zone {
-            padding: 10px 30px;
-            overflow-y: auto;
-            max-height: calc(100vh - 200px);
-        }
+        /* ZONA CENTRAL */
+        #center-zone { padding: 10px 30px; overflow-y: auto; height: 100%; scroll-behavior: smooth; }
+        .category-container { margin-bottom: 50px; padding: 20px; border-left: 1px dashed var(--neon-magenta-dim); transition: opacity 0.4s ease; display: block; }
+        .category-header { color: var(--neon-magenta); font-weight: 900; font-size: 1.5rem; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 4px; text-shadow: 0 0 10px var(--neon-magenta-dim); display: flex; align-items: center; }
+        .category-header::after { content: ''; flex-grow: 1; height: 1px; background: var(--neon-magenta-dim); margin-left: 20px; }
 
-        .category-container {
-            margin-bottom: 60px;
-            border: 1px solid var(--neon-magenta-dim);
-            padding: 30px;
-            background: linear-gradient(135deg, rgba(255, 0, 85, 0.05) 0%, transparent 100%);
-            display: block;
-            transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
-            position: relative;
-        }
-
-        .category-header {
-            color: var(--neon-magenta);
-            font-weight: 900;
-            font-size: 1.5rem;
-            margin-bottom: 30px;
-            border-bottom: 2px solid var(--neon-magenta);
-            display: inline-block;
-            padding-right: 40px;
-            padding-bottom: 5px;
-            letter-spacing: 3px;
-            text-shadow: 0 0 10px var(--neon-magenta-dim);
-        }
-
-        /* ==========================================================================
-           TARJETAS DE DATOS (POST CARDS)
-           ========================================================================== */
         .post-card {
-            border: 1px solid var(--neon-cyan-dim);
-            background: rgba(0, 0, 0, 0.6);
-            padding: 20px;
-            margin-bottom: 20px;
-            transition: all 0.3s ease;
-            position: relative;
-            border-left: 4px solid var(--neon-cyan);
-            display: flex;
-            flex-direction: column;
+            border: 1px solid var(--neon-cyan-dim); background: rgba(0, 0, 0, 0.6); padding: 20px;
+            margin-bottom: 15px; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            position: relative; border-left: 3px solid var(--neon-cyan); display: flex; flex-direction: column;
         }
-
-        .post-card::before {
-            content: '[DATA_BLOCK_ENCRYPTED]';
-            position: absolute;
-            top: 5px;
-            right: 10px;
-            font-size: 0.5rem;
-            color: #555;
-        }
-
+        .post-card::before { content: '[DATA_BLOCK]'; position: absolute; top: 5px; right: 10px; font-size: 0.6rem; color: #555; transition: 0.3s; }
         .post-card:hover {
-            border-color: var(--neon-cyan);
-            box-shadow: 0 0 20px var(--neon-cyan-dim), inset 0 0 15px var(--neon-cyan-dim);
-            transform: translateX(10px);
-            background: rgba(0, 243, 255, 0.05);
-            border-left: 4px solid var(--neon-magenta);
+            border-color: var(--neon-cyan); transform: translateX(10px) scale(1.01);
+            background: rgba(0, 243, 255, 0.05); border-left: 3px solid var(--neon-magenta);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5), inset 0 0 20px rgba(0,243,255,0.05);
         }
+        .post-card:hover::before { content: '[DECRYPTING...]'; color: var(--neon-magenta); animation: flicker 0.2s infinite; }
+        .post-card:hover .post-title { animation: text-decrypt 0.4s forwards; }
 
-        .post-card:hover::before {
-            content: '[DECRYPTING...]';
-            color: var(--terminal-green);
-            animation: blink 0.5s infinite;
-        }
-
-        .post-title { 
-            font-size: 1.4rem; 
-            margin: 5px 0 10px 0; 
-            color: #fff; 
-            font-weight: bold;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-        }
-
-        .post-date { 
-            color: var(--terminal-green); 
-            font-size: 0.85rem; 
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-        }
-
-        .post-date::before {
-            content: 'TS:';
-            color: #666;
-            margin-right: 5px;
-        }
+        .post-title { font-size: 1.3rem; margin: 5px 0 10px 0; color: #fff; font-weight: bold; text-transform: uppercase; }
+        .post-date { color: var(--terminal-green); font-size: 0.8rem; margin-bottom: 15px; opacity: 0.8; }
         
-        .btn-link {
-            display: inline-block;
-            align-self: flex-start;
-            margin-top: 10px;
-            color: var(--bg-dark);
-            background: var(--neon-cyan);
-            text-decoration: none;
-            border: 1px solid var(--neon-cyan);
-            padding: 8px 20px;
-            font-size: 0.9rem;
-            font-weight: bold;
-            transition: all 0.2s;
-            text-transform: uppercase;
+        .btn-action {
+            display: inline-block; align-self: flex-start; margin-top: auto; color: var(--bg-dark);
+            background: var(--neon-cyan); text-decoration: none; padding: 6px 15px; font-size: 0.8rem;
+            font-weight: bold; text-transform: uppercase; transition: 0.3s; border: 1px solid var(--neon-cyan);
         }
+        .btn-action:hover { background: var(--bg-dark); color: var(--neon-cyan); box-shadow: 0 0 10px var(--neon-cyan); }
 
-        .btn-link:hover {
-            background: transparent;
-            color: var(--neon-cyan);
-            box-shadow: 0 0 15px var(--neon-cyan);
-        }
+        /* LOG DEL SISTEMA */
+        .sys-log { font-size: 0.75rem; color: #aaa; height: 200px; overflow-y: auto; display: flex; flex-direction: column; }
+        .log-entry { margin-bottom: 4px; word-break: break-all; opacity: 0.8; transition: opacity 0.2s; }
+        .log-entry:hover { opacity: 1; color: #fff; }
 
-        /* ==========================================================================
-           BOTONES DE FILTRO HUD LATERAL
-           ========================================================================== */
-        .category-btn {
-            background: transparent;
-            border: 1px solid var(--neon-magenta-dim);
-            color: var(--neon-magenta);
-            padding: 15px;
-            text-align: left;
-            width: 100%;
-            cursor: pointer;
-            font-family: var(--font-main);
-            text-transform: uppercase;
-            transition: 0.3s;
-            margin-bottom: 12px;
-            position: relative;
-            letter-spacing: 1px;
-            font-weight: bold;
-        }
-
-        .category-btn::before {
-            content: '>';
-            position: absolute;
-            left: 10px;
-            opacity: 0;
-            transition: 0.3s;
-        }
-
-        .category-btn:hover, .category-btn.active {
-            background: rgba(255, 0, 85, 0.15);
-            border-color: var(--neon-magenta);
-            box-shadow: inset 5px 0 0 var(--neon-magenta), 0 0 15px var(--neon-magenta-dim);
-            color: #fff;
-            padding-left: 30px;
-        }
-
-        .category-btn:hover::before, .category-btn.active::before {
-            opacity: 1;
-        }
-
-        /* ==========================================================================
-           SPLASH SCREEN / BOOT SEQUENCE (COMPLEJA)
-           ========================================================================== */
+        /* SPLASH SCREEN */
         #splash {
-            position: fixed; inset: 0;
-            background: var(--bg-dark); z-index: 100000;
-            display: flex; flex-direction: column;
-            justify-content: center; align-items: center;
+            position: fixed; inset: 0; background: var(--bg-dark); z-index: 100000;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
         }
-
-        #boot-text {
-            color: var(--terminal-green);
-            font-size: 1.2rem;
-            margin-bottom: 40px;
-            text-align: left;
-            width: 600px;
-            height: 200px;
-            white-space: pre-wrap;
-            text-shadow: 0 0 5px var(--terminal-green-glow);
-        }
-
+        #boot-text { color: var(--terminal-green); font-size: 1.1rem; text-align: left; width: 60vw; max-width: 800px; height: 300px; overflow-y: hidden; text-shadow: 0 0 5px var(--terminal-green-glow); }
         #enter-btn {
-            background: transparent; 
-            color: var(--neon-cyan);
-            border: 2px solid var(--neon-cyan);
-            padding: 20px 60px; font-size: 2.5rem;
-            cursor: pointer; font-family: var(--font-main);
+            background: transparent; color: var(--neon-cyan); border: 2px solid var(--neon-cyan);
+            padding: 20px 60px; font-size: 2rem; cursor: pointer; font-family: var(--font-main);
             box-shadow: 0 0 20px var(--neon-cyan-dim), inset 0 0 10px var(--neon-cyan-dim);
-            text-transform: uppercase;
-            font-weight: 900;
-            letter-spacing: 5px;
-            display: none; /* Se muestra por JS */
-            transition: 0.2s;
-            position: relative;
-            overflow: hidden;
+            text-transform: uppercase; font-weight: 900; letter-spacing: 8px; display: none;
+            transition: 0.3s; position: relative; overflow: hidden; margin-top: 30px;
         }
+        #enter-btn:hover { background: var(--neon-cyan); color: var(--bg-dark); box-shadow: 0 0 50px var(--neon-cyan); transform: scale(1.05); }
 
-        #enter-btn:hover {
-            background: var(--neon-cyan);
-            color: var(--bg-dark);
-            box-shadow: 0 0 40px var(--neon-cyan);
-        }
-
-        /* ==========================================================================
-           MEDIA QUERIES (RESPONSIVE)
-           ========================================================================== */
-        @media (max-width: 1400px) {
-            .main-wrapper { grid-template-columns: 250px 2px 1fr 2px 250px; }
-        }
-
-        @media (max-width: 1000px) {
-            .main-wrapper { 
-                grid-template-columns: 1fr; 
-                padding: 10px;
-            }
-            .cyan-line { display: none; }
-            .side-panel { display: none; } /* En móvil ocultamos paneles laterales por simplicidad del HUD */
-            #center-zone { max-height: none; padding: 10px; }
+        /* RESPONSIVE */
+        @media (max-width: 1200px) { .main-wrapper { grid-template-columns: 250px 1px 1fr 1px 250px; padding: 10px; } }
+        @media (max-width: 900px) {
+            .main-wrapper { grid-template-columns: 1fr; overflow-y: auto; height: auto; }
+            .cyan-line, .crt-vignette { display: none; }
+            #crt-screen { overflow-y: auto; }
+            #center-zone { overflow: visible; height: auto; }
         }
     </style>
 </head>
 <body>
 
+<div id="crt-screen">
     <canvas id="matrix-canvas"></canvas>
+    <div class="crt-rgb"></div>
     <div class="crt-overlay"></div>
     <div class="crt-vignette"></div>
 
     <div id="splash">
         <div id="boot-text"></div>
-        <button id="enter-btn" onclick="initSystem()">INICIAR_ENLACE</button>
+        <button id="enter-btn">INICIAR_ENLACE</button>
     </div>
 
     <header>
-        <div class="glitch-box">NEURAL_OVERRIDE_V9</div>
-        <div class="subtitle-header">SECURE CONDUIT // ESTABLISHED 2077 // ENCRYPTION LEVEL: OMEGA</div>
+        <div class="glitch-box">NEURAL_OVERRIDE_V10</div>
+        <div class="subtitle-header">SECURE CONDUIT // AUDIO DISTORTION MATRIX // ENC: OMEGA</div>
     </header>
 
     <div class="main-wrapper">
         
         <div class="side-panel">
             <div class="module">
-                <div class="module-header">
-                    <span>> NODE_INFO</span>
-                    <span class="status-indicator"></span>
-                </div>
-                <div class="module-data">
-                    ID_USUARIO: <span style="color:var(--neon-magenta)">GUEST_ANONYMOUS</span><br>
-                    LOCALIZACIÓN: <span style="color:var(--neon-cyan)">SECTOR_7G</span><br>
-                    ESTADO_RED: <span style="color:var(--terminal-green)">ONLINE</span><br>
-                    LANTENCIA: <span id="ping-ms">14</span>ms
+                <div class="module-header"><span>> NODE_DIAGNOSTICS</span><span style="color:var(--terminal-green); animation: flicker 2s infinite;">●</span></div>
+                <div style="font-size: 0.85rem; line-height: 1.8;">
+                    USR: <span style="color:var(--neon-magenta)">GUEST_GHOST</span><br>
+                    LOC: <span style="color:var(--neon-cyan)">GEO_ORBIT_7</span><br>
+                    NET: <span style="color:var(--terminal-green)">LINK_ESTABLISHED</span><br>
+                    PING: <span id="ping-ms">12</span>ms
                 </div>
             </div>
             
-            <div class="module" style="text-align: center;">
-                <div class="module-header">> SENSORY_UPLINK</div>
-                <div class="audio-btn-wrapper">
-                    <button onclick="toggleAudio()" id="audioBtn">CONNECT AUDIO</button>
-                    <audio id="bgm" loop src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"></audio>
+            <div class="module">
+                <div class="module-header">> AUDIO_SUBSYSTEM</div>
+                <div style="font-size: 0.75rem; color: #888; margin-bottom:10px;">VINTAGE_RADIO_EMULATOR_ACTIVE</div>
+                
+                <div class="audio-waves" id="audio-visualizer">
+                    <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+                    <div class="bar"></div><div class="bar"></div><div class="bar"></div>
                 </div>
+
+                <button class="btn-cyber active" id="audioBtn">SYS.AUDIO_MUTE()</button>
+                <audio id="bgm" loop crossorigin="anonymous" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"></audio>
             </div>
 
-            <div class="module" style="display:flex; justify-content:center; align-items:center; min-height: 150px;">
-                <img src="https://i.gifer.com/1kt1.gif" style="width: 100px; filter: hue-rotate(180deg) contrast(200%); mix-blend-mode: screen;">
+            <div class="module" style="display:flex; justify-content:center; align-items:center; min-height: 120px; overflow:hidden;">
+                <img src="https://i.gifer.com/1kt1.gif" style="width: 120%; filter: hue-rotate(180deg) contrast(200%) grayscale(50%); mix-blend-mode: screen; opacity: 0.8;">
             </div>
         </div>
 
@@ -610,8 +326,8 @@ layout: null
                 {% for post in site.categories.PROYECTOS %}
                 <div class="post-card">
                     <div class="post-title">{{ post.title }}</div>
-                    <div class="post-date">{{ post.date | date: "%Y-%m-%d" }}</div>
-                    <a href="{{ post.url }}" class="btn-link">EJECUTAR_ARCHIVO.EXE</a>
+                    <div class="post-date">TS: {{ post.date | date: "%Y-%m-%d" }} // ALGORITMO DE RUTINA</div>
+                    <a href="{{ post.url }}" class="btn-action btn-hover-sfx">EJECUTAR_ARCHIVO.EXE</a>
                 </div>
                 {% endfor %}
             </div>
@@ -621,8 +337,8 @@ layout: null
                 {% for post in site.categories.PENSAMIENTOS %}
                 <div class="post-card">
                     <div class="post-title">{{ post.title }}</div>
-                    <div class="post-date">{{ post.date | date: "%Y-%m-%d" }}</div>
-                    <a href="{{ post.url }}" class="btn-link">EXTRAER_MEMORIA.DAT</a>
+                    <div class="post-date">TS: {{ post.date | date: "%Y-%m-%d" }} // VOLCADO DE MEMORIA</div>
+                    <a href="{{ post.url }}" class="btn-action btn-hover-sfx">EXTRAER_MEMORIA.DAT</a>
                 </div>
                 {% endfor %}
             </div>
@@ -632,19 +348,8 @@ layout: null
                 {% for post in site.categories.ARTES %}
                 <div class="post-card">
                     <div class="post-title">{{ post.title }}</div>
-                    <div class="post-date">{{ post.date | date: "%Y-%m-%d" }}</div>
-                    <a href="{{ post.url }}" class="btn-link">VISUALIZAR_RENDER.IMG</a>
-                </div>
-                {% endfor %}
-            </div>
-
-            <div class="category-container" id="cat-SISTEMAS">
-                <div class="category-header">SYS.DIR // SISTEMAS</div>
-                {% for post in site.categories.SISTEMAS %}
-                <div class="post-card">
-                    <div class="post-title">{{ post.title }}</div>
-                    <div class="post-date">{{ post.date | date: "%Y-%m-%d" }}</div>
-                    <a href="{{ post.url }}" class="btn-link">COMPILAR_CÓDIGO.BIN</a>
+                    <div class="post-date">TS: {{ post.date | date: "%Y-%m-%d" }} // VECTORES VISUALES</div>
+                    <a href="{{ post.url }}" class="btn-action btn-hover-sfx">VISUALIZAR_RENDER.IMG</a>
                 </div>
                 {% endfor %}
             </div>
@@ -655,203 +360,356 @@ layout: null
 
         <div class="side-panel">
             <div class="module">
-                <div class="module-header">> SELECT_PROTOCOL</div>
-                <div style="font-size: 0.7rem; color: #777; margin-bottom: 15px;">DEFINE_QUERY_PARAMETERS:</div>
-                
-                <button class="category-btn active" id="btn-ALL" onclick="filterCat('ALL')">MOSTRAR_TODO</button>
-                <button class="category-btn" id="btn-PROYECTOS" onclick="filterCat('PROYECTOS')">PROYECTOS</button>
-                <button class="category-btn" id="btn-PENSAMIENTOS" onclick="filterCat('PENSAMIENTOS')">PENSAMIENTOS</button>
-                <button class="category-btn" id="btn-ARTES" onclick="filterCat('ARTES')">ARTES</button>
-                <button class="category-btn" id="btn-SISTEMAS" onclick="filterCat('SISTEMAS')">SISTEMAS</button>
+                <div class="module-header">> QUERY_FILTERS</div>
+                <button class="btn-cyber active btn-hover-sfx" id="btn-ALL" data-filter="ALL">SELECT * FROM DATA</button>
+                <button class="btn-cyber btn-hover-sfx" id="btn-PROYECTOS" data-filter="PROYECTOS">/PROYECTOS/</button>
+                <button class="btn-cyber btn-hover-sfx" id="btn-PENSAMIENTOS" data-filter="PENSAMIENTOS">/PENSAMIENTOS/</button>
+                <button class="btn-cyber btn-hover-sfx" id="btn-ARTES" data-filter="ARTES">/ARTES/</button>
             </div>
 
-            <div class="module">
-                <div class="module-header">> SYSTEM_LOG</div>
-                <div class="sys-log" id="sys-log-container">
-                    </div>
+            <div class="module" style="flex-grow: 1;">
+                <div class="module-header">> SYSTEM_TERMINAL</div>
+                <div class="sys-log" id="sys-log-container"></div>
             </div>
         </div>
+
     </div>
+</div>
 
-    <script>
-        /* ---------------------------------------------------
-           EFECTO DE ARRANQUE (BOOT SEQUENCE)
-           --------------------------------------------------- */
-        const bootSequence = [
-            "Iniciando NEURAL_OVERRIDE_V9...",
-            "Cargando módulos de memoria cuántica... [OK]",
-            "Estableciendo enlace de sub-rutina... [OK]",
-            "Bypassing firewalls de la corporación... [EXITO]",
-            "Desencriptando base de datos neural...",
-            "Comprobando integridad del archivo... 99.9%",
-            "ADVERTENCIA: Interfaz inestable detectada.",
-            "Protocolo de emergencia activado. Listo para usuario."
-        ];
+<script>
+/**
+ * ===================================================================================
+ * NEURAL_OVERRIDE CORE ENGINE V10.0
+ * Arquitectura modular orientada a objetos.
+ * ===================================================================================
+ */
+
+// -----------------------------------------------------------------
+// CLASE 1: Motor de Audio (Web Audio API - Efecto Radio de los 80)
+// -----------------------------------------------------------------
+class CyberAudioEngine {
+    constructor() {
+        this.audioEl = document.getElementById('bgm');
+        this.btn = document.getElementById('audioBtn');
+        this.visualizer = document.getElementById('audio-visualizer');
         
-        const bootTextEl = document.getElementById('boot-text');
-        const enterBtn = document.getElementById('enter-btn');
-        let bootLine = 0;
+        this.audioCtx = null;
+        this.isPlaying = false;
+        this.isInitialized = false;
 
-        function typeBootSequence() {
-            if (bootLine < bootSequence.length) {
-                bootTextEl.innerHTML += bootSequence[bootLine] + "<br>";
-                bootLine++;
-                setTimeout(typeBootSequence, 150 + Math.random() * 300);
-            } else {
-                setTimeout(() => {
-                    bootTextEl.innerHTML += "<br><span style='color:var(--neon-cyan)'>SISTEMA LISTO. ESPERANDO INPUT.</span><br>";
-                    enterBtn.style.display = 'inline-block';
-                }, 500);
+        this.btn.addEventListener('click', () => this.toggleBGM());
+    }
+
+    // Inicializa el contexto de audio y la cadena de nodos (Efecto Bitcrush/Radio)
+    init() {
+        if (this.isInitialized) return;
+        
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        this.audioCtx = new AudioContext();
+        
+        // 1. Fuente
+        const source = this.audioCtx.createMediaElementSource(this.audioEl);
+        
+        // 2. Filtro Bandpass (corta agudos limpios y bajos profundos, sonido "hueco" y delgado)
+        const bandpassFilter = this.audioCtx.createBiquadFilter();
+        bandpassFilter.type = 'bandpass';
+        bandpassFilter.frequency.value = 1200; // Frecuencia media (voz/radio antigua)
+        bandpassFilter.Q.value = 1.2;
+
+        // 3. WaveShaper (Distorsión/Clipping para el "averiado/bitcrush" analógico)
+        const distortion = this.audioCtx.createWaveShaper();
+        distortion.curve = this.makeDistortionCurve(60); // Nivel de distorsión
+        distortion.oversample = '4x';
+
+        // 4. Ganancia final (control volumen)
+        this.masterGain = this.audioCtx.createGain();
+        this.masterGain.gain.value = 0.6; // Bajar volumen un poco tras distorsión
+
+        // Conexiones de la cadena: Source -> Filtro -> Distorsión -> Destino
+        source.connect(bandpassFilter);
+        bandpassFilter.connect(distortion);
+        distortion.connect(this.masterGain);
+        this.masterGain.connect(this.audioCtx.destination);
+
+        this.isInitialized = true;
+    }
+
+    // Crea la curva matemática para la distorsión
+    makeDistortionCurve(amount) {
+        let k = typeof amount === 'number' ? amount : 50,
+            n_samples = 44100,
+            curve = new Float32Array(n_samples),
+            deg = Math.PI / 180, i = 0, x;
+        for ( ; i < n_samples; ++i ) {
+            x = i * 2 / n_samples - 1;
+            curve[i] = ( 3 + k ) * x * 20 * deg / ( Math.PI + k * Math.abs(x) );
+        }
+        return curve;
+    }
+
+    // Síntesis de sonido para los botones (UI Beeps)
+    playHoverBeep() {
+        if (!this.audioCtx) return;
+        const osc = this.audioCtx.createOscillator();
+        const gainNode = this.audioCtx.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(800, this.audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(1200, this.audioCtx.currentTime + 0.05);
+        
+        gainNode.gain.setValueAtTime(0.02, this.audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, this.audioCtx.currentTime + 0.05);
+        
+        osc.connect(gainNode);
+        gainNode.connect(this.audioCtx.destination);
+        osc.start();
+        osc.stop(this.audioCtx.currentTime + 0.05);
+    }
+
+    playClickSound() {
+        if (!this.audioCtx) return;
+        const osc = this.audioCtx.createOscillator();
+        const gainNode = this.audioCtx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(150, this.audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(40, this.audioCtx.currentTime + 0.1);
+        
+        gainNode.gain.setValueAtTime(0.1, this.audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, this.audioCtx.currentTime + 0.1);
+        
+        osc.connect(gainNode);
+        gainNode.connect(this.audioCtx.destination);
+        osc.start();
+        osc.stop(this.audioCtx.currentTime + 0.1);
+    }
+
+    // Control Play/Pause principal
+    startMusic() {
+        if(this.audioCtx.state === 'suspended') this.audioCtx.resume();
+        this.audioEl.play().catch(e => console.warn("Auto-play bloqueado aún:", e));
+        this.isPlaying = true;
+        this.btn.innerText = "SYS.AUDIO_MUTE()";
+        this.btn.classList.add('active');
+        this.visualizer.classList.add('active');
+        Terminal.log("BGM_UPLINK: ACTIVO. Filtros analógicos aplicados.");
+    }
+
+    toggleBGM() {
+        if(!this.isInitialized) this.init();
+        
+        if(this.isPlaying) {
+            this.audioEl.pause();
+            this.isPlaying = false;
+            this.btn.innerText = "SYS.AUDIO_PLAY()";
+            this.btn.classList.remove('active');
+            this.visualizer.classList.remove('active');
+            Terminal.log("BGM_UPLINK: DESCONECTADO.");
+        } else {
+            this.startMusic();
+        }
+    }
+}
+
+// -----------------------------------------------------------------
+// CLASE 2: Terminal y UI Logs
+// -----------------------------------------------------------------
+class TerminalController {
+    constructor() {
+        this.container = document.getElementById('sys-log-container');
+        this.gibberishLines = [
+            "Interceptando paquetes de sector C...",
+            "Alineación de nodo: Estable",
+            "Análisis de firma de datos en curso.",
+            "WARNING: Interferencia electromagnética local.",
+            "Desfragmentando volumen de disco Z:",
+            "Compilando renderizadores de sombras...",
+            "Ping a la matriz central completado."
+        ];
+    }
+
+    log(text, isError = false) {
+        const time = new Date().toLocaleTimeString('en-US', { hour12: false, hour: '2-digit', minute:'2-digit', second:'2-digit' });
+        const color = isError ? "var(--neon-magenta)" : "var(--neon-cyan)";
+        const newLine = document.createElement('div');
+        newLine.className = 'log-entry';
+        newLine.innerHTML = `<span style="color:${color}">[${time}]</span> ${text}`;
+        
+        this.container.appendChild(newLine);
+        this.container.scrollTop = this.container.scrollHeight;
+
+        // Mantener el log limpio (máximo 15 líneas)
+        if (this.container.children.length > 15) {
+            this.container.removeChild(this.container.firstChild);
+        }
+    }
+
+    startRandomLogs() {
+        setInterval(() => {
+            if(Math.random() > 0.6) {
+                const text = this.gibberishLines[Math.floor(Math.random() * this.gibberishLines.length)];
+                this.log(text);
+                document.getElementById('ping-ms').innerText = Math.floor(Math.random() * 25) + 5;
             }
-        }
+        }, 2500);
+    }
+}
 
-        // Iniciar secuencia al cargar página
-        window.onload = () => {
-            typeBootSequence();
-            initMatrixCanvas();
-            startSystemLogs();
-        };
+// -----------------------------------------------------------------
+// CLASE 3: Interfaz Principal (Filtros, Parallax y Core)
+// -----------------------------------------------------------------
+class UIController {
+    constructor(audioEngine) {
+        this.audioEngine = audioEngine;
+        this.bindEvents();
+        this.initParallax();
+    }
 
-        function initSystem() {
-            document.getElementById('splash').style.opacity = '0';
-            setTimeout(() => {
-                document.getElementById('splash').style.display = 'none';
-                addLogLine("Usuario autenticado.");
-            }, 500);
-        }
-
-        /* ---------------------------------------------------
-           LÓGICA DE FILTRADO Y AUDIO (Mejorada de la original)
-           --------------------------------------------------- */
-        function filterCat(category) {
-            const containers = document.querySelectorAll('.category-container');
-            const buttons = document.querySelectorAll('.category-btn');
-            
-            // Actualizar botones UI
-            buttons.forEach(btn => btn.classList.remove('active'));
-            document.getElementById('btn-' + category).classList.add('active');
-
-            // Log del sistema
-            addLogLine(`Ejecutando query: SELECT * FROM mainframe WHERE cat='${category}'`);
-
-            containers.forEach(container => {
-                container.style.opacity = '0'; // Efecto fade out rápido
+    bindEvents() {
+        // Lógica de Filtros
+        const filterBtns = document.querySelectorAll('[data-filter]');
+        filterBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                this.audioEngine.playClickSound();
+                this.applyFilter(e.target.dataset.filter);
                 
-                setTimeout(() => {
-                    if (category === 'ALL') {
-                        container.style.display = 'block';
-                        setTimeout(() => container.style.opacity = '1', 50);
-                    } else {
-                        if (container.id === 'cat-' + category) {
-                            container.style.display = 'block';
-                            setTimeout(() => container.style.opacity = '1', 50);
-                        } else {
-                            container.style.display = 'none';
-                        }
-                    }
-                }, 300); // Tiempo de espera para la animación CSS
+                filterBtns.forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
             });
-        }
+        });
 
-        function toggleAudio() {
-            const a = document.getElementById('bgm');
-            const b = document.getElementById('audioBtn');
-            if(a.paused) { 
-                a.play(); 
-                b.innerText = "DISCONNECT AUDIO"; 
-                b.classList.add('active-audio');
-                addLogLine("Enlace sensorial auditivo: ESTABLECIDO.");
-            } else { 
-                a.pause(); 
-                b.innerText = "CONNECT AUDIO"; 
-                b.classList.remove('active-audio');
-                addLogLine("Enlace sensorial auditivo: CERRADO.");
-            }
-        }
+        // Eventos de sonido en Hover para todos los botones marcados
+        const hoverItems = document.querySelectorAll('.btn-hover-sfx');
+        hoverItems.forEach(item => {
+            item.addEventListener('mouseenter', () => this.audioEngine.playHoverBeep());
+        });
+    }
 
-        /* ---------------------------------------------------
-           GENERADOR DE LOGS DEL SISTEMA SIMULADOS
-           --------------------------------------------------- */
-        function addLogLine(text) {
-            const logContainer = document.getElementById('sys-log-container');
-            const time = new Date().toLocaleTimeString('es-ES', { hour12: false });
-            const newLine = document.createElement('div');
-            newLine.innerHTML = `<span style="color:var(--neon-cyan)">[${time}]</span> ${text}`;
-            logContainer.appendChild(newLine);
+    applyFilter(category) {
+        Terminal.log(`EJECUTANDO_QUERY: Categoria='${category}'`);
+        const containers = document.querySelectorAll('.category-container');
+        
+        containers.forEach(container => {
+            container.style.opacity = '0'; // Fade out
             
-            if (logContainer.children.length > 8) {
-                logContainer.removeChild(logContainer.firstChild);
-            }
-        }
-
-        function startSystemLogs() {
-            const gibberish = [
-                "Indexando bloque de memoria 0x4F92...",
-                "Buscando anomalías en red local...",
-                "Ping al servidor central: 14ms",
-                "Reubicando memoria fragmentada...",
-                "Alerta: Intento de escaneo externo bloqueado.",
-                "Compilando shaders ambientales...",
-                "Sincronizando reloj cuántico..."
-            ];
-            setInterval(() => {
-                if(Math.random() > 0.7) {
-                    const randomLine = gibberish[Math.floor(Math.random() * gibberish.length)];
-                    addLogLine(randomLine);
-                    // Actualizar ping visual simulado
-                    document.getElementById('ping-ms').innerText = Math.floor(Math.random() * 20) + 10;
+            setTimeout(() => {
+                if (category === 'ALL' || container.id === `cat-${category}`) {
+                    container.style.display = 'block';
+                    setTimeout(() => container.style.opacity = '1', 50); // Fade in
+                } else {
+                    container.style.display = 'none';
                 }
-            }, 3000);
+            }, 400); // Tiempo coincide con CSS transition
+        });
+    }
+
+    // Efecto sutil al mover el ratón simulando el cristal CRT
+    initParallax() {
+        const screen = document.getElementById('crt-screen');
+        document.addEventListener('mousemove', (e) => {
+            const x = (e.clientX / window.innerWidth - 0.5) * 4; // -2deg a 2deg
+            const y = (e.clientY / window.innerHeight - 0.5) * -4;
+            screen.style.transform = `scale(1.02) perspective(1000px) rotateY(${x}deg) rotateX(${y}deg)`;
+        });
+    }
+}
+
+// -----------------------------------------------------------------
+// CLASE 4: Boot Sequence & Matrix Canvas
+// -----------------------------------------------------------------
+class SystemBoot {
+    constructor() {
+        this.splash = document.getElementById('splash');
+        this.bootTextEl = document.getElementById('boot-text');
+        this.enterBtn = document.getElementById('enter-btn');
+        this.bootSequence = [
+            "> INICIANDO KERNEL_V10.0...",
+            "> CARGANDO DRIVERS DE PANTALLA CRT_EMU... [OK]",
+            "> ESTABLECIENDO CONEXIÓN SOCKET... [OK]",
+            "> DESENCRIPTANDO RUTINAS DE AUDIO... [OK]",
+            "> WARNING: ANOMALÍA DETECTADA EN SECTOR 7.",
+            "> FORZANDO PROTOCOLO DE OVERRIDE NEURONAL...",
+            "> COMPILACIÓN EXITOSA. SISTEMA LISTO."
+        ];
+        this.lineIndex = 0;
+    }
+
+    start() {
+        this.typeLine();
+        this.initMatrixCanvas();
+    }
+
+    typeLine() {
+        if (this.lineIndex < this.bootSequence.length) {
+            this.bootTextEl.innerHTML += this.bootSequence[this.lineIndex] + "<br>";
+            this.lineIndex++;
+            setTimeout(() => this.typeLine(), 150 + Math.random() * 200);
+        } else {
+            setTimeout(() => {
+                this.bootTextEl.innerHTML += "<br><span style='color:var(--neon-cyan)'>ESPERANDO AUTORIZACIÓN DE OPERADOR...</span><br>";
+                this.enterBtn.style.display = 'inline-block';
+            }, 400);
         }
+    }
 
-        /* ---------------------------------------------------
-           CANVAS: EFECTO MATRIX DIGITAL RAIN COMPLETO
-           --------------------------------------------------- */
-        function initMatrixCanvas() {
-            const canvas = document.getElementById('matrix-canvas');
-            const ctx = canvas.getContext('2d');
+    initMatrixCanvas() {
+        const canvas = document.getElementById('matrix-canvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
 
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
+        const alphabet = 'ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        const fontSize = 14;
+        const columns = canvas.width / fontSize;
+        const drops = Array(Math.floor(columns)).fill(1);
 
-            const katakana = 'ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ';
-            const latin = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-            const nums = '0123456789';
-            const alphabet = katakana + latin + nums;
+        function draw() {
+            ctx.fillStyle = 'rgba(2, 2, 2, 0.05)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#00ff41'; // Terminal green
+            ctx.font = fontSize + 'px monospace';
 
-            const fontSize = 16;
-            const columns = canvas.width / fontSize;
-            const drops = [];
-
-            for (let x = 0; x < columns; x++) {
-                drops[x] = 1;
+            for (let i = 0; i < drops.length; i++) {
+                const text = alphabet.charAt(Math.floor(Math.random() * alphabet.length));
+                ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+                if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) drops[i] = 0;
+                drops[i]++;
             }
-
-            function draw() {
-                ctx.fillStyle = 'rgba(2, 2, 2, 0.05)';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-                ctx.fillStyle = '#00ff41'; // Terminal green
-                ctx.font = fontSize + 'px monospace';
-
-                for (let i = 0; i < drops.length; i++) {
-                    const text = alphabet.charAt(Math.floor(Math.random() * alphabet.length));
-                    ctx.fillText(text, i * fontSize, drops[i] * fontSize);
-
-                    if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
-                        drops[i] = 0;
-                    }
-                    drops[i]++;
-                }
-            }
-
-            setInterval(draw, 30);
-
-            window.addEventListener('resize', () => {
-                canvas.width = window.innerWidth;
-                canvas.height = window.innerHeight;
-            });
         }
-    </script>
+        setInterval(draw, 33);
+        window.addEventListener('resize', () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; });
+    }
+}
+
+// ===================================================================================
+// INICIALIZACIÓN GLOBAL
+// ===================================================================================
+const Terminal = new TerminalController();
+const Boot = new SystemBoot();
+let AudioSys, CoreUI;
+
+window.onload = () => {
+    Boot.start();
+};
+
+// Evento principal de entrada (Bypassea políticas de autoplay)
+document.getElementById('enter-btn').addEventListener('click', () => {
+    // 1. Ocultar Splash
+    document.getElementById('splash').style.opacity = '0';
+    setTimeout(() => document.getElementById('splash').style.display = 'none', 400);
+    
+    // 2. Inicializar subsistemas
+    Terminal.log("ACCESO CONCEDIDO. Bypassing firewalls.");
+    Terminal.startRandomLogs();
+
+    // 3. Inicializar Audio (Crucial hacerlo DENTRO del evento click)
+    AudioSys = new CyberAudioEngine();
+    AudioSys.init(); // Crea el contexto
+    AudioSys.playClickSound(); // SFX de entrada
+    AudioSys.startMusic(); // Inicia la música de SoundHelix con efecto bitcrush/radio
+
+    // 4. Inicializar UI
+    CoreUI = new UIController(AudioSys);
+});
+
+</script>
 </body>
 </html>
