@@ -6,22 +6,49 @@ layout: null
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NEURAL_OVERRIDE // V9.0</title>
+    <title>NEURAL_OVERRIDE // V9.0 :: MAINFRAME_ACCESS</title>
     
     <style>
+        /* ==========================================================================
+           VARIABLES DEL SISTEMA CORE
+           ========================================================================== */
         :root {
             --neon-cyan: #00f3ff;
+            --neon-cyan-dim: rgba(0, 243, 255, 0.3);
             --neon-magenta: #ff0055;
-            --bg-dark: #050505;
+            --neon-magenta-dim: rgba(255, 0, 85, 0.3);
+            --neon-yellow: #fcee0a;
+            --bg-dark: #020202;
             --terminal-green: #00ff41;
+            --terminal-green-glow: rgba(0, 255, 65, 0.5);
             --font-main: 'Courier New', Courier, monospace;
+            --font-display: 'Impact', sans-serif;
+            --hud-border: 1px solid var(--neon-cyan-dim);
+        }
+
+        /* ==========================================================================
+           REINICIO Y ESTILOS BASE
+           ========================================================================== */
+        * {
+            box-sizing: border-box;
+            scrollbar-width: thin;
+            scrollbar-color: var(--neon-cyan) var(--bg-dark);
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg-dark);
+            border-left: 1px solid var(--neon-cyan-dim);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--neon-cyan);
+            box-shadow: 0 0 10px var(--neon-cyan);
         }
 
         body {
             background-color: var(--bg-dark);
-            background-image: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
-                              linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
-            background-size: 100% 4px, 3px 100%;
             color: var(--neon-cyan);
             font-family: var(--font-main);
             margin: 0;
@@ -29,174 +56,549 @@ layout: null
             display: flex;
             flex-direction: column;
             overflow-x: hidden;
+            position: relative;
         }
 
+        /* ==========================================================================
+           EFECTOS CRT Y MATRIX BACKGROUND
+           ========================================================================== */
+        #matrix-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -2;
+            opacity: 0.15;
+        }
+
+        .crt-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 9998;
+            pointer-events: none;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background-size: 100% 4px, 3px 100%;
+            box-shadow: inset 0 0 100px rgba(0,0,0,0.9);
+            animation: flicker 0.15s infinite;
+        }
+
+        .crt-vignette {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: 9997;
+            pointer-events: none;
+            background: radial-gradient(circle at center, transparent 50%, rgba(0,0,0,0.8) 100%);
+        }
+
+        /* ==========================================================================
+           ANIMACIONES CORE
+           ========================================================================== */
+        @keyframes flicker {
+            0% { opacity: 0.95; }
+            5% { opacity: 0.85; }
+            10% { opacity: 0.95; }
+            15% { opacity: 1; }
+            100% { opacity: 1; }
+        }
+
+        @keyframes glitch-anim-1 {
+            0% { clip-path: inset(20% 0 80% 0); transform: translate(-2px, 2px); }
+            20% { clip-path: inset(60% 0 10% 0); transform: translate(2px, -2px); }
+            40% { clip-path: inset(40% 0 50% 0); transform: translate(-2px, 2px); }
+            60% { clip-path: inset(80% 0 5% 0); transform: translate(2px, -2px); }
+            80% { clip-path: inset(10% 0 70% 0); transform: translate(-2px, 2px); }
+            100% { clip-path: inset(30% 0 50% 0); transform: translate(2px, -2px); }
+        }
+
+        @keyframes glitch-anim-2 {
+            0% { clip-path: inset(10% 0 60% 0); transform: translate(2px, -2px); }
+            20% { clip-path: inset(80% 0 5% 0); transform: translate(-2px, 2px); }
+            40% { clip-path: inset(30% 0 20% 0); transform: translate(2px, -2px); }
+            60% { clip-path: inset(70% 0 10% 0); transform: translate(-2px, 2px); }
+            80% { clip-path: inset(20% 0 50% 0); transform: translate(2px, -2px); }
+            100% { clip-path: inset(50% 0 30% 0); transform: translate(-2px, 2px); }
+        }
+
+        @keyframes blink {
+            0%, 49% { opacity: 1; }
+            50%, 100% { opacity: 0; }
+        }
+
+        @keyframes pulse-border {
+            0% { box-shadow: 0 0 5px var(--neon-cyan), inset 0 0 5px var(--neon-cyan); }
+            50% { box-shadow: 0 0 20px var(--neon-cyan), inset 0 0 10px var(--neon-cyan); }
+            100% { box-shadow: 0 0 5px var(--neon-cyan), inset 0 0 5px var(--neon-cyan); }
+        }
+
+        @keyframes rotate-slow {
+            100% { transform: rotate(360deg); }
+        }
+
+        /* ==========================================================================
+           HEADER & GLITCH TEXT
+           ========================================================================== */
         header {
             text-align: center;
-            padding: 50px 0;
+            padding: 40px 0;
             flex-shrink: 0;
+            position: relative;
+            z-index: 10;
+            border-bottom: 2px solid var(--neon-cyan-dim);
+            background: linear-gradient(180deg, rgba(0,243,255,0.05) 0%, transparent 100%);
         }
 
         .glitch-box {
-            border: 2px solid var(--neon-cyan);
-            padding: 15px 40px;
+            position: relative;
             display: inline-block;
-            text-shadow: 2px 2px var(--neon-magenta);
-            font-size: 1.8rem;
-            letter-spacing: 10px;
-            box-shadow: 0 0 15px rgba(0, 243, 255, 0.3);
+            font-size: 3rem;
+            font-weight: 900;
+            letter-spacing: 15px;
+            color: var(--neon-cyan);
+            text-transform: uppercase;
+            text-shadow: 4px 4px 0px var(--neon-magenta), -2px -2px 0px var(--terminal-green);
         }
 
+        .glitch-box::before, .glitch-box::after {
+            content: "NEURAL_OVERRIDE_V9";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-dark);
+        }
+
+        .glitch-box::before {
+            left: 3px;
+            text-shadow: -2px 0 var(--neon-magenta);
+            animation: glitch-anim-1 2.5s infinite linear alternate-reverse;
+        }
+
+        .glitch-box::after {
+            left: -3px;
+            text-shadow: -2px 0 var(--neon-cyan);
+            animation: glitch-anim-2 3s infinite linear alternate-reverse;
+        }
+
+        .subtitle-header {
+            font-size: 0.8rem;
+            color: var(--neon-yellow);
+            letter-spacing: 5px;
+            margin-top: 10px;
+        }
+
+        /* ==========================================================================
+           ESTRUCTURA DE CUADRÍCULA (GRID) DEL MAINFRAME
+           ========================================================================== */
         .main-wrapper {
             display: grid;
-            grid-template-columns: 260px 2px 1fr 2px 260px;
-            gap: 0;
+            grid-template-columns: 300px 4px 1fr 4px 300px;
+            gap: 10px;
             flex-grow: 1;
-            padding: 0 20px;
-        }
-
-        .side-panel {
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
+            padding: 20px 40px;
+            position: relative;
+            z-index: 10;
+            max-width: 1800px;
+            margin: 0 auto;
+            width: 100%;
         }
 
         .cyan-line {
             background: var(--neon-cyan);
-            box-shadow: 0 0 20px var(--neon-cyan), 0 0 5px #fff;
+            box-shadow: 0 0 15px var(--neon-cyan), 0 0 5px #fff;
             height: 100%;
-            width: 2px;
+            width: 100%;
+            position: relative;
+            opacity: 0.8;
         }
 
-        #center-zone {
-            padding: 30px;
+        .cyan-line::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 10px,
+                rgba(0,0,0,0.8) 10px,
+                rgba(0,0,0,0.8) 20px
+            );
         }
 
-        /* --- FILTRO DE CATEGORÍAS --- */
-        .category-container {
-            margin-bottom: 50px;
-            border: 1px solid rgba(255, 0, 85, 0.2);
+        /* ==========================================================================
+           PANELES LATERALES Y MÓDULOS HUD
+           ========================================================================== */
+        .side-panel {
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .module {
+            background: rgba(5, 5, 5, 0.85);
+            border: 1px solid var(--neon-cyan);
             padding: 20px;
-            background: rgba(255, 0, 85, 0.02);
-            display: block; /* Por defecto visibles */
-            transition: opacity 0.5s ease;
+            position: relative;
+            backdrop-filter: blur(5px);
+            box-shadow: inset 0 0 20px rgba(0, 243, 255, 0.05);
+        }
+
+        /* Decoración de esquinas tecnológicas */
+        .module::before {
+            content: '';
+            position: absolute;
+            top: -2px; left: -2px;
+            width: 15px; height: 15px;
+            border-top: 2px solid var(--neon-magenta);
+            border-left: 2px solid var(--neon-magenta);
+        }
+        .module::after {
+            content: '';
+            position: absolute;
+            bottom: -2px; right: -2px;
+            width: 15px; height: 15px;
+            border-bottom: 2px solid var(--neon-magenta);
+            border-right: 2px solid var(--neon-magenta);
+        }
+
+        .module-header {
+            color: var(--neon-yellow);
+            font-size: 0.85rem;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            border-bottom: 1px dashed var(--neon-cyan-dim);
+            padding-bottom: 5px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .module-data {
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            background-color: var(--terminal-green);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--terminal-green);
+            margin-right: 5px;
+            animation: blink 2s infinite;
+        }
+
+        .audio-btn-wrapper {
+            position: relative;
+            margin-top: 10px;
+        }
+
+        #audioBtn {
+            background: transparent;
+            border: 1px solid var(--neon-cyan);
+            color: var(--neon-cyan);
+            width: 100%;
+            padding: 15px;
+            cursor: pointer;
+            font-weight: bold;
+            font-family: var(--font-main);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #audioBtn:hover {
+            background: var(--neon-cyan-dim);
+            box-shadow: 0 0 15px var(--neon-cyan);
+            text-shadow: 0 0 5px #fff;
+        }
+
+        #audioBtn.active-audio {
+            border-color: var(--neon-magenta);
+            color: var(--neon-magenta);
+            text-shadow: 0 0 10px var(--neon-magenta);
+        }
+        
+        #audioBtn.active-audio:hover {
+            background: var(--neon-magenta-dim);
+        }
+
+        .sys-log {
+            font-size: 0.7rem;
+            color: #666;
+            height: 150px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+        }
+
+        /* ==========================================================================
+           ZONA CENTRAL (POSTS Y CATEGORÍAS)
+           ========================================================================== */
+        #center-zone {
+            padding: 10px 30px;
+            overflow-y: auto;
+            max-height: calc(100vh - 200px);
+        }
+
+        .category-container {
+            margin-bottom: 60px;
+            border: 1px solid var(--neon-magenta-dim);
+            padding: 30px;
+            background: linear-gradient(135deg, rgba(255, 0, 85, 0.05) 0%, transparent 100%);
+            display: block;
+            transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1);
+            position: relative;
         }
 
         .category-header {
             color: var(--neon-magenta);
-            font-weight: bold;
-            font-size: 1.2rem;
-            margin-bottom: 20px;
-            border-bottom: 1px solid var(--neon-magenta);
+            font-weight: 900;
+            font-size: 1.5rem;
+            margin-bottom: 30px;
+            border-bottom: 2px solid var(--neon-magenta);
             display: inline-block;
-            padding-right: 20px;
+            padding-right: 40px;
+            padding-bottom: 5px;
+            letter-spacing: 3px;
+            text-shadow: 0 0 10px var(--neon-magenta-dim);
         }
 
-        .module {
-            background: rgba(0, 0, 0, 0.8);
-            border: 1px solid var(--neon-cyan);
-            padding: 15px;
+        /* ==========================================================================
+           TARJETAS DE DATOS (POST CARDS)
+           ========================================================================== */
+        .post-card {
+            border: 1px solid var(--neon-cyan-dim);
+            background: rgba(0, 0, 0, 0.6);
+            padding: 20px;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
             position: relative;
+            border-left: 4px solid var(--neon-cyan);
+            display: flex;
+            flex-direction: column;
         }
 
-        .module-header {
-            color: var(--neon-magenta);
-            font-size: 0.7rem;
-            margin-bottom: 10px;
+        .post-card::before {
+            content: '[DATA_BLOCK_ENCRYPTED]';
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            font-size: 0.5rem;
+            color: #555;
+        }
+
+        .post-card:hover {
+            border-color: var(--neon-cyan);
+            box-shadow: 0 0 20px var(--neon-cyan-dim), inset 0 0 15px var(--neon-cyan-dim);
+            transform: translateX(10px);
+            background: rgba(0, 243, 255, 0.05);
+            border-left: 4px solid var(--neon-magenta);
+        }
+
+        .post-card:hover::before {
+            content: '[DECRYPTING...]';
+            color: var(--terminal-green);
+            animation: blink 0.5s infinite;
+        }
+
+        .post-title { 
+            font-size: 1.4rem; 
+            margin: 5px 0 10px 0; 
+            color: #fff; 
+            font-weight: bold;
+            letter-spacing: 1px;
             text-transform: uppercase;
         }
 
+        .post-date { 
+            color: var(--terminal-green); 
+            font-size: 0.85rem; 
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+
+        .post-date::before {
+            content: 'TS:';
+            color: #666;
+            margin-right: 5px;
+        }
+        
+        .btn-link {
+            display: inline-block;
+            align-self: flex-start;
+            margin-top: 10px;
+            color: var(--bg-dark);
+            background: var(--neon-cyan);
+            text-decoration: none;
+            border: 1px solid var(--neon-cyan);
+            padding: 8px 20px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            transition: all 0.2s;
+            text-transform: uppercase;
+        }
+
+        .btn-link:hover {
+            background: transparent;
+            color: var(--neon-cyan);
+            box-shadow: 0 0 15px var(--neon-cyan);
+        }
+
+        /* ==========================================================================
+           BOTONES DE FILTRO HUD LATERAL
+           ========================================================================== */
         .category-btn {
             background: transparent;
-            border: 1px solid var(--neon-magenta);
+            border: 1px solid var(--neon-magenta-dim);
             color: var(--neon-magenta);
             padding: 15px;
-            text-align: center;
+            text-align: left;
             width: 100%;
             cursor: pointer;
             font-family: var(--font-main);
             text-transform: uppercase;
             transition: 0.3s;
-            margin-bottom: 10px;
+            margin-bottom: 12px;
+            position: relative;
+            letter-spacing: 1px;
+            font-weight: bold;
         }
 
-        .category-btn:hover, .category-btn.active {
-            background: rgba(255, 0, 85, 0.2);
-            box-shadow: 0 0 15px var(--neon-magenta);
-            color: white;
-        }
-
-        .post-card {
-            border: 1px solid rgba(0, 243, 255, 0.1);
-            background: rgba(0, 0, 0, 0.3);
-            padding: 15px;
-            margin-bottom: 15px;
+        .category-btn::before {
+            content: '>';
+            position: absolute;
+            left: 10px;
+            opacity: 0;
             transition: 0.3s;
         }
 
-        .post-card:hover {
-            border-color: var(--neon-cyan);
-            box-shadow: 0 0 10px rgba(0, 243, 255, 0.2);
+        .category-btn:hover, .category-btn.active {
+            background: rgba(255, 0, 85, 0.15);
+            border-color: var(--neon-magenta);
+            box-shadow: inset 5px 0 0 var(--neon-magenta), 0 0 15px var(--neon-magenta-dim);
+            color: #fff;
+            padding-left: 30px;
         }
 
-        .post-title { font-size: 1.1rem; margin: 5px 0; color: #fff; }
-        .post-date { color: #555; font-size: 0.7rem; }
-        
-        .btn-link {
-            display: inline-block;
-            margin-top: 10px;
-            color: var(--neon-cyan);
-            text-decoration: none;
-            border: 1px solid var(--neon-cyan);
-            padding: 3px 10px;
-            font-size: 0.8rem;
+        .category-btn:hover::before, .category-btn.active::before {
+            opacity: 1;
         }
 
+        /* ==========================================================================
+           SPLASH SCREEN / BOOT SEQUENCE (COMPLEJA)
+           ========================================================================== */
         #splash {
             position: fixed; inset: 0;
-            background: #000; z-index: 10000;
-            display: flex; justify-content: center; align-items: center;
+            background: var(--bg-dark); z-index: 100000;
+            display: flex; flex-direction: column;
+            justify-content: center; align-items: center;
         }
 
-        #splash button {
-            background: black; color: var(--neon-cyan);
+        #boot-text {
+            color: var(--terminal-green);
+            font-size: 1.2rem;
+            margin-bottom: 40px;
+            text-align: left;
+            width: 600px;
+            height: 200px;
+            white-space: pre-wrap;
+            text-shadow: 0 0 5px var(--terminal-green-glow);
+        }
+
+        #enter-btn {
+            background: transparent; 
+            color: var(--neon-cyan);
             border: 2px solid var(--neon-cyan);
-            padding: 20px 40px; font-size: 2rem;
+            padding: 20px 60px; font-size: 2.5rem;
             cursor: pointer; font-family: var(--font-main);
-            box-shadow: 0 0 20px var(--neon-cyan);
+            box-shadow: 0 0 20px var(--neon-cyan-dim), inset 0 0 10px var(--neon-cyan-dim);
+            text-transform: uppercase;
+            font-weight: 900;
+            letter-spacing: 5px;
+            display: none; /* Se muestra por JS */
+            transition: 0.2s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        #enter-btn:hover {
+            background: var(--neon-cyan);
+            color: var(--bg-dark);
+            box-shadow: 0 0 40px var(--neon-cyan);
+        }
+
+        /* ==========================================================================
+           MEDIA QUERIES (RESPONSIVE)
+           ========================================================================== */
+        @media (max-width: 1400px) {
+            .main-wrapper { grid-template-columns: 250px 2px 1fr 2px 250px; }
         }
 
         @media (max-width: 1000px) {
-            .main-wrapper { grid-template-columns: 1fr; }
+            .main-wrapper { 
+                grid-template-columns: 1fr; 
+                padding: 10px;
+            }
             .cyan-line { display: none; }
+            .side-panel { display: none; } /* En móvil ocultamos paneles laterales por simplicidad del HUD */
+            #center-zone { max-height: none; padding: 10px; }
         }
     </style>
 </head>
 <body>
 
+    <canvas id="matrix-canvas"></canvas>
+    <div class="crt-overlay"></div>
+    <div class="crt-vignette"></div>
+
     <div id="splash">
-        <button onclick="document.getElementById('splash').style.display='none'">ENTRAR</button>
+        <div id="boot-text"></div>
+        <button id="enter-btn" onclick="initSystem()">INICIAR_ENLACE</button>
     </div>
 
     <header>
         <div class="glitch-box">NEURAL_OVERRIDE_V9</div>
+        <div class="subtitle-header">SECURE CONDUIT // ESTABLISHED 2077 // ENCRYPTION LEVEL: OMEGA</div>
     </header>
 
     <div class="main-wrapper">
         
         <div class="side-panel">
             <div class="module">
-                <div class="module-header">> NODE_INFO</div>
-                <div style="font-size: 0.8rem;">USER: <span style="color:var(--neon-magenta)">GUEST</span></div>
-                <div style="font-size: 0.8rem;">STATUS: <span style="color:var(--terminal-green)">ONLINE</span></div>
+                <div class="module-header">
+                    <span>> NODE_INFO</span>
+                    <span class="status-indicator"></span>
+                </div>
+                <div class="module-data">
+                    ID_USUARIO: <span style="color:var(--neon-magenta)">GUEST_ANONYMOUS</span><br>
+                    LOCALIZACIÓN: <span style="color:var(--neon-cyan)">SECTOR_7G</span><br>
+                    ESTADO_RED: <span style="color:var(--terminal-green)">ONLINE</span><br>
+                    LANTENCIA: <span id="ping-ms">14</span>ms
+                </div>
             </div>
             
             <div class="module" style="text-align: center;">
-                <button onclick="toggleAudio()" id="audioBtn" style="background:var(--neon-cyan); border:none; width:100%; padding:10px; cursor:pointer; font-weight:bold;">CONNECT AUDIO</button>
-                <audio id="bgm" loop src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"></audio>
+                <div class="module-header">> SENSORY_UPLINK</div>
+                <div class="audio-btn-wrapper">
+                    <button onclick="toggleAudio()" id="audioBtn">CONNECT AUDIO</button>
+                    <audio id="bgm" loop src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"></audio>
+                </div>
             </div>
-            <img src="https://i.gifer.com/1kt1.gif" style="width: 80px; align-self: center; margin-top: 20px;">
+
+            <div class="module" style="display:flex; justify-content:center; align-items:center; min-height: 150px;">
+                <img src="https://i.gifer.com/1kt1.gif" style="width: 100px; filter: hue-rotate(180deg) contrast(200%); mix-blend-mode: screen;">
+            </div>
         </div>
 
         <div class="cyan-line"></div>
@@ -204,90 +606,251 @@ layout: null
         <div id="center-zone">
             
             <div class="category-container" id="cat-PROYECTOS">
-                <div class="category-header">[ CATEGORIA: PROYECTOS ]</div>
+                <div class="category-header">SYS.DIR // PROYECTOS</div>
                 {% for post in site.categories.PROYECTOS %}
                 <div class="post-card">
                     <div class="post-title">{{ post.title }}</div>
                     <div class="post-date">{{ post.date | date: "%Y-%m-%d" }}</div>
-                    <a href="{{ post.url }}" class="btn-link">ACCEDER_DATOS</a>
+                    <a href="{{ post.url }}" class="btn-link">EJECUTAR_ARCHIVO.EXE</a>
                 </div>
                 {% endfor %}
             </div>
 
             <div class="category-container" id="cat-PENSAMIENTOS">
-                <div class="category-header">[ CATEGORIA: PENSAMIENTOS ]</div>
+                <div class="category-header">SYS.DIR // PENSAMIENTOS</div>
                 {% for post in site.categories.PENSAMIENTOS %}
                 <div class="post-card">
                     <div class="post-title">{{ post.title }}</div>
                     <div class="post-date">{{ post.date | date: "%Y-%m-%d" }}</div>
-                    <a href="{{ post.url }}" class="btn-link">ACCEDER_DATOS</a>
+                    <a href="{{ post.url }}" class="btn-link">EXTRAER_MEMORIA.DAT</a>
                 </div>
                 {% endfor %}
             </div>
 
             <div class="category-container" id="cat-ARTES">
-                <div class="category-header">[ CATEGORIA: ARTES ]</div>
+                <div class="category-header">SYS.DIR // ARTES</div>
                 {% for post in site.categories.ARTES %}
                 <div class="post-card">
                     <div class="post-title">{{ post.title }}</div>
                     <div class="post-date">{{ post.date | date: "%Y-%m-%d" }}</div>
-                    <a href="{{ post.url }}" class="btn-link">ACCEDER_DATOS</a>
+                    <a href="{{ post.url }}" class="btn-link">VISUALIZAR_RENDER.IMG</a>
                 </div>
                 {% endfor %}
             </div>
 
             <div class="category-container" id="cat-SISTEMAS">
-                <div class="category-header">[ CATEGORIA: SISTEMAS ]</div>
+                <div class="category-header">SYS.DIR // SISTEMAS</div>
                 {% for post in site.categories.SISTEMAS %}
                 <div class="post-card">
                     <div class="post-title">{{ post.title }}</div>
                     <div class="post-date">{{ post.date | date: "%Y-%m-%d" }}</div>
-                    <a href="{{ post.url }}" class="btn-link">ACCEDER_DATOS</a>
+                    <a href="{{ post.url }}" class="btn-link">COMPILAR_CÓDIGO.BIN</a>
                 </div>
                 {% endfor %}
             </div>
+
         </div>
 
         <div class="cyan-line"></div>
 
         <div class="side-panel">
             <div class="module">
-                <div class="module-header">> SYSTEM_UPLINK</div>
-                <div style="font-size: 0.6rem; color: #444;">SELECT_PROTOCOL</div>
+                <div class="module-header">> SELECT_PROTOCOL</div>
+                <div style="font-size: 0.7rem; color: #777; margin-bottom: 15px;">DEFINE_QUERY_PARAMETERS:</div>
+                
+                <button class="category-btn active" id="btn-ALL" onclick="filterCat('ALL')">MOSTRAR_TODO</button>
+                <button class="category-btn" id="btn-PROYECTOS" onclick="filterCat('PROYECTOS')">PROYECTOS</button>
+                <button class="category-btn" id="btn-PENSAMIENTOS" onclick="filterCat('PENSAMIENTOS')">PENSAMIENTOS</button>
+                <button class="category-btn" id="btn-ARTES" onclick="filterCat('ARTES')">ARTES</button>
+                <button class="category-btn" id="btn-SISTEMAS" onclick="filterCat('SISTEMAS')">SISTEMAS</button>
             </div>
 
-            <button class="category-btn" onclick="filterCat('ALL')">MOSTRAR_TODO</button>
-            <button class="category-btn" onclick="filterCat('PROYECTOS')">PROYECTOS</button>
-            <button class="category-btn" onclick="filterCat('PENSAMIENTOS')">PENSAMIENTOS</button>
-            <button class="category-btn" onclick="filterCat('ARTES')">ARTES</button>
-            <button class="category-btn" onclick="filterCat('SISTEMAS')">SISTEMAS</button>
+            <div class="module">
+                <div class="module-header">> SYSTEM_LOG</div>
+                <div class="sys-log" id="sys-log-container">
+                    </div>
+            </div>
         </div>
     </div>
 
     <script>
-        // Función para filtrar categorías
+        /* ---------------------------------------------------
+           EFECTO DE ARRANQUE (BOOT SEQUENCE)
+           --------------------------------------------------- */
+        const bootSequence = [
+            "Iniciando NEURAL_OVERRIDE_V9...",
+            "Cargando módulos de memoria cuántica... [OK]",
+            "Estableciendo enlace de sub-rutina... [OK]",
+            "Bypassing firewalls de la corporación... [EXITO]",
+            "Desencriptando base de datos neural...",
+            "Comprobando integridad del archivo... 99.9%",
+            "ADVERTENCIA: Interfaz inestable detectada.",
+            "Protocolo de emergencia activado. Listo para usuario."
+        ];
+        
+        const bootTextEl = document.getElementById('boot-text');
+        const enterBtn = document.getElementById('enter-btn');
+        let bootLine = 0;
+
+        function typeBootSequence() {
+            if (bootLine < bootSequence.length) {
+                bootTextEl.innerHTML += bootSequence[bootLine] + "<br>";
+                bootLine++;
+                setTimeout(typeBootSequence, 150 + Math.random() * 300);
+            } else {
+                setTimeout(() => {
+                    bootTextEl.innerHTML += "<br><span style='color:var(--neon-cyan)'>SISTEMA LISTO. ESPERANDO INPUT.</span><br>";
+                    enterBtn.style.display = 'inline-block';
+                }, 500);
+            }
+        }
+
+        // Iniciar secuencia al cargar página
+        window.onload = () => {
+            typeBootSequence();
+            initMatrixCanvas();
+            startSystemLogs();
+        };
+
+        function initSystem() {
+            document.getElementById('splash').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('splash').style.display = 'none';
+                addLogLine("Usuario autenticado.");
+            }, 500);
+        }
+
+        /* ---------------------------------------------------
+           LÓGICA DE FILTRADO Y AUDIO (Mejorada de la original)
+           --------------------------------------------------- */
         function filterCat(category) {
             const containers = document.querySelectorAll('.category-container');
+            const buttons = document.querySelectorAll('.category-btn');
             
+            // Actualizar botones UI
+            buttons.forEach(btn => btn.classList.remove('active'));
+            document.getElementById('btn-' + category).classList.add('active');
+
+            // Log del sistema
+            addLogLine(`Ejecutando query: SELECT * FROM mainframe WHERE cat='${category}'`);
+
             containers.forEach(container => {
-                if (category === 'ALL') {
-                    container.style.display = 'block';
-                } else {
-                    // Si el ID del contenedor coincide con la categoría seleccionada
-                    if (container.id === 'cat-' + category) {
+                container.style.opacity = '0'; // Efecto fade out rápido
+                
+                setTimeout(() => {
+                    if (category === 'ALL') {
                         container.style.display = 'block';
+                        setTimeout(() => container.style.opacity = '1', 50);
                     } else {
-                        container.style.display = 'none';
+                        if (container.id === 'cat-' + category) {
+                            container.style.display = 'block';
+                            setTimeout(() => container.style.opacity = '1', 50);
+                        } else {
+                            container.style.display = 'none';
+                        }
                     }
-                }
+                }, 300); // Tiempo de espera para la animación CSS
             });
         }
 
         function toggleAudio() {
             const a = document.getElementById('bgm');
             const b = document.getElementById('audioBtn');
-            if(a.paused) { a.play(); b.innerText = "DISCONNECT"; b.style.background = "#ff0055"; }
-            else { a.pause(); b.innerText = "CONNECT AUDIO"; b.style.background = "#00f3ff"; }
+            if(a.paused) { 
+                a.play(); 
+                b.innerText = "DISCONNECT AUDIO"; 
+                b.classList.add('active-audio');
+                addLogLine("Enlace sensorial auditivo: ESTABLECIDO.");
+            } else { 
+                a.pause(); 
+                b.innerText = "CONNECT AUDIO"; 
+                b.classList.remove('active-audio');
+                addLogLine("Enlace sensorial auditivo: CERRADO.");
+            }
+        }
+
+        /* ---------------------------------------------------
+           GENERADOR DE LOGS DEL SISTEMA SIMULADOS
+           --------------------------------------------------- */
+        function addLogLine(text) {
+            const logContainer = document.getElementById('sys-log-container');
+            const time = new Date().toLocaleTimeString('es-ES', { hour12: false });
+            const newLine = document.createElement('div');
+            newLine.innerHTML = `<span style="color:var(--neon-cyan)">[${time}]</span> ${text}`;
+            logContainer.appendChild(newLine);
+            
+            if (logContainer.children.length > 8) {
+                logContainer.removeChild(logContainer.firstChild);
+            }
+        }
+
+        function startSystemLogs() {
+            const gibberish = [
+                "Indexando bloque de memoria 0x4F92...",
+                "Buscando anomalías en red local...",
+                "Ping al servidor central: 14ms",
+                "Reubicando memoria fragmentada...",
+                "Alerta: Intento de escaneo externo bloqueado.",
+                "Compilando shaders ambientales...",
+                "Sincronizando reloj cuántico..."
+            ];
+            setInterval(() => {
+                if(Math.random() > 0.7) {
+                    const randomLine = gibberish[Math.floor(Math.random() * gibberish.length)];
+                    addLogLine(randomLine);
+                    // Actualizar ping visual simulado
+                    document.getElementById('ping-ms').innerText = Math.floor(Math.random() * 20) + 10;
+                }
+            }, 3000);
+        }
+
+        /* ---------------------------------------------------
+           CANVAS: EFECTO MATRIX DIGITAL RAIN COMPLETO
+           --------------------------------------------------- */
+        function initMatrixCanvas() {
+            const canvas = document.getElementById('matrix-canvas');
+            const ctx = canvas.getContext('2d');
+
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            const katakana = 'ｱｲｳｴｵｶｷｸｹｺｻｼｽｾｿﾀﾁﾂﾃﾄﾅﾆﾇﾈﾉﾊﾋﾌﾍﾎﾏﾐﾑﾒﾓﾔﾕﾖﾗﾘﾙﾚﾛﾜﾝ';
+            const latin = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            const nums = '0123456789';
+            const alphabet = katakana + latin + nums;
+
+            const fontSize = 16;
+            const columns = canvas.width / fontSize;
+            const drops = [];
+
+            for (let x = 0; x < columns; x++) {
+                drops[x] = 1;
+            }
+
+            function draw() {
+                ctx.fillStyle = 'rgba(2, 2, 2, 0.05)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                ctx.fillStyle = '#00ff41'; // Terminal green
+                ctx.font = fontSize + 'px monospace';
+
+                for (let i = 0; i < drops.length; i++) {
+                    const text = alphabet.charAt(Math.floor(Math.random() * alphabet.length));
+                    ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+                    if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                        drops[i] = 0;
+                    }
+                    drops[i]++;
+                }
+            }
+
+            setInterval(draw, 30);
+
+            window.addEventListener('resize', () => {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            });
         }
     </script>
 </body>
