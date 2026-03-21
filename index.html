@@ -6,11 +6,11 @@ layout: null
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NEURAL_OVERRIDE // V10.0 :: MAINFRAME_ACCESS</title>
+    <title>NEURAL_OVERRIDE // V10.1 :: MAINFRAME_ACCESS</title>
     
     <style>
         /* ==========================================================================
-           VARIABLES DEL SISTEMA CORE V10
+           VARIABLES DEL SISTEMA CORE V10.1
            ========================================================================== */
         :root {
             --neon-cyan: #00f3ff;
@@ -41,11 +41,10 @@ layout: null
             font-family: var(--font-main);
             margin: 0;
             height: 100vh;
-            overflow: hidden; /* Evitamos scroll en el body, lo manejamos internamente */
+            overflow: hidden;
             perspective: 1000px;
         }
 
-        /* Contenedor principal que simula la pantalla curva del monitor */
         #crt-screen {
             position: relative;
             width: 100vw;
@@ -98,7 +97,7 @@ layout: null
         }
 
         /* ==========================================================================
-           ANIMACIONES CORE V10
+           ANIMACIONES CORE V10.1
            ========================================================================== */
         @keyframes turn-on {
             0% { transform: scale(1, 0.001) translate3d(0, 0, 0); filter: brightness(10); }
@@ -124,7 +123,6 @@ layout: null
             100% { color: var(--neon-cyan); letter-spacing: normal; }
         }
 
-        /* Animaciones Glitch (optimizadas) */
         @keyframes glitch-anim-1 {
             0%, 100% { clip-path: inset(20% 0 80% 0); transform: translate(-2px, 2px); }
             20% { clip-path: inset(60% 0 10% 0); transform: translate(2px, -2px); }
@@ -132,12 +130,19 @@ layout: null
             60% { clip-path: inset(80% 0 5% 0); transform: translate(2px, -2px); }
             80% { clip-path: inset(10% 0 70% 0); transform: translate(-2px, 2px); }
         }
+
         @keyframes glitch-anim-2 {
             0%, 100% { clip-path: inset(10% 0 60% 0); transform: translate(2px, -2px); }
             20% { clip-path: inset(80% 0 5% 0); transform: translate(-2px, 2px); }
             40% { clip-path: inset(30% 0 20% 0); transform: translate(2px, -2px); }
             60% { clip-path: inset(70% 0 10% 0); transform: translate(-2px, 2px); }
             80% { clip-path: inset(20% 0 50% 0); transform: translate(2px, -2px); }
+        }
+
+        /* Efecto global para el parpadeo de pantalla completo */
+        .global-glitch {
+            animation: glitch-anim-1 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+            filter: hue-rotate(90deg);
         }
 
         /* ==========================================================================
@@ -238,15 +243,20 @@ layout: null
         }
         .btn-action:hover { background: var(--bg-dark); color: var(--neon-cyan); box-shadow: 0 0 10px var(--neon-cyan); }
 
-        /* LOG DEL SISTEMA */
-        .sys-log { font-size: 0.75rem; color: #aaa; height: 200px; overflow-y: auto; display: flex; flex-direction: column; }
+        /* LOG DEL SISTEMA Y TERMINAL INTERACTIVA */
+        .sys-log { font-size: 0.75rem; color: #aaa; height: 150px; overflow-y: auto; display: flex; flex-direction: column; }
         .log-entry { margin-bottom: 4px; word-break: break-all; opacity: 0.8; transition: opacity 0.2s; }
         .log-entry:hover { opacity: 1; color: #fff; }
+        
+        .terminal-input-wrapper { display: flex; margin-top: 10px; border-top: 1px dashed var(--neon-cyan-dim); padding-top: 10px; align-items: center; }
+        .terminal-input-wrapper input { background: transparent; border: none; color: var(--terminal-green); outline: none; font-family: var(--font-main); flex-grow: 1; width: 100%; font-size: 0.8rem; text-transform: lowercase; }
+        .terminal-input-wrapper input::placeholder { color: rgba(0, 255, 65, 0.3); text-transform: none; }
 
-        /* SPLASH SCREEN */
+        /* SPLASH SCREEN (Corregido con transiciones) */
         #splash {
             position: fixed; inset: 0; background: var(--bg-dark); z-index: 100000;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
+            transition: opacity 0.5s ease;
         }
         #boot-text { color: var(--terminal-green); font-size: 1.1rem; text-align: left; width: 60vw; max-width: 800px; height: 300px; overflow-y: hidden; text-shadow: 0 0 5px var(--terminal-green-glow); }
         #enter-btn {
@@ -297,11 +307,26 @@ layout: null
                     NET: <span style="color:var(--terminal-green)">LINK_ESTABLISHED</span><br>
                     PING: <span id="ping-ms">12</span>ms
                 </div>
+                
+                <div style="margin-top: 15px; font-size: 0.75rem;">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:2px; color: #aaa;">
+                        <span>CPU_LOAD</span> <span id="cpu-val">12%</span>
+                    </div>
+                    <div style="height: 4px; background: rgba(255,255,255,0.1); margin-bottom: 8px;">
+                        <div id="cpu-meter" style="height:100%; width: 12%; background: var(--neon-cyan); transition: width 0.5s;"></div>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; margin-bottom:2px; color: #aaa;">
+                        <span>MEM_ALLOC</span> <span id="ram-val">45%</span>
+                    </div>
+                    <div style="height: 4px; background: rgba(255,255,255,0.1);">
+                        <div id="ram-meter" style="height:100%; width: 45%; background: var(--neon-magenta); transition: width 0.5s;"></div>
+                    </div>
+                </div>
             </div>
             
             <div class="module">
                 <div class="module-header">> AUDIO_SUBSYSTEM</div>
-                <div style="font-size: 0.75rem; color: #888; margin-bottom:10px;">VINTAGE_RADIO_EMULATOR_ACTIVE</div>
+                <div style="font-size: 0.75rem; color: #888; margin-bottom:10px;">VINTAGE_RADIO_EMULATOR</div>
                 
                 <div class="audio-waves" id="audio-visualizer">
                     <div class="bar"></div><div class="bar"></div><div class="bar"></div>
@@ -313,7 +338,7 @@ layout: null
             </div>
 
             <div class="module" style="display:flex; justify-content:center; align-items:center; min-height: 120px; overflow:hidden;">
-                <img src="https://i.gifer.com/1kt1.gif" style="width: 120%; filter: hue-rotate(180deg) contrast(200%) grayscale(50%); mix-blend-mode: screen; opacity: 0.8;">
+                <img src="https://i.gifer.com/1kt1.gif" style="width: 120%; filter: hue-rotate(180deg) contrast(200%) grayscale(50%); mix-blend-mode: screen; opacity: 0.8;" alt="Radar_Anim">
             </div>
         </div>
 
@@ -367,9 +392,14 @@ layout: null
                 <button class="btn-cyber btn-hover-sfx" id="btn-ARTES" data-filter="ARTES">/ARTES/</button>
             </div>
 
-            <div class="module" style="flex-grow: 1;">
+            <div class="module" style="flex-grow: 1; display: flex; flex-direction: column;">
                 <div class="module-header">> SYSTEM_TERMINAL</div>
-                <div class="sys-log" id="sys-log-container"></div>
+                <div class="sys-log" id="sys-log-container" style="flex-grow: 1;"></div>
+                
+                <div class="terminal-input-wrapper">
+                    <span style="color:var(--neon-magenta); margin-right:8px; font-weight:bold;">$</span>
+                    <input type="text" id="cmd-input" placeholder="Ingresa comando (ej: help)" autocomplete="off" spellcheck="false">
+                </div>
             </div>
         </div>
 
@@ -379,13 +409,12 @@ layout: null
 <script>
 /**
  * ===================================================================================
- * NEURAL_OVERRIDE CORE ENGINE V10.0
- * Arquitectura modular orientada a objetos.
+ * NEURAL_OVERRIDE CORE ENGINE V10.1 (Fault-Tolerant Patch)
  * ===================================================================================
  */
 
 // -----------------------------------------------------------------
-// CLASE 1: Motor de Audio (Web Audio API - Efecto Radio de los 80)
+// CLASE 1: Motor de Audio (Protegido contra bloqueos CORS)
 // -----------------------------------------------------------------
 class CyberAudioEngine {
     constructor() {
@@ -397,35 +426,30 @@ class CyberAudioEngine {
         this.isPlaying = false;
         this.isInitialized = false;
 
-        this.btn.addEventListener('click', () => this.toggleBGM());
+        this.btn.addEventListener('click', () => {
+            try { this.toggleBGM(); } catch(e) { console.warn("Audio ignorado:", e); }
+        });
     }
 
-    // Inicializa el contexto de audio y la cadena de nodos (Efecto Bitcrush/Radio)
     init() {
         if (this.isInitialized) return;
         
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         this.audioCtx = new AudioContext();
         
-        // 1. Fuente
         const source = this.audioCtx.createMediaElementSource(this.audioEl);
-        
-        // 2. Filtro Bandpass (corta agudos limpios y bajos profundos, sonido "hueco" y delgado)
         const bandpassFilter = this.audioCtx.createBiquadFilter();
         bandpassFilter.type = 'bandpass';
-        bandpassFilter.frequency.value = 1200; // Frecuencia media (voz/radio antigua)
+        bandpassFilter.frequency.value = 1200; 
         bandpassFilter.Q.value = 1.2;
 
-        // 3. WaveShaper (Distorsión/Clipping para el "averiado/bitcrush" analógico)
         const distortion = this.audioCtx.createWaveShaper();
-        distortion.curve = this.makeDistortionCurve(60); // Nivel de distorsión
+        distortion.curve = this.makeDistortionCurve(60); 
         distortion.oversample = '4x';
 
-        // 4. Ganancia final (control volumen)
         this.masterGain = this.audioCtx.createGain();
-        this.masterGain.gain.value = 0.6; // Bajar volumen un poco tras distorsión
+        this.masterGain.gain.value = 0.6; 
 
-        // Conexiones de la cadena: Source -> Filtro -> Distorsión -> Destino
         source.connect(bandpassFilter);
         bandpassFilter.connect(distortion);
         distortion.connect(this.masterGain);
@@ -434,7 +458,6 @@ class CyberAudioEngine {
         this.isInitialized = true;
     }
 
-    // Crea la curva matemática para la distorsión
     makeDistortionCurve(amount) {
         let k = typeof amount === 'number' ? amount : 50,
             n_samples = 44100,
@@ -447,55 +470,53 @@ class CyberAudioEngine {
         return curve;
     }
 
-    // Síntesis de sonido para los botones (UI Beeps)
     playHoverBeep() {
-        if (!this.audioCtx) return;
-        const osc = this.audioCtx.createOscillator();
-        const gainNode = this.audioCtx.createGain();
-        osc.type = 'square';
-        osc.frequency.setValueAtTime(800, this.audioCtx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(1200, this.audioCtx.currentTime + 0.05);
-        
-        gainNode.gain.setValueAtTime(0.02, this.audioCtx.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.001, this.audioCtx.currentTime + 0.05);
-        
-        osc.connect(gainNode);
-        gainNode.connect(this.audioCtx.destination);
-        osc.start();
-        osc.stop(this.audioCtx.currentTime + 0.05);
+        if (!this.audioCtx || this.audioCtx.state === 'suspended') return;
+        try {
+            const osc = this.audioCtx.createOscillator();
+            const gainNode = this.audioCtx.createGain();
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(800, this.audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(1200, this.audioCtx.currentTime + 0.05);
+            gainNode.gain.setValueAtTime(0.02, this.audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, this.audioCtx.currentTime + 0.05);
+            osc.connect(gainNode);
+            gainNode.connect(this.audioCtx.destination);
+            osc.start();
+            osc.stop(this.audioCtx.currentTime + 0.05);
+        } catch(e){}
     }
 
     playClickSound() {
         if (!this.audioCtx) return;
-        const osc = this.audioCtx.createOscillator();
-        const gainNode = this.audioCtx.createGain();
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(150, this.audioCtx.currentTime);
-        osc.frequency.exponentialRampToValueAtTime(40, this.audioCtx.currentTime + 0.1);
-        
-        gainNode.gain.setValueAtTime(0.1, this.audioCtx.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.001, this.audioCtx.currentTime + 0.1);
-        
-        osc.connect(gainNode);
-        gainNode.connect(this.audioCtx.destination);
-        osc.start();
-        osc.stop(this.audioCtx.currentTime + 0.1);
+        try {
+            const osc = this.audioCtx.createOscillator();
+            const gainNode = this.audioCtx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(150, this.audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(40, this.audioCtx.currentTime + 0.1);
+            gainNode.gain.setValueAtTime(0.1, this.audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.001, this.audioCtx.currentTime + 0.1);
+            osc.connect(gainNode);
+            gainNode.connect(this.audioCtx.destination);
+            osc.start();
+            osc.stop(this.audioCtx.currentTime + 0.1);
+        } catch(e){}
     }
 
-    // Control Play/Pause principal
     startMusic() {
+        if(!this.audioCtx) return;
         if(this.audioCtx.state === 'suspended') this.audioCtx.resume();
-        this.audioEl.play().catch(e => console.warn("Auto-play bloqueado aún:", e));
+        this.audioEl.play().catch(e => console.warn("Auto-play requería interacción extra:", e));
         this.isPlaying = true;
         this.btn.innerText = "SYS.AUDIO_MUTE()";
         this.btn.classList.add('active');
         this.visualizer.classList.add('active');
-        Terminal.log("BGM_UPLINK: ACTIVO. Filtros analógicos aplicados.");
+        Terminal.log("BGM_UPLINK: Filtros analógicos aplicados.");
     }
 
     toggleBGM() {
         if(!this.isInitialized) this.init();
-        
         if(this.isPlaying) {
             this.audioEl.pause();
             this.isPlaying = false;
@@ -510,11 +531,12 @@ class CyberAudioEngine {
 }
 
 // -----------------------------------------------------------------
-// CLASE 2: Terminal y UI Logs
+// CLASE 2: Terminal y UI Logs interactivos
 // -----------------------------------------------------------------
 class TerminalController {
     constructor() {
         this.container = document.getElementById('sys-log-container');
+        this.inputEl = document.getElementById('cmd-input');
         this.gibberishLines = [
             "Interceptando paquetes de sector C...",
             "Alineación de nodo: Estable",
@@ -524,6 +546,8 @@ class TerminalController {
             "Compilando renderizadores de sombras...",
             "Ping a la matriz central completado."
         ];
+        this.initInput();
+        this.initSystemMeters();
     }
 
     log(text, isError = false) {
@@ -536,8 +560,7 @@ class TerminalController {
         this.container.appendChild(newLine);
         this.container.scrollTop = this.container.scrollHeight;
 
-        // Mantener el log limpio (máximo 15 líneas)
-        if (this.container.children.length > 15) {
+        if (this.container.children.length > 25) {
             this.container.removeChild(this.container.firstChild);
         }
     }
@@ -549,7 +572,61 @@ class TerminalController {
                 this.log(text);
                 document.getElementById('ping-ms').innerText = Math.floor(Math.random() * 25) + 5;
             }
-        }, 2500);
+        }, 3500);
+    }
+
+    initInput() {
+        if(!this.inputEl) return;
+        this.inputEl.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const cmd = this.inputEl.value.trim().toLowerCase();
+                this.inputEl.value = '';
+                if(cmd !== '') {
+                    this.log(`<span style="color:#fff">> ${cmd}</span>`);
+                    this.processCommand(cmd);
+                }
+            }
+        });
+    }
+
+    processCommand(cmd) {
+        switch(cmd) {
+            case 'help': 
+                this.log("COMANDOS: clear, reboot, hack, status, matrix"); 
+                break;
+            case 'clear': 
+                this.container.innerHTML = ''; 
+                break;
+            case 'reboot': 
+                this.log("Reiniciando nodo virtual...");
+                setTimeout(() => location.reload(), 1000); 
+                break;
+            case 'hack': 
+                this.log(">> OVERRIDE DETECTADO. INYECTANDO CARGA ÚTIL...", true);
+                CoreUI.triggerGlobalGlitch();
+                break;
+            case 'status': 
+                this.log("ESTADO: Estable. Conexión encriptada Nivel 5."); 
+                break;
+            case 'matrix':
+                this.log("Ajustando densidad visual de la matriz.");
+                document.getElementById('matrix-canvas').style.opacity = '0.4';
+                setTimeout(() => document.getElementById('matrix-canvas').style.opacity = '0.12', 3000);
+                break;
+            default: 
+                this.log(`COMANDO_NO_RECONOCIDO: '${cmd}'`, true);
+        }
+    }
+
+    initSystemMeters() {
+        setInterval(() => {
+            const cpu = Math.floor(Math.random() * 40) + 15;
+            const ram = Math.floor(Math.random() * 25) + 50;
+            document.getElementById('cpu-meter').style.width = cpu + '%';
+            document.getElementById('ram-meter').style.width = ram + '%';
+            document.getElementById('cpu-val').innerText = cpu + '%';
+            document.getElementById('ram-val').innerText = ram + '%';
+        }, 1500);
     }
 }
 
@@ -564,11 +641,10 @@ class UIController {
     }
 
     bindEvents() {
-        // Lógica de Filtros
         const filterBtns = document.querySelectorAll('[data-filter]');
         filterBtns.forEach(btn => {
             btn.addEventListener('click', (e) => {
-                this.audioEngine.playClickSound();
+                if(this.audioEngine) this.audioEngine.playClickSound();
                 this.applyFilter(e.target.dataset.filter);
                 
                 filterBtns.forEach(b => b.classList.remove('active'));
@@ -576,10 +652,11 @@ class UIController {
             });
         });
 
-        // Eventos de sonido en Hover para todos los botones marcados
         const hoverItems = document.querySelectorAll('.btn-hover-sfx');
         hoverItems.forEach(item => {
-            item.addEventListener('mouseenter', () => this.audioEngine.playHoverBeep());
+            item.addEventListener('mouseenter', () => {
+                if(this.audioEngine) this.audioEngine.playHoverBeep();
+            });
         });
     }
 
@@ -587,25 +664,36 @@ class UIController {
         Terminal.log(`EJECUTANDO_QUERY: Categoria='${category}'`);
         const containers = document.querySelectorAll('.category-container');
         
+        // Efecto glitch global al buscar datos
+        this.triggerGlobalGlitch();
+
         containers.forEach(container => {
-            container.style.opacity = '0'; // Fade out
+            container.style.opacity = '0';
             
             setTimeout(() => {
                 if (category === 'ALL' || container.id === `cat-${category}`) {
                     container.style.display = 'block';
-                    setTimeout(() => container.style.opacity = '1', 50); // Fade in
+                    setTimeout(() => container.style.opacity = '1', 50);
                 } else {
                     container.style.display = 'none';
                 }
-            }, 400); // Tiempo coincide con CSS transition
+            }, 400); 
         });
     }
 
-    // Efecto sutil al mover el ratón simulando el cristal CRT
+    triggerGlobalGlitch() {
+        const screen = document.getElementById('crt-screen');
+        // Reiniciar animación para que corra cada vez
+        screen.classList.remove('global-glitch');
+        void screen.offsetWidth; 
+        screen.classList.add('global-glitch');
+        setTimeout(() => screen.classList.remove('global-glitch'), 400);
+    }
+
     initParallax() {
         const screen = document.getElementById('crt-screen');
         document.addEventListener('mousemove', (e) => {
-            const x = (e.clientX / window.innerWidth - 0.5) * 4; // -2deg a 2deg
+            const x = (e.clientX / window.innerWidth - 0.5) * 4; 
             const y = (e.clientY / window.innerHeight - 0.5) * -4;
             screen.style.transform = `scale(1.02) perspective(1000px) rotateY(${x}deg) rotateX(${y}deg)`;
         });
@@ -621,11 +709,11 @@ class SystemBoot {
         this.bootTextEl = document.getElementById('boot-text');
         this.enterBtn = document.getElementById('enter-btn');
         this.bootSequence = [
-            "> INICIANDO KERNEL_V10.0...",
+            "> INICIANDO KERNEL_V10.1...",
+            "> COMPROBANDO SUBSISTEMAS DE ESTADO... [OK]",
             "> CARGANDO DRIVERS DE PANTALLA CRT_EMU... [OK]",
             "> ESTABLECIENDO CONEXIÓN SOCKET... [OK]",
-            "> DESENCRIPTANDO RUTINAS DE AUDIO... [OK]",
-            "> WARNING: ANOMALÍA DETECTADA EN SECTOR 7.",
+            "> AISLANDO ANOMALÍAS DE CORS (AUDIO)... [ENFORCED]",
             "> FORZANDO PROTOCOLO DE OVERRIDE NEURONAL...",
             "> COMPILACIÓN EXITOSA. SISTEMA LISTO."
         ];
@@ -641,12 +729,12 @@ class SystemBoot {
         if (this.lineIndex < this.bootSequence.length) {
             this.bootTextEl.innerHTML += this.bootSequence[this.lineIndex] + "<br>";
             this.lineIndex++;
-            setTimeout(() => this.typeLine(), 150 + Math.random() * 200);
+            setTimeout(() => this.typeLine(), 100 + Math.random() * 150);
         } else {
             setTimeout(() => {
                 this.bootTextEl.innerHTML += "<br><span style='color:var(--neon-cyan)'>ESPERANDO AUTORIZACIÓN DE OPERADOR...</span><br>";
                 this.enterBtn.style.display = 'inline-block';
-            }, 400);
+            }, 300);
         }
     }
 
@@ -664,7 +752,7 @@ class SystemBoot {
         function draw() {
             ctx.fillStyle = 'rgba(2, 2, 2, 0.05)';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = '#00ff41'; // Terminal green
+            ctx.fillStyle = '#00ff41'; 
             ctx.font = fontSize + 'px monospace';
 
             for (let i = 0; i < drops.length; i++) {
@@ -680,7 +768,7 @@ class SystemBoot {
 }
 
 // ===================================================================================
-// INICIALIZACIÓN GLOBAL
+// INICIALIZACIÓN GLOBAL SEPARADA (Evita bloqueo crítico)
 // ===================================================================================
 const Terminal = new TerminalController();
 const Boot = new SystemBoot();
@@ -690,23 +778,28 @@ window.onload = () => {
     Boot.start();
 };
 
-// Evento principal de entrada (Bypassea políticas de autoplay)
 document.getElementById('enter-btn').addEventListener('click', () => {
-    // 1. Ocultar Splash
-    document.getElementById('splash').style.opacity = '0';
-    setTimeout(() => document.getElementById('splash').style.display = 'none', 400);
+    // 1. Ocultar Splash suavemente
+    const splash = document.getElementById('splash');
+    splash.style.opacity = '0';
+    setTimeout(() => { splash.style.display = 'none'; }, 500);
     
-    // 2. Inicializar subsistemas
-    Terminal.log("ACCESO CONCEDIDO. Bypassing firewalls.");
+    // 2. Ejecutar Logs y UI Core sin depender del audio
+    Terminal.log("ACCESO CONCEDIDO. Bypassing firewalls críticos.");
     Terminal.startRandomLogs();
 
-    // 3. Inicializar Audio (Crucial hacerlo DENTRO del evento click)
-    AudioSys = new CyberAudioEngine();
-    AudioSys.init(); // Crea el contexto
-    AudioSys.playClickSound(); // SFX de entrada
-    AudioSys.startMusic(); // Inicia la música de SoundHelix con efecto bitcrush/radio
+    // 3. Inicializar Audio a través del bloque TRY/CATCH para evitar "Pantalla Negra"
+    try {
+        AudioSys = new CyberAudioEngine();
+        AudioSys.init(); 
+        AudioSys.playClickSound(); 
+        AudioSys.startMusic(); 
+    } catch (e) {
+        console.warn("Subsistema de audio restringido. Ignorando fallo:", e);
+        Terminal.log("ERROR_AUDIO: Fallo mitigado. Sistema gráfico priorizado.", true);
+    }
 
-    // 4. Inicializar UI
+    // 4. Iniciar Interfaz Principal
     CoreUI = new UIController(AudioSys);
 });
 
