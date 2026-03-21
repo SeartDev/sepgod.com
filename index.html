@@ -1,11 +1,10 @@
----
 layout: null
 ---
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>NEURAL_OVERRIDE // V10.1 :: MAINFRAME_ACCESS</title>
     
     <style>
@@ -41,6 +40,7 @@ layout: null
             font-family: var(--font-main);
             margin: 0;
             height: 100vh;
+            height: 100dvh; /* Soporte para navegadores móviles modernos */
             overflow: hidden;
             perspective: 1000px;
         }
@@ -48,7 +48,7 @@ layout: null
         #crt-screen {
             position: relative;
             width: 100vw;
-            height: 100vh;
+            height: 100%;
             display: flex;
             flex-direction: column;
             transform: scale(1.02);
@@ -139,7 +139,6 @@ layout: null
             80% { clip-path: inset(20% 0 50% 0); transform: translate(2px, -2px); }
         }
 
-        /* Efecto global para el parpadeo de pantalla completo */
         .global-glitch {
             animation: glitch-anim-1 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
             filter: hue-rotate(90deg);
@@ -149,7 +148,7 @@ layout: null
            ESTRUCTURA Y COMPONENTES UI
            ========================================================================== */
         header {
-            text-align: center; padding: 30px 0; flex-shrink: 0; position: relative; z-index: 10;
+            text-align: center; padding: 30px 10px; flex-shrink: 0; position: relative; z-index: 10;
             border-bottom: 1px solid var(--neon-cyan-dim);
             background: linear-gradient(180deg, rgba(0,243,255,0.08) 0%, transparent 100%);
         }
@@ -158,6 +157,7 @@ layout: null
             position: relative; display: inline-block; font-size: 3rem; font-weight: 900;
             letter-spacing: 15px; color: var(--neon-cyan); text-transform: uppercase;
             text-shadow: 4px 4px 0px var(--neon-magenta), -2px -2px 0px var(--terminal-green);
+            word-wrap: break-word; max-width: 100%;
         }
         .glitch-box::before, .glitch-box::after {
             content: "NEURAL_OVERRIDE_V10"; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
@@ -233,7 +233,7 @@ layout: null
         .post-card:hover::before { content: '[DECRYPTING...]'; color: var(--neon-magenta); animation: flicker 0.2s infinite; }
         .post-card:hover .post-title { animation: text-decrypt 0.4s forwards; }
 
-        .post-title { font-size: 1.3rem; margin: 5px 0 10px 0; color: #fff; font-weight: bold; text-transform: uppercase; }
+        .post-title { font-size: 1.3rem; margin: 5px 0 10px 0; color: #fff; font-weight: bold; text-transform: uppercase; word-break: break-word; }
         .post-date { color: var(--terminal-green); font-size: 0.8rem; margin-bottom: 15px; opacity: 0.8; }
         
         .btn-action {
@@ -252,7 +252,7 @@ layout: null
         .terminal-input-wrapper input { background: transparent; border: none; color: var(--terminal-green); outline: none; font-family: var(--font-main); flex-grow: 1; width: 100%; font-size: 0.8rem; text-transform: lowercase; }
         .terminal-input-wrapper input::placeholder { color: rgba(0, 255, 65, 0.3); text-transform: none; }
 
-        /* SPLASH SCREEN (Corregido con transiciones) */
+        /* SPLASH SCREEN */
         #splash {
             position: fixed; inset: 0; background: var(--bg-dark); z-index: 100000;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
@@ -268,13 +268,51 @@ layout: null
         }
         #enter-btn:hover { background: var(--neon-cyan); color: var(--bg-dark); box-shadow: 0 0 50px var(--neon-cyan); transform: scale(1.05); }
 
-        /* RESPONSIVE */
-        @media (max-width: 1200px) { .main-wrapper { grid-template-columns: 250px 1px 1fr 1px 250px; padding: 10px; } }
+        /* ==========================================================================
+           RESPONSIVE (SMARTPHONES Y TABLETS)
+           ========================================================================== */
+        @media (max-width: 1200px) { 
+            .main-wrapper { grid-template-columns: 250px 1px 1fr 1px 250px; padding: 10px; } 
+        }
+
         @media (max-width: 900px) {
-            .main-wrapper { grid-template-columns: 1fr; overflow-y: auto; height: auto; }
-            .cyan-line, .crt-vignette { display: none; }
+            /* Transformar a un layout lineal que permita scroll completo */
+            .main-wrapper { 
+                grid-template-columns: 1fr; 
+                overflow-y: auto; /* El wrapper principal hace el scroll */
+                height: auto; 
+                padding: 10px 15px 40px 15px; 
+                gap: 30px; 
+            }
+            
+            /* Permite el scroll interno */
             #crt-screen { overflow-y: auto; }
-            #center-zone { overflow: visible; height: auto; }
+            #center-zone { overflow-y: visible; height: auto; padding: 0; }
+            .side-panel { overflow-y: visible; }
+            
+            /* Ocultar elementos estéticos que ensucian pantallas estrechas */
+            .cyan-line, .crt-vignette { display: none; }
+            
+            /* Ajustes de tipografía críticos */
+            .glitch-box { font-size: 1.6rem; letter-spacing: 4px; }
+            .subtitle-header { font-size: 0.6rem; letter-spacing: 2px; }
+            
+            /* Splash Screen en Móvil */
+            #boot-text { width: 90vw; font-size: 0.85rem; height: 250px; }
+            #enter-btn { 
+                padding: 15px 20px; 
+                font-size: 1.2rem; 
+                width: 90%; 
+                max-width: 300px; 
+                letter-spacing: 3px; 
+                text-align: center; 
+            }
+
+            /* Corrección del Radar (Evita scroll horizontal por el width: 120%) */
+            .module img[alt="Radar_Anim"] { width: 100% !important; max-width: 250px; object-fit: contain; }
+            
+            .category-header { font-size: 1.2rem; letter-spacing: 2px; }
+            .post-title { font-size: 1.1rem; }
         }
     </style>
 </head>
@@ -691,6 +729,9 @@ class UIController {
     }
 
     initParallax() {
+        // Desactiva el parallax en móviles ya que no hay ratón y consume batería
+        if (window.innerWidth <= 900) return; 
+
         const screen = document.getElementById('crt-screen');
         document.addEventListener('mousemove', (e) => {
             const x = (e.clientX / window.innerWidth - 0.5) * 4; 
