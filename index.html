@@ -6,6 +6,10 @@ layout: null
 <head>
     <meta charset="UTF-8"> 
     <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+    
+    <meta name="description" content="Bienvenido a SEPGOD_OS. El rincón digital de Sergio Arturo Ramos Rodriguez sobre retro gaming, cultura japonesa, cyberpunk, tecnología y desarrollo web. Entra al Mainframe.">
+    <meta name="keywords" content="Sergio Arturo Ramos Rodriguez, sepgod, sepgod_os, retro gaming, cyberpunk, desarrollo web, blog personal">
+    
     <title>SEPGOD_OS // V1.0 :: MAINFRAME_ACCESS</title> 
     
     <style>
@@ -243,7 +247,7 @@ layout: null
     </div>
 
     <header>
-        <div class="glitch-box">SEPGOD_OS_V1.0</div>
+        <h1 class="glitch-box" style="margin: 0;">SEPGOD_OS_V1.0</h1>
         <div class="subtitle-header">SECURE CONDUIT // KERNEL MATRIX</div>
     </header>
 
@@ -290,7 +294,7 @@ layout: null
                 <div class="module-header">> KNOW THYSELF.</div>
                 <div class="about-me-content">
                     <h3>Welcome to My Digital Corner</h3>
-                    <p>Hi there! I’m a digital culture enthusiast with a passion for stories that transcend the screen. This space was born from a simple need: to document and share my fascination with the worlds we inhabit—whether through a controller, a line of code, or an animated series.</p>
+                    <p>Hi there! I’m Sergio Arturo Ramos Rodriguez, a digital culture enthusiast with a passion for stories that transcend the screen. This space was born from a simple need: to document and share my fascination with the worlds we inhabit—whether through a controller, a line of code, or an animated series.</p>
 
                     <h4>> What Will You Find Here?</h4>
                     <p>My goal is to explore the intersection of nostalgia and innovation. On this blog, we dive deep into:</p>
@@ -425,21 +429,17 @@ const playBeep = (freq, type) => {
 // =========================================================================
 document.querySelectorAll('.toggle-post-btn').forEach(btn => {
     btn.addEventListener('click', function(e) {
-        // Reproducir un sonido al abrir
         playBeep(450, 'sine');
         
-        // Seleccionamos el div del contenido que está justo después del botón
         const contentDiv = this.nextElementSibling;
         const isOpen = contentDiv.style.display === 'block';
 
         if (isOpen) {
-            // Si está abierto, lo ocultamos y regresamos los estilos del botón al estado original
             contentDiv.style.display = 'none';
             this.innerText = this.getAttribute('data-text-open');
             this.style.background = 'var(--neon-cyan)';
             this.style.color = 'var(--bg-dark)';
         } else {
-            // Si está oculto, lo mostramos y ponemos la terminal en rojo (o magenta) de "cerrar"
             contentDiv.style.display = 'block';
             this.innerText = this.getAttribute('data-text-close');
             this.style.background = 'var(--neon-magenta)';
