@@ -124,11 +124,9 @@ layout: null
         .btn-action { display: inline-block; background: var(--neon-cyan); color: var(--bg-dark); border: none; font-family: inherit; padding: 4px 10px; font-size: 0.8rem; font-weight: bold; transition: 0.2s; cursor: pointer; text-decoration: none; }
         .btn-action:hover { background: #fff; color: #000; }
 
-        /* =========================================================================
-           NUEVO: ESTILOS PARA EL CONTENIDO EXPANDIBLE DEL POST
-           ========================================================================= */
+        /* CONTENIDO EXPANDIBLE DEL POST */
         .post-content {
-            display: none; /* Oculto por defecto */
+            display: none;
             margin-top: 15px;
             border-top: 1px dashed rgba(0,243,255,0.3);
             padding-top: 15px;
@@ -139,11 +137,68 @@ layout: null
             text-shadow: none;
         }
         
-        /* Asegura que los enlaces e imágenes dentro del post se vean bien en el tema oscuro */
         .post-content a { color: var(--neon-magenta); text-decoration: underline; }
         .post-content img { max-width: 100%; height: auto; border: 1px solid var(--neon-cyan); border-radius: 4px; margin: 10px 0; }
         .post-content h1, .post-content h2, .post-content h3 { color: #fff; }
         .post-content code { background: rgba(0, 243, 255, 0.1); padding: 2px 5px; color: var(--terminal-green); }
+
+        /* =========================================================================
+           10.5 NUEVO: MÓDULO ABOUT ME (Perfil del Usuario)
+           ========================================================================= */
+        .about-me-module {
+            background: rgba(5, 5, 5, 0.9);
+            border: 1px solid var(--neon-magenta);
+            padding: 20px;
+            margin-bottom: 25px;
+            position: relative;
+            box-shadow: inset 0 0 15px rgba(255, 0, 85, 0.1);
+            transition: 0.3s;
+        }
+        .about-me-module:hover {
+            border-color: var(--neon-cyan);
+            box-shadow: inset 0 0 15px rgba(0, 243, 255, 0.1);
+        }
+        .about-me-content {
+            color: #d1d1d1;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            animation: fadeInContent 0.5s ease-in-out;
+        }
+        .about-me-content h3 {
+            color: var(--neon-cyan);
+            margin: 5px 0 15px 0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-shadow: 0 0 5px rgba(0, 243, 255, 0.5);
+        }
+        .about-me-content h4 {
+            color: var(--neon-yellow);
+            margin: 20px 0 10px 0;
+            font-size: 0.9rem;
+        }
+        .about-me-content ul {
+            padding-left: 20px;
+            margin: 10px 0;
+        }
+        .about-me-content li {
+            margin-bottom: 8px;
+            color: var(--terminal-green); /* Color de las viñetas */
+        }
+        .about-me-content li .text {
+            color: #d1d1d1; /* Color del texto de la lista */
+        }
+        .highlight-magenta {
+            color: var(--neon-magenta);
+            font-weight: bold;
+        }
+        .about-me-content blockquote {
+            border-left: 3px solid var(--neon-cyan);
+            background: rgba(0, 243, 255, 0.05);
+            margin: 20px 0 0 0;
+            padding: 15px;
+            font-style: italic;
+            color: var(--terminal-green);
+        }
 
         /* 11. ESTRUCTURA DE LA COLUMNA DERECHA */
         .side-panel-right { display: grid; grid-template-columns: 200px 1fr; gap: 15px; height: 100%; overflow: hidden; }
@@ -231,6 +286,29 @@ layout: null
 
         <div id="center-zone">
             
+            <div class="about-me-module">
+                <div class="module-header">> SYS.PROFILE // ABOUT_ME</div>
+                <div class="about-me-content">
+                    <h3>Welcome to My Digital Corner</h3>
+                    <p>Hi there! I’m a digital culture enthusiast with a passion for stories that transcend the screen. This space was born from a simple need: to document and share my fascination with the worlds we inhabit—whether through a controller, a line of code, or an animated series.</p>
+
+                    <h4>> What Will You Find Here?</h4>
+                    <p>My goal is to explore the intersection of nostalgia and innovation. On this blog, we dive deep into:</p>
+                    <ul>
+                        <li><span class="text"><span class="highlight-magenta">Retro Gaming:</span> From the magic of 8 and 16-bit eras to the hunt for classic hardware. We celebrate the art of collecting and the titles that defined entire genres.</span></li>
+                        <li><span class="text"><span class="highlight-magenta">Anime and Japan:</span> Analysis of impactful stories—ranging from gritty cyberpunk to laid-back slice-of-life—alongside my journey learning the language and exploring the culture.</span></li>
+                        <li><span class="text"><span class="highlight-magenta">Tech and PC Gaming:</span> Guides on components, building powerful rigs, and how modern technology can elevate our favorite hobbies.</span></li>
+                        <li><span class="text"><span class="highlight-magenta">Personal Projects:</span> A look behind the scenes of my own experiments, from creating pixel art to managing small-scale digital projects.</span></li>
+                    </ul>
+
+                    <h4>> My Philosophy</h4>
+                    <p>I firmly believe that hobbies aren't just a way to pass the time; they are a way to understand the world and connect with others. Whether I’m analyzing the economy of an RPG or hunting for the perfect aesthetic on a vintage digital camera, this blog is for those who see details where others only see pixels.</p>
+
+                    <blockquote>
+                        "Exploring the past, building the future, and enjoying every frame of the present."
+                    </blockquote>
+                </div>
+            </div>
             <div class="top-filter-module">
                 <div class="module-header">> QUERY_FILTERS</div>
                 <div class="horizontal-filters">
@@ -343,7 +421,7 @@ const playBeep = (freq, type) => {
 };
 
 // =========================================================================
-// NUEVO: LÓGICA PARA EXPANDIR/CONTRAER LOS POSTS AL HACER CLIC
+// LÓGICA PARA EXPANDIR/CONTRAER LOS POSTS AL HACER CLIC
 // =========================================================================
 document.querySelectorAll('.toggle-post-btn').forEach(btn => {
     btn.addEventListener('click', function(e) {
