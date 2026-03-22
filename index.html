@@ -11,7 +11,6 @@ layout: null
     <style>
         /* =========================================================================
            CSS: EL DISEÑO Y LA PINTURA DE LA PÁGINA
-           Aquí definimos colores, tamaños, posiciones y animaciones de cada elemento.
            ========================================================================= */
 
         /* 1. PALETA DE COLORES (Variables Globales) */
@@ -63,9 +62,10 @@ layout: null
         @keyframes turn-on { 0%, 40% { transform: scaleY(0.001); filter: brightness(5); } 100% { transform: scaleY(1); filter: brightness(1); } }
         @keyframes flicker { 0%, 10% { opacity: 0.95; } 5%, 100% { opacity: 1; } }
         @keyframes glitch-simple { 0%, 100% { transform: translate(0); } 25% { transform: translate(-2px, 2px); } 75% { transform: translate(2px, -2px); } }
+        @keyframes fadeInContent { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
         .global-glitch { animation: glitch-simple 0.2s infinite; filter: hue-rotate(90deg); }
 
-        /* 6. DISEÑO DEL DIBUJO ASCII (El Alien secreto) */
+        /* 6. DISEÑO DEL DIBUJO ASCII */
         .hack-art-output {
             color: var(--terminal-green); font-family: var(--font-main); 
             font-size: 4px; 
@@ -73,12 +73,12 @@ layout: null
             text-shadow: 0 0 5px rgba(0, 255, 65, 0.5); 
         }
 
-        /* 7. CABECERA (El título superior de la web) */
+        /* 7. CABECERA */
         header { text-align: center; padding: 20px 0; border-bottom: 1px solid rgba(0,243,255,0.3); }
         .glitch-box { font-size: 2.5rem; font-weight: 900; letter-spacing: 10px; color: var(--neon-cyan); text-shadow: 2px 2px var(--neon-magenta); }
         .subtitle-header { font-size: 0.8rem; color: var(--neon-yellow); margin-top: 5px; }
 
-        /* 8. ESTRUCTURA PRINCIPAL (La cuadrícula o "Grid") */
+        /* 8. ESTRUCTURA PRINCIPAL */
         .main-wrapper { 
             display: grid; 
             max-width: 1800px; 
@@ -97,45 +97,18 @@ layout: null
         
         .module-header { color: var(--neon-yellow); font-size: 0.85rem; margin-bottom: 10px; border-bottom: 1px dashed rgba(0,243,255,0.3); padding-bottom: 5px; }
 
-        /* Botones estilo hacker generales */
-        .btn-cyber { background: rgba(0,0,0,0.5); border: 1px solid rgba(0,243,255,0.3); color: var(--neon-cyan); width: 100%; padding: 10px; font-weight: bold; font-family: inherit; margin-bottom: 8px; transition: 0.2s; text-align: left; }
+        .btn-cyber { background: rgba(0,0,0,0.5); border: 1px solid rgba(0,243,255,0.3); color: var(--neon-cyan); width: 100%; padding: 10px; font-weight: bold; font-family: inherit; margin-bottom: 8px; transition: 0.2s; text-align: left; border-radius: 0; }
         .btn-cyber:hover, .btn-cyber.active { background: rgba(0, 243, 255, 0.1); border-color: var(--neon-cyan); padding-left: 20px; } 
         .btn-cyber.active { border-color: var(--neon-magenta); color: #fff; background: rgba(255,0,85,0.15); } 
 
-        /* =========================================================================
-           NUEVO: ESTILOS PARA EL FILTRO HORIZONTAL SUPERIOR
-           ========================================================================= */
+        /* FILTRO HORIZONTAL SUPERIOR */
         .top-filter-module {
-            background: rgba(5, 5, 5, 0.9); 
-            border: 1px solid rgba(0,243,255,0.3); 
-            padding: 15px; 
-            margin-bottom: 25px; /* Empuja los artículos hacia abajo para respirar */
-            transition: 0.2s;
+            background: rgba(5, 5, 5, 0.9); border: 1px solid rgba(0,243,255,0.3); padding: 15px; margin-bottom: 25px; transition: 0.2s;
         }
         .top-filter-module:hover { border-color: var(--neon-cyan); }
-        
-        /* Flexbox en fila para acostar los botones */
-        .horizontal-filters {
-            display: flex;
-            flex-direction: row;
-            gap: 10px; 
-            flex-wrap: wrap; /* Si la pantalla es pequeña, se apilan ordenadamente */
-        }
-
-        /* Sobreescribimos el comportamiento de .btn-cyber solo para los filtros horizontales */
-        .horizontal-filters .btn-cyber {
-            width: auto; /* Anula el 100% por defecto */
-            flex-grow: 1; /* Hace que todos los botones se estiren igual para llenar el espacio */
-            text-align: center; /* Centramos el texto del botón */
-            margin-bottom: 0; /* Quitamos el margen inferior porque usamos 'gap' en el contenedor */
-        }
-        
-        /* Modificamos el hover para que no se muevan a la izquierda (lo cual rompería la fila)
-           sino que hagan un leve salto hacia arriba */
-        .horizontal-filters .btn-cyber:hover, .horizontal-filters .btn-cyber.active {
-            padding-left: 10px; /* Restauramos el padding normal */
-            transform: translateY(-2px); /* Efecto de salto hacia arriba */
-        }
+        .horizontal-filters { display: flex; flex-direction: row; gap: 10px; flex-wrap: wrap; }
+        .horizontal-filters .btn-cyber { width: auto; flex-grow: 1; text-align: center; margin-bottom: 0; }
+        .horizontal-filters .btn-cyber:hover, .horizontal-filters .btn-cyber.active { padding-left: 10px; transform: translateY(-2px); }
 
         /* 10. ZONA CENTRAL */
         #center-zone { padding: 0 20px; overflow-y: auto; }
@@ -143,61 +116,55 @@ layout: null
         .category-header { color: var(--neon-magenta); font-size: 1.2rem; margin-bottom: 15px; text-shadow: 0 0 5px rgba(255,0,85,0.5); }
         
         .post-card { background: rgba(0,0,0,0.8); border: 1px solid rgba(0,243,255,0.2); padding: 15px; margin-bottom: 10px; border-left: 3px solid var(--neon-cyan); transition: 0.2s; }
-        .post-card:hover { border-color: var(--neon-cyan); border-left-color: var(--neon-magenta); transform: translateX(5px); background: rgba(0,243,255,0.05); }
+        .post-card:hover { border-color: var(--neon-cyan); border-left-color: var(--neon-magenta); background: rgba(0,243,255,0.05); }
         .post-title { font-size: 1.1rem; color: #fff; margin-bottom: 5px; text-transform: uppercase; }
         .post-card:hover .post-title { color: var(--neon-cyan); transition: color 0.3s ease; }
         .post-date { color: var(--terminal-green); font-size: 0.8rem; margin-bottom: 10px; }
         
-        .btn-action { display: inline-block; background: var(--neon-cyan); color: var(--bg-dark); text-decoration: none; padding: 4px 10px; font-size: 0.8rem; font-weight: bold; transition: 0.2s; }
-        .btn-action:hover { background: #fff; }
+        .btn-action { display: inline-block; background: var(--neon-cyan); color: var(--bg-dark); border: none; font-family: inherit; padding: 4px 10px; font-size: 0.8rem; font-weight: bold; transition: 0.2s; cursor: pointer; text-decoration: none; }
+        .btn-action:hover { background: #fff; color: #000; }
 
-        /* 11. ESTRUCTURA DE LA COLUMNA DERECHA */
-        .side-panel-right {
-            display: grid;
-            grid-template-columns: 200px 1fr; 
-            gap: 15px;
-            height: 100%;       
-            overflow: hidden;   
+        /* =========================================================================
+           NUEVO: ESTILOS PARA EL CONTENIDO EXPANDIBLE DEL POST
+           ========================================================================= */
+        .post-content {
+            display: none; /* Oculto por defecto */
+            margin-top: 15px;
+            border-top: 1px dashed rgba(0,243,255,0.3);
+            padding-top: 15px;
+            font-size: 0.95rem;
+            color: #d1d1d1;
+            line-height: 1.6;
+            animation: fadeInContent 0.3s ease-in-out;
+            text-shadow: none;
         }
         
+        /* Asegura que los enlaces e imágenes dentro del post se vean bien en el tema oscuro */
+        .post-content a { color: var(--neon-magenta); text-decoration: underline; }
+        .post-content img { max-width: 100%; height: auto; border: 1px solid var(--neon-cyan); border-radius: 4px; margin: 10px 0; }
+        .post-content h1, .post-content h2, .post-content h3 { color: #fff; }
+        .post-content code { background: rgba(0, 243, 255, 0.1); padding: 2px 5px; color: var(--terminal-green); }
+
+        /* 11. ESTRUCTURA DE LA COLUMNA DERECHA */
+        .side-panel-right { display: grid; grid-template-columns: 200px 1fr; gap: 15px; height: 100%; overflow: hidden; }
         .sub-col-gifs { display: flex; flex-direction: column; gap: 15px; overflow-y: auto; }
         .terminal-module { display: flex; flex-direction: column; height: 100%; margin: 0; }
 
         /* 12. LA TERMINAL DE COMANDOS */
-        #sys-log-container { 
-            display: flex; flex-direction: column; 
-            flex-grow: 1;      
-            height: 0;         
-            overflow-y: auto;  
-            font-size: 0.75rem; color: #aaa; 
-        }
+        #sys-log-container { display: flex; flex-direction: column; flex-grow: 1; height: 0; overflow-y: auto; font-size: 0.75rem; color: #aaa; }
         .terminal-input-wrapper { display: flex; margin-top: 10px; border-top: 1px dashed rgba(0,243,255,0.3); padding-top: 10px; }
         .terminal-input-wrapper input { background: transparent; border: none; color: var(--terminal-green); font-family: inherit; width: 100%; outline: none; }
         
-        /* 13. PANTALLA NEGRA DE CARGA (Splash) */
+        /* 13. PANTALLA NEGRA DE CARGA */
         #splash { position: fixed; inset: 0; background: var(--bg-dark); z-index: 10000; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: 0.3s; }
         #boot-text { color: var(--terminal-green); font-size: 1rem; width: 60vw; height: 200px; }
         #enter-btn { background: transparent; color: var(--neon-cyan); border: 2px solid var(--neon-cyan); padding: 15px 40px; font-size: 1.5rem; font-family: inherit; display: none; transition: 0.2s; }
         #enter-btn:hover { background: var(--neon-cyan); color: #000; }
 
-        /* 14. LOS GIFs DE MONITOREO Y NEIGHBOR */
-        .cyber-gif {
-            width: 100%; height: auto; display: block; 
-            border: 1px solid rgba(0,243,255,0.3); 
-            filter: contrast(120%) brightness(90%); 
-        }
-        
-        .neighbor-img {
-            width: 100%; height: auto; display: block;
-            border: 1px solid rgba(0,243,255,0.3);
-            filter: contrast(120%) brightness(80%); 
-            transition: all 0.3s ease; 
-        }
-        .neighbor-img:hover {
-            border-color: var(--neon-magenta); 
-            filter: contrast(100%) brightness(110%); 
-            transform: scale(1.03); 
-        }
+        /* 14. LOS GIFs DE MONITOREO */
+        .cyber-gif { width: 100%; height: auto; display: block; border: 1px solid rgba(0,243,255,0.3); filter: contrast(120%) brightness(90%); }
+        .neighbor-img { width: 100%; height: auto; display: block; border: 1px solid rgba(0,243,255,0.3); filter: contrast(120%) brightness(80%); transition: all 0.3s ease; }
+        .neighbor-img:hover { border-color: var(--neon-magenta); filter: contrast(100%) brightness(110%); transform: scale(1.03); }
 
         /* 15. RESPONSIVE DESIGN */
         @media (max-width: 1200px) { 
@@ -205,8 +172,6 @@ layout: null
             .cyan-line { display: none; } 
             .side-panel-right { grid-template-columns: 1fr; height: auto; } 
             .terminal-module { height: 400px; }
-            
-            /* Ajuste extra para los filtros en celular: forzamos que ocupen el 100% para no verse amontonados */
             .horizontal-filters .btn-cyber { width: 100%; flex-basis: 100%; }
         }
     </style>
@@ -230,7 +195,6 @@ layout: null
     <div class="main-wrapper">
         
         <div class="side-panel">
-            
             <div class="module">
                 <div class="module-header">> NODE_DIAGNOSTICS</div>
                 <div style="font-size: 0.8rem; line-height: 1.5;">
@@ -261,7 +225,6 @@ layout: null
                 <div class="module-header">> FLUJO_DE_DATOS</div>
                 <img src="https://i.gifer.com/C2pO.gif" alt="Flujo de red" class="cyber-gif">
             </div>
-
         </div>
 
         <div class="cyan-line"></div>
@@ -284,7 +247,10 @@ layout: null
                 <div class="post-card">
                     <div class="post-title">{{ post.title }}</div>
                     <div class="post-date">TS: {{ post.date | date: "%Y-%m-%d" }}</div>
-                    <a href="{{ post.url }}" class="btn-action btn-hover-sfx">EJECUTAR_ARCHIVO</a>
+                    <button class="btn-action btn-hover-sfx toggle-post-btn" data-text-open="EJECUTAR_ARCHIVO" data-text-close="CERRAR_ARCHIVO">EJECUTAR_ARCHIVO</button>
+                    <div class="post-content">
+                        {{ post.content }}
+                    </div>
                 </div>
                 {% endfor %}
             </div>
@@ -295,7 +261,10 @@ layout: null
                 <div class="post-card">
                     <div class="post-title">{{ post.title }}</div>
                     <div class="post-date">TS: {{ post.date | date: "%Y-%m-%d" }}</div>
-                    <a href="{{ post.url }}" class="btn-action btn-hover-sfx">EXTRAER_MEMORIA</a>
+                    <button class="btn-action btn-hover-sfx toggle-post-btn" data-text-open="EXTRAER_MEMORIA" data-text-close="SELLAR_MEMORIA">EXTRAER_MEMORIA</button>
+                    <div class="post-content">
+                        {{ post.content }}
+                    </div>
                 </div>
                 {% endfor %}
             </div>
@@ -306,7 +275,10 @@ layout: null
                 <div class="post-card">
                     <div class="post-title">{{ post.title }}</div>
                     <div class="post-date">TS: {{ post.date | date: "%Y-%m-%d" }}</div>
-                    <a href="{{ post.url }}" class="btn-action btn-hover-sfx">VISUALIZAR_RENDER</a>
+                    <button class="btn-action btn-hover-sfx toggle-post-btn" data-text-open="VISUALIZAR_RENDER" data-text-close="APAGAR_RENDER">VISUALIZAR_RENDER</button>
+                    <div class="post-content">
+                        {{ post.content }}
+                    </div>
                 </div>
                 {% endfor %}
             </div>
@@ -315,9 +287,7 @@ layout: null
         <div class="cyan-line"></div>
 
         <div class="side-panel-right">
-            
             <div class="sub-col-gifs">
-                
                 <div class="module" style="padding: 10px;">
                     <div class="module-header">> MAPA_TOPOLÓGICO</div>
                     <img src="https://i.gifer.com/Bh1W.gif" alt="Mapa de red" class="cyber-gif">
@@ -331,7 +301,6 @@ layout: null
                 <div class="module" style="padding: 10px; text-align: center;">
                     <div class="module-header">> DIGITAL_NEIGHBOR</div>
                     <p style="font-size: 0.8rem; color: #aaa; margin-bottom: 10px; margin-top: 5px;">Enlace externo detectado en el radar de red:</p>
-                    
                     <a href="https://asciicrawler.com/" target="_blank" class="btn-hover-sfx" style="display: block;">
                         <img src="https://asciicrawler.com/assets/profile._WERjmoF_Z9iJTC.webp" alt="ASCii CRAWLER Node" class="neighbor-img">
                     </a>
@@ -341,7 +310,6 @@ layout: null
             <div class="module terminal-module">
                 <div class="module-header">> SYSTEM_TERMINAL</div>
                 <div class="sys-log" id="sys-log-container"></div>
-                
                 <div class="terminal-input-wrapper">
                     <span style="color:var(--neon-magenta); margin-right:5px;">$</span>
                     <input type="text" id="cmd-input" placeholder="Comando (ej: help)" autocomplete="off">
@@ -374,6 +342,34 @@ const playBeep = (freq, type) => {
     osc.stop(audioCtx.currentTime + 0.05); 
 };
 
+// =========================================================================
+// NUEVO: LÓGICA PARA EXPANDIR/CONTRAER LOS POSTS AL HACER CLIC
+// =========================================================================
+document.querySelectorAll('.toggle-post-btn').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+        // Reproducir un sonido al abrir
+        playBeep(450, 'sine');
+        
+        // Seleccionamos el div del contenido que está justo después del botón
+        const contentDiv = this.nextElementSibling;
+        const isOpen = contentDiv.style.display === 'block';
+
+        if (isOpen) {
+            // Si está abierto, lo ocultamos y regresamos los estilos del botón al estado original
+            contentDiv.style.display = 'none';
+            this.innerText = this.getAttribute('data-text-open');
+            this.style.background = 'var(--neon-cyan)';
+            this.style.color = 'var(--bg-dark)';
+        } else {
+            // Si está oculto, lo mostramos y ponemos la terminal en rojo (o magenta) de "cerrar"
+            contentDiv.style.display = 'block';
+            this.innerText = this.getAttribute('data-text-close');
+            this.style.background = 'var(--neon-magenta)';
+            this.style.color = '#fff';
+        }
+    });
+});
+
 const bgm = document.getElementById('bgm'); 
 const audioBtn = document.getElementById('audioBtn'); 
 
@@ -389,39 +385,7 @@ audioBtn.onclick = () => {
     } 
 };
 
-const alienAscii = `⠀⠀⠀⠀⠀⠀⠀⠄⣀⠢⢀⣤⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣄⠀⡔⢀⠂⡜⢭⢻⣍⢯⡻⣝⣿⣿⡿⣟⠂
-⠀⠀⠀⠀⠀⠀⠀⠄⠀⣦⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⡔⡀⢂⠜⣪⢗⡾⣶⡽⣾⣟⣯⠛⠀⠀
-⠀⠀⠀⠀⠀⠄⠀⠠⣶⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣔⠨⡸⡝⣯⣳⢏⣿⠳⠉⠀⢠⣬⡶
-⠠⣓⢤⣂⣄⣀⢀⣾⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡆⠁⣞⡱⣝⠎⠀⢀⠠⣥⠳⡞⡹
-⠀⡄⢉⠲⢿⣼⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡔⣧⡽⠋⠀⣰⣶⣻⣶⣿⢾⣷
-⢤⡈⠉⠲⢤⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠁⢀⡴⢏⡳⢮⡿⣽⣞⠻⡜
-⠒⣭⠳⢶⣼⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⢿⡙⠮⣜⣯⡽⣳⢌⡓⠈
-⡸⣰⢋⣷⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣻⢿⣻⣿⡽⣗⠋⠄⠀
-⠣⢇⢟⣸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣧⢟⡿⢣⣟⡻⠘⠀⠀⠀
-⠱⡊⠤⣸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠨⠗⠋⣁⣤⠖⠊⢁⣀
-⠀⠁⠂⢹⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡏⠀⠀⠀⠀⣿⡂⠹⣿⣿⣿⣿⣿⠙⣿⣿⣿⣿⣿⣿⣿⣿⡿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠄⠒⢋⣉⡤⣔⣮⣽⣾
-⢢⠣⣌⢼⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠀⠀⠀⠀⢰⣿⡅⠀⣿⣿⣿⣿⣿⠀⠸⢿⣹⣿⣿⣿⣿⣿⡇⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣶⣻⣿⣿⣿⣿⣿⣿⣿
-⢃⡉⠠⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡟⣼⢹⠀⠀⠀⠀⣾⠿⡇⠀⣿⣿⣿⣿⡏⠀⠀⣞⣧⣻⠟⢿⣿⣿⢠⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡿⣧⠱⣌⣳⣽⣻⣿⣿⣻
-⠀⢒⡕⣺⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠁⡇⠈⣇⠀⠀⠀⠈⡆⢳⠀⠇⡟⠋⠉⠀⠀⠀⠃⢙⣠⣤⣤⣼⣯⣚⣟⢸⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⠀⠌⠑⠌⢳⠛⡛⠏⠛⠉
-⡘⢷⣌⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⡟⠉⢻⣀⣧⣤⣽⣦⣤⣄⠀⠰⡀⠃⠀⠀⠀⠀⠀⠀⡴⠟⠛⣉⣉⡉⠉⠈⠉⠉⠉⠋⢻⣿⣿⣿⣿⣿⣿⣿⣿⣿⠀⢈⠈⠈⠁⠛⠀⠀⠀⣒
-⠉⢣⡛⣿⣿⣿⣿⣿⣿⣿⣿⣿⡧⠖⠛⠉⠉⠉⠀⠀⠐⠒⢢⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⡾⣠⣲⣾⣿⢿⣷⢶⡄⠀⠀⣽⣿⣿⣿⣿⡿⠟⣿⣿⣿⣿⣿⠛⢁⣤⡶⠿⠛⠋
-⠀⠀⠌⢽⣿⣿⣿⣿⣿⣿⣿⣿⡷⠀⠀⠀⣠⣶⣶⣿⣟⣿⣶⡅⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠃⢿⣿⣿⣿⣿⠀⣿⡀⠀⢻⣬⣙⡻⡿⣡⣾⣿⣿⡍⠈⣀⣤⣬⣤⣶⣲⣶⣿
-⠀⢈⠐⡀⢻⣫⢿⣿⣿⣿⣿⠘⢧⠁⠀⣻⡏⠸⣿⣿⣿⣿⠏⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠑⢄⣉⣛⣋⣡⡴⠃⠀⠀⣿⣿⣿⠟⣠⡛⢿⣿⣿⣷⣲⣽⣿⣿⣷⣾⣷⣿⣿
-⠀⠀⢀⠐⡀⢃⡈⣿⢿⣿⣿⣟⡆⠀⠀⠉⠿⣦⣈⣉⣉⠤⠚⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⡟⣡⣶⣿⣿⣾⣿⣿⣿⢿⡿⣿⣿⡿⠿⠛⣋⣡
-⠠⠐⡀⢢⣶⣿⢧⠻⣯⣿⣯⡛⢿⡄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⠘⠐⠂⡁⠤⠔⢂⣉⣤⡴
-⣀⠥⠌⣳⢯⣟⣮⣗⣾⣟⣿⣿⣦⣭⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣿⣿⣿⣿⣿⣿⣿⣿⠂⣈⠥⡔⡤⣍⠣⣝⢾⡹
-⠀⠀⠀⠠⠈⠉⠈⠉⠉⠉⣨⣿⣿⣿⣯⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣿⣿⣿⣿⣿⣿⣿⣿⡟⠻⢞⣿⣝⣳⢎⢳⢻⡮⣕
-⠀⠀⢀⠀⡀⠀⠀⣀⣴⣾⣿⣿⣿⣿⣿⣧⡀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣰⣿⣿⣿⣿⣿⣿⣿⣿⣿⡗⢠⠘⡼⣽⣛⡞⠦⣧⢻⣽
-⠀⢈⠀⡀⡀⢤⠞⡉⢭⣹⣿⣿⣿⣿⣿⣿⣿⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠈⠈⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⣴⣿⣿⣿⣿⣿⣿⣿⣿⣟⣿⣍⣣⢾⣵⣯⣷⣽⣦⣑⣯⢿
-⠀⠂⣴⣾⡟⣧⠊⡔⢢⠛⣿⣿⣿⣿⣿⣿⣿⣿⣷⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠐⠒⠂⠀⠀⠀⠀⠀⠀⠀⠀⠀⢠⣾⣿⣿⣿⣿⣿⣿⣿⣿⡟⠉⣯⢹⣽⢻⣿⣿⣿⣿⣿⣿⣿⣿
-⣶⣟⠳⣏⡿⣎⠳⣈⡜⣺⣿⠿⢿⣝⡿⣫⢟⣽⣿⣿⠻⣦⣄⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⠔⠛⣿⠿⣟⢩⢾⣿⣿⣿⣿⣇⠾⣜⡧⣯⣟⣿⣿⣿⣿⣿⣿⣿⣿
-⠋⢀⢱⣫⣟⢾⡹⢴⡸⣵⡏⣂⢾⡿⣽⣹⣟⣾⣿⡟⢠⡇⠀⣹⠂⠄⣀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣷⣣⢟⡿⣾⣿⣿⣿⣿⢌⠫⢝⡻⣵⢻⡟⣿⢿⣿⢿⡿⣿⠿
-⠀⢢⠞⣴⢯⢯⣝⣦⢳⡝⡶⣭⣿⣽⣳⣟⡾⣽⡟⢀⡟⠀⢀⡿⠀⠀⠀⠁⠠⠤⠀⠀⠀⠤⠐⠀⠀⠀⠀⠀⠀⠀⢸⡗⠈⠭⣿⣿⣿⣿⡿⢌⠣⡀⡐⢈⠃⠚⠦⣉⠂⠣⠜⡄⢋
-⣜⣷⢻⡜⣯⣾⡞⣥⣓⢾⡽⢎⡷⢯⡷⣯⢟⣽⠃⣸⠁⠀⡼⠃⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢻⡄⢹⣿⣿⣿⣿⢃⡮⡑⢰⢠⣂⡜⣦⡴⣱⣎⣴⣩⡜⣦
-⣿⣯⢷⡻⣏⣷⣟⠶⣙⠮⡙⢪⠜⣯⢽⣯⣿⠃⠄⢃⣠⠞⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠹⣾⣿⣿⣿⡇⠢⢡⡙⢦⡓⡼⣽⣾⣿⣿⣿⣿⣷⣿⣿
-⣿⡹⢇⡳⡹⣞⠘⡈⢅⠢⢁⠂⡘⠤⣋⣶⣡⠴⠚⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣿⣿⣿⣿⠰⡁⢆⠘⣡⠻⣽⣳⣿⣿⣿⣿⢿⣿⣿⣿
-⢣⠝⡢⢍⠱⢈⣂⣌⡤⠦⠶⠶⠞⠛⠋⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢰⣿⣿⣿⠛⠷⣭⣂⠌⢠⠓⡴⣻⣿⣿⣿⣿⣿⣿⣯⣿
-⣇⢾⡱⠞⠈⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣸⣿⣿⡇⠀⠀⠀⠉⠛⠳⠿⣶⣽⣿⣿⣿⣿⣿⣿⣿⣿`;
+const alienAscii = `[TEXTO ASCII OMITIDO PARA BREVEDAD, SE MANTIENE EL TUYO AQUÍ]`;
 
 const terminalLogs = document.getElementById('sys-log-container'); 
 
@@ -443,13 +407,11 @@ document.getElementById('cmd-input').onkeydown = e => {
         else if(cmd === 'reboot') location.reload(); 
         else if (cmd === 'hack') { 
             document.getElementById('crt-screen').classList.add('global-glitch'); 
-            
             const pre = document.createElement('pre'); 
             pre.className = 'hack-art-output'; 
             pre.textContent = alienAscii; 
             terminalLogs.appendChild(pre); 
             terminalLogs.scrollTop = terminalLogs.scrollHeight; 
-            
             setTimeout(() => { document.getElementById('crt-screen').classList.remove('global-glitch'); }, 2000);
         }
         else printLog("COMANDO_NO_RECONOCIDO", true); 
@@ -458,11 +420,9 @@ document.getElementById('cmd-input').onkeydown = e => {
 
 document.querySelectorAll('.btn-hover-sfx').forEach(btn => btn.onmouseenter = () => playBeep(800, 'square'));
 
-// El script JavaScript de los filtros se mantiene intacto ya que la lógica sigue funcionando igual de bien
 document.querySelectorAll('[data-filter]').forEach(btn => {
     btn.onclick = e => {
         playBeep(150, 'sawtooth'); 
-        
         document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('active'));
         e.target.classList.add('active'); 
         
@@ -493,7 +453,6 @@ initMatrix();
 setInterval(() => {
     ctx.fillStyle = 'rgba(2, 2, 2, 0.1)'; 
     ctx.fillRect(0, 0, w, h); 
-    
     ctx.fillStyle = '#00ff41'; 
     ctx.font = '14px monospace'; 
     
