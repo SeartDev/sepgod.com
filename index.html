@@ -10,9 +10,7 @@ layout: null
            Aquí le decimos al navegador qué colores, tamaños y formas usar.
            ========================================================================= */
 
-        /* 1. LA PALETA DE COLORES (:root)
-           Guardamos los colores principales aquí como "variables" para no tener que 
-           escribir el código del color exacto cada vez. */
+        /* 1. LA PALETA DE COLORES (:root) */
         :root {
             --neon-cyan: #00f3ff;       /* Azul brillante tipo Tron */
             --neon-magenta: #ff0055;    /* Rosa/Rojo brillante */
@@ -26,9 +24,7 @@ layout: null
         * { 
             box-sizing: border-box; /* Evita que los bordes deformen el tamaño de las cajas */
             
-            /* MODIFICACIÓN: EL NUEVO CURSOR RETRO
-               En lugar de "crosshair", dibujamos una flecha pixelada usando código SVG.
-               El 'url' contiene el dibujo de la flecha. Si algo falla, 'auto' usa el cursor normal. */
+            /* EL NUEVO CURSOR RETRO: Dibuja una flecha pixelada usando código SVG. */
             cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20"><path fill="%2300f3ff" stroke="%23020202" stroke-width="1.5" d="M2,2 L2,18 L7,13 L10,19 L13,17 L10,12 L16,12 Z"/></svg>'), auto;
             
             scrollbar-width: thin; /* Hace que la barra de desplazamiento sea delgadita */
@@ -93,12 +89,12 @@ layout: null
         .subtitle-header { font-size: 0.8rem; color: var(--neon-yellow); margin-top: 5px; }
 
         /* 8. ESTRUCTURA PRINCIPAL DE LA PANTALLA (Grilla / Grid) */
-        /* Divide la pantalla en 5 columnas invisibles: Panel Izquierdo(300px), Linea(1px), Centro(auto), Linea(1px), Panel Derecho(300px) */
+        /* Divide la pantalla en 5 columnas invisibles */
         .main-wrapper { display: grid; grid-template-columns: 300px 1px 1fr 1px 300px; gap: 15px; padding: 20px; height: calc(100vh - 100px); max-width: 1600px; margin: auto; }
         .cyan-line { background: var(--neon-cyan); opacity: 0.3; } /* La línea vertical que separa las columnas */
 
         /* 9. PANELES LATERALES (Los cuadros de los lados) */
-        .side-panel { display: flex; flex-direction: column; gap: 15px; overflow-y: auto; } /* overflow-y: auto permite hacer scroll solo en este panel si el contenido es muy largo */
+        .side-panel { display: flex; flex-direction: column; gap: 15px; overflow-y: auto; } 
         .module { background: rgba(5, 5, 5, 0.9); border: 1px solid rgba(0,243,255,0.3); padding: 15px; position: relative; transition: 0.2s; }
         .module:hover { border-color: var(--neon-cyan); } /* Al pasar el ratón, el borde del módulo brilla más */
         .module-header { color: var(--neon-yellow); font-size: 0.85rem; margin-bottom: 10px; border-bottom: 1px dashed rgba(0,243,255,0.3); padding-bottom: 5px; }
@@ -121,12 +117,8 @@ layout: null
         
         .post-title { font-size: 1.1rem; color: #fff; margin-bottom: 5px; text-transform: uppercase; }
         
-        /* MODIFICACIÓN: ELIMINAMOS EL GLITCH EN EL TÍTULO */
         /* Hacemos que simplemente el título cambie a color azul suavemente sin temblar ni separar letras */
-        .post-card:hover .post-title { 
-            color: var(--neon-cyan); 
-            transition: color 0.3s ease; /* transition es lo que hace que el cambio sea suave, sin saltos */
-        }
+        .post-card:hover .post-title { color: var(--neon-cyan); transition: color 0.3s ease; }
         
         .post-date { color: var(--terminal-green); font-size: 0.8rem; margin-bottom: 10px; }
         
@@ -146,7 +138,17 @@ layout: null
         #enter-btn { background: transparent; color: var(--neon-cyan); border: 2px solid var(--neon-cyan); padding: 15px 40px; font-size: 1.5rem; font-family: inherit; display: none; transition: 0.2s; }
         #enter-btn:hover { background: var(--neon-cyan); color: #000; }
 
-        /* 15. ADAPTACIÓN A CELULARES (Responsive Design) */
+        /* 15. ESTILOS PARA LA NUEVA IMAGEN/GIF */
+        /* Hacemos que el GIF se comporte bien dentro de su caja y le damos estilo hacker */
+        .cyber-gif {
+            width: 100%; /* Ocupa todo el ancho disponible del módulo */
+            height: auto; /* Mantiene su proporción para no verse estirado */
+            display: block; /* Evita que queden espacios en blanco debajo de la imagen */
+            border: 1px solid rgba(0,243,255,0.3); /* Le ponemos el mismo borde neón tenue */
+            filter: contrast(120%) brightness(90%); /* Lo oscurecemos un poquitito para que no lastime la vista y encaje con el fondo */
+        }
+
+        /* 16. ADAPTACIÓN A CELULARES (Responsive Design) */
         /* Si la pantalla es menor a 900px de ancho, las columnas se apilan una debajo de otra (1fr) */
         @media (max-width: 900px) { .main-wrapper { grid-template-columns: 1fr; overflow: auto; height: auto; } .cyan-line { display: none; } }
     </style>
@@ -189,6 +191,11 @@ layout: null
                 <div class="module-header">> AUDIO_SUBSYSTEM</div>
                 <button class="btn-cyber active" id="audioBtn">SYS.AUDIO_MUTE()</button>
                 <audio id="bgm" loop src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"></audio>
+            </div>
+
+            <div class="module" style="padding: 10px;">
+                <div class="module-header">> SIGNAL_INTERCEPT</div>
+                <img src="https://i.gifer.com/Bh1M.gif" alt="Señal interceptada" class="cyber-gif">
             </div>
         </div>
 
