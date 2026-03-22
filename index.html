@@ -503,20 +503,28 @@ document.getElementById('cmd-input').onkeydown = e => {
 
         else if(cmd === 'reboot') location.reload();
 
-else if(cmd === 'hack') {
-    const screen = document.getElementById('crt-screen');
-    const canvas = document.getElementById('ascii-canvas');
+else if (cmd === 'hack') {
+    // 1. Efecto visual de glitch en la pantalla
+    document.getElementById('crt-screen').classList.add('global-glitch');
+
+    // 2. Crear el contenedor para el arte ASCII
+    const asciiArt = `[PEGA AQUÍ TODO TU ARTE ASCII]`; // Usa las comillas invertidas `
     
-    // Activar glitch
-    screen.classList.add('global-glitch');
-    
-    // Inyectar el arte ASCII
-    canvas.textContent = hackArt;
-    
-    // (Opcional) Quitar el glitch después de unos segundos
+    const pre = document.createElement('pre');
+    pre.className = 'hack-art-output'; // Clase para darle estilo
+    pre.textContent = asciiArt;
+
+    // 3. Insertarlo en tu log de sistema
+    const logContainer = document.getElementById('sys-log-container');
+    logContainer.appendChild(pre);
+
+    // 4. Hacer scroll automático al final para que se vea el arte
+    logContainer.scrollTop = logContainer.scrollHeight;
+
+    // 5. Opcional: Limpiar el glitch después de 2 segundos
     setTimeout(() => {
-        screen.classList.remove('global-glitch');
-    }, 3000);
+        document.getElementById('crt-screen').classList.remove('global-glitch');
+    }, 2000);
 }
         else printLog("COMANDO_NO_RECONOCIDO", true);
 
