@@ -190,6 +190,22 @@ layout: null
             border: 1px solid rgba(0,243,255,0.3); 
             filter: contrast(120%) brightness(90%); /* Baja un poco el brillo para que no desentonen con el tema oscuro */
         }
+        
+        /* 14.5 DISEÑO DEL DIGITAL NEIGHBOR (Imagen enlazada) */
+        /* Le damos a la imagen de tu amigo el mismo estilo que a los GIFs, con animaciones extra. */
+        .neighbor-img {
+            width: 100%; height: auto; display: block;
+            border: 1px solid rgba(0,243,255,0.3);
+            filter: contrast(120%) brightness(80%); /* La oscurece un poco para que no rompa la estética oscura */
+            transition: all 0.3s ease; /* Hace que la animación de hover sea suave */
+        }
+        
+        /* Qué pasa cuando el usuario pasa el mouse por la imagen */
+        .neighbor-img:hover {
+            border-color: var(--neon-magenta); /* El borde se vuelve rojo/magenta */
+            filter: contrast(100%) brightness(110%); /* La imagen recupera su brillo original y destaca */
+            transform: scale(1.03); /* Se hace un 3% más grande, como si saltara hacia el usuario */
+        }
 
         /* 15. RESPONSIVE DESIGN (Adaptación para Celulares y Tablets pequeñas) */
         /* Si la pantalla mide menos de 1200px de ancho, las columnas se rompen y todo se acomoda hacia abajo en bloque. */
@@ -319,7 +335,10 @@ layout: null
                 <div class="module" style="padding: 10px; text-align: center;">
                     <div class="module-header">> DIGITAL_NEIGHBOR</div>
                     <p style="font-size: 0.8rem; color: #aaa; margin-bottom: 10px; margin-top: 5px;">Enlace externo detectado en el radar de red:</p>
-                    <a href="https://asciicrawler.com/" target="_blank" class="btn-action btn-hover-sfx" style="display: block; width: 100%; text-align: center; text-decoration: none;">ASCii_CRAWLER_NODE</a>
+                    
+                    <a href="https://asciicrawler.com/" target="_blank" class="btn-hover-sfx" style="display: block;">
+                        <img src="https://asciicrawler.com/assets/profile._WERjmoF_Z9iJTC.webp" alt="ASCii CRAWLER Node" class="neighbor-img">
+                    </a>
                 </div>
                 </div>
 
