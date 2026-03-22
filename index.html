@@ -4,128 +4,150 @@ layout: null
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NEURAL_OVERRIDE // V10.1 :: MAINFRAME_ACCESS</title>
-    
-    <style>
-        /* =========================================
+    <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>NEURAL_OVERRIDE // V10.1 :: MAINFRAME_ACCESS</title> <style>
+        /* =========================================================================
            CSS: LA PINTURA Y DECORACIÓN DE LA PÁGINA
-           ========================================= */
+           Aquí le decimos al navegador qué colores, tamaños y formas usar.
+           ========================================================================= */
 
-        /* Aquí guardamos los colores principales para usarlos fácilmente después */
+        /* 1. LA PALETA DE COLORES (:root)
+           Guardamos los colores principales aquí como "variables" para no tener que 
+           escribir el código del color exacto cada vez. */
         :root {
-            --neon-cyan: #00f3ff; /* Azul brillante */
-            --neon-magenta: #ff0055; /* Rosa/Rojo brillante */
-            --neon-yellow: #fcee0a; /* Amarillo brillante */
-            --bg-dark: #020202; /* Negro casi absoluto para el fondo */
-            --terminal-green: #00ff41; /* Verde clásico de película de hackers */
-            --font-main: 'Courier New', Courier, monospace; /* Tipo de letra de máquina de escribir */
+            --neon-cyan: #00f3ff;       /* Azul brillante tipo Tron */
+            --neon-magenta: #ff0055;    /* Rosa/Rojo brillante */
+            --neon-yellow: #fcee0a;     /* Amarillo brillante */
+            --bg-dark: #020202;         /* Negro casi absoluto para el fondo */
+            --terminal-green: #00ff41;  /* Verde clásico de película de hackers (Matrix) */
+            --font-main: 'Courier New', Courier, monospace; /* Tipo de letra de máquina de escribir antigua */
         }
 
-        /* Configuración general: el cursor será una cruz (crosshair) y la barra de desplazamiento tendrá colores neón */
-        * { box-sizing: border-box; cursor: crosshair; scrollbar-width: thin; scrollbar-color: var(--neon-cyan) var(--bg-dark); }
+        /* 2. REGLA GENERAL PARA TODO EL SITIO (*) */
+        * { 
+            box-sizing: border-box; /* Evita que los bordes deformen el tamaño de las cajas */
+            
+            /* MODIFICACIÓN: EL NUEVO CURSOR RETRO
+               En lugar de "crosshair", dibujamos una flecha pixelada usando código SVG.
+               El 'url' contiene el dibujo de la flecha. Si algo falla, 'auto' usa el cursor normal. */
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20"><path fill="%2300f3ff" stroke="%23020202" stroke-width="1.5" d="M2,2 L2,18 L7,13 L10,19 L13,17 L10,12 L16,12 Z"/></svg>'), auto;
+            
+            scrollbar-width: thin; /* Hace que la barra de desplazamiento sea delgadita */
+            scrollbar-color: var(--neon-cyan) var(--bg-dark); /* Le da color azul a la barra de desplazamiento */
+        }
 
-        /* El cuerpo de la página: fondo negro, letras azules, sin márgenes y ocupando toda la pantalla sin dejar que se desborde */
+        /* 3. EL CUERPO DE LA PÁGINA (body) */
         body {
-            background-color: var(--bg-dark); color: var(--neon-cyan);
-            font-family: var(--font-main); margin: 0; height: 100vh; overflow: hidden;
+            background-color: var(--bg-dark); /* Fondo negro */
+            color: var(--neon-cyan);          /* Texto por defecto en azul neón */
+            font-family: var(--font-main);    /* Aplica la letra de máquina de escribir a todo */
+            margin: 0;                        /* Quita los márgenes blancos feos de las orillas */
+            height: 100vh;                    /* Ocupa exactamente el 100% del alto de tu pantalla (Viewport Height) */
+            overflow: hidden;                 /* Esconde cualquier cosa que se salga de la pantalla (evita scroll principal) */
         }
 
-        /* EFECTOS DE TELEVISIÓN ANTIGUA (CRT) */
-        /* Este contenedor envuelve toda la página y tiene una animación de "encendido" de televisor viejo */
+        /* 4. EFECTOS DE TELEVISIÓN ANTIGUA (CRT) */
+        /* Este contenedor envuelve TODA la página. Funciona como el cristal de una TV vieja. */
         #crt-screen {
             position: relative; width: 100vw; height: 100vh; display: flex; flex-direction: column;
-            overflow: hidden; animation: turn-on 1s ease-out forwards;
+            overflow: hidden; 
+            animation: turn-on 1s ease-out forwards; /* Llama a la animación de encendido al abrir la página */
         }
 
-        /* El lienzo (canvas) donde caerán las letras verdes de Matrix. Está al fondo y un poco transparente. */
+        /* El lienzo donde caen las letras verdes de Matrix. Está pegado al fondo (z-index: -2) */
         #matrix-canvas { position: absolute; inset: 0; z-index: -2; opacity: 0.15; }
 
-        /* La capa invisible encima de todo que dibuja las "líneas" de la tele vieja y parpadea un poco */
+        /* Capa invisible encima de todo que dibuja las "líneas horizontales" típicas de las teles de tubo (CRT) */
         .crt-overlay {
-            position: absolute; inset: 0; z-index: 9998; pointer-events: none;
-            /* Dibuja líneas horizontales y oscurece las esquinas */
+            position: absolute; inset: 0; z-index: 9998; pointer-events: none; /* pointer-events: none hace que los clics la atraviesen */
             background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), radial-gradient(circle, transparent 50%, #000 120%);
-            background-size: 100% 4px, 100% 100%;
-            animation: flicker 0.2s infinite; /* Hace que parpadee infinitamente */
+            background-size: 100% 4px, 100% 100%; /* Define el grosor de las líneas */
+            animation: flicker 0.2s infinite; /* Llama a la animación de parpadeo para que no se detenga nunca (infinite) */
         }
 
-        /* ANIMACIONES (Movimientos y cambios de color programados) */
-        /* Efecto de prender la pantalla (se expande desde una línea pequeña) */
+        /* 5. ANIMACIONES (Movimientos y cambios de color programados) */
+        /* Efecto de encender la pantalla (empieza como una línea aplastada y se expande al 100%) */
         @keyframes turn-on { 0%, 40% { transform: scaleY(0.001); filter: brightness(5); } 100% { transform: scaleY(1); filter: brightness(1); } }
-        /* Efecto de parpadeo de la pantalla */
-        @keyframes flicker { 0%, 10% { opacity: 0.95; } 5%, 100% { opacity: 1; } }
-        /* Efecto de color al pasar el ratón sobre un título (pasa de rosa separado a azul normal) */
-        @keyframes text-decrypt { 0% { color: var(--neon-magenta); letter-spacing: 2px; } 100% { color: var(--neon-cyan); letter-spacing: normal; } }
         
-        /* Efecto de error o "glitch": hace que la pantalla tiemble ligeramente y cambie de color un instante */
+        /* Efecto de parpadeo sutil de la pantalla */
+        @keyframes flicker { 0%, 10% { opacity: 0.95; } 5%, 100% { opacity: 1; } }
+        
+        /* Efecto de error global (glitch) que se activa por unos segundos al usar comandos o botones */
         @keyframes glitch-simple { 0%, 100% { transform: translate(0); } 25% { transform: translate(-2px, 2px); } 75% { transform: translate(2px, -2px); } }
-        .global-glitch { animation: glitch-simple 0.2s infinite; filter: hue-rotate(90deg); }
+        .global-glitch { animation: glitch-simple 0.2s infinite; filter: hue-rotate(90deg); } /* hue-rotate cambia los colores a lo loco */
 
-        /* DISEÑO DEL DIBUJO DEL ALIEN */
-        /* Configura el tamaño diminuto de las letras para que el dibujo formado por texto no se rompa */
+        /* 6. DISEÑO DEL ARTE ASCII (El Alien) */
         .hack-art-output {
             color: var(--terminal-green); 
             font-family: var(--font-main);
-            font-size: 4px; /* Tamaño muy pequeño */
-            line-height: 1;
-            white-space: pre; /* Respeta los espacios exactos del dibujo */
+            font-size: 4px; /* Tamaño diminuto para que los caracteres formen el dibujo correctamente */
+            line-height: 1; /* El espacio entre renglones es exactamente igual al tamaño de la letra */
+            white-space: pre; /* Le dice al navegador: "Respeta todos mis espacios en blanco tal como los escribí" */
             margin: 10px 0;
             overflow-x: hidden;
-            text-shadow: 0 0 5px rgba(0, 255, 65, 0.5); /* Brillo verde */
+            text-shadow: 0 0 5px rgba(0, 255, 65, 0.5); /* Le da un brillo verde fosforescente */
         }
 
-        /* DISEÑO DE LOS COMPONENTES DE LA PÁGINA (UI BASE) */
-        /* El título principal de arriba */
+        /* 7. DISEÑO DE LA CABECERA (El título principal) */
         header { text-align: center; padding: 20px 0; border-bottom: 1px solid rgba(0,243,255,0.3); }
         .glitch-box { font-size: 2.5rem; font-weight: 900; letter-spacing: 10px; color: var(--neon-cyan); text-shadow: 2px 2px var(--neon-magenta); }
         .subtitle-header { font-size: 0.8rem; color: var(--neon-yellow); margin-top: 5px; }
 
-        /* La estructura principal: divide la pantalla en 3 columnas (Izquierda, Centro, Derecha) separadas por líneas */
+        /* 8. ESTRUCTURA PRINCIPAL DE LA PANTALLA (Grilla / Grid) */
+        /* Divide la pantalla en 5 columnas invisibles: Panel Izquierdo(300px), Linea(1px), Centro(auto), Linea(1px), Panel Derecho(300px) */
         .main-wrapper { display: grid; grid-template-columns: 300px 1px 1fr 1px 300px; gap: 15px; padding: 20px; height: calc(100vh - 100px); max-width: 1600px; margin: auto; }
-        .cyan-line { background: var(--neon-cyan); opacity: 0.3; } /* Las líneas separadoras */
+        .cyan-line { background: var(--neon-cyan); opacity: 0.3; } /* La línea vertical que separa las columnas */
 
-        /* PANELES LATERALES (Los cuadros de los lados) */
-        .side-panel { display: flex; flex-direction: column; gap: 15px; overflow-y: auto; }
+        /* 9. PANELES LATERALES (Los cuadros de los lados) */
+        .side-panel { display: flex; flex-direction: column; gap: 15px; overflow-y: auto; } /* overflow-y: auto permite hacer scroll solo en este panel si el contenido es muy largo */
         .module { background: rgba(5, 5, 5, 0.9); border: 1px solid rgba(0,243,255,0.3); padding: 15px; position: relative; transition: 0.2s; }
-        .module:hover { border-color: var(--neon-cyan); } /* Se ilumina al pasar el ratón */
+        .module:hover { border-color: var(--neon-cyan); } /* Al pasar el ratón, el borde del módulo brilla más */
         .module-header { color: var(--neon-yellow); font-size: 0.85rem; margin-bottom: 10px; border-bottom: 1px dashed rgba(0,243,255,0.3); padding-bottom: 5px; }
 
-        /* BOTONES (Estilo hacker) */
-        .btn-cyber { background: rgba(0,0,0,0.5); border: 1px solid rgba(0,243,255,0.3); color: var(--neon-cyan); width: 100%; padding: 10px; cursor: pointer; font-weight: bold; font-family: inherit; margin-bottom: 8px; transition: 0.2s; text-align: left; }
-        .btn-cyber:hover, .btn-cyber.active { background: rgba(0, 243, 255, 0.1); border-color: var(--neon-cyan); padding-left: 20px; } /* Se mueve un poco a la derecha al seleccionarlo */
-        .btn-cyber.active { border-color: var(--neon-magenta); color: #fff; background: rgba(255,0,85,0.15); }
+        /* 10. BOTONES LATERALES (Los que tienen diseño Cyberpunk) */
+        .btn-cyber { background: rgba(0,0,0,0.5); border: 1px solid rgba(0,243,255,0.3); color: var(--neon-cyan); width: 100%; padding: 10px; font-weight: bold; font-family: inherit; margin-bottom: 8px; transition: 0.2s; text-align: left; }
+        .btn-cyber:hover, .btn-cyber.active { background: rgba(0, 243, 255, 0.1); border-color: var(--neon-cyan); padding-left: 20px; } /* Al pasar el ratón, el texto se mueve a la derecha (padding-left) */
+        .btn-cyber.active { border-color: var(--neon-magenta); color: #fff; background: rgba(255,0,85,0.15); } /* Si está seleccionado, se vuelve magenta */
 
-        /* ZONA CENTRAL (Donde van los artículos) */
+        /* 11. ZONA CENTRAL (Donde van los artículos o posts) */
         #center-zone { padding: 0 20px; overflow-y: auto; }
         .category-container { display: block; margin-bottom: 30px; transition: opacity 0.3s; }
         .category-header { color: var(--neon-magenta); font-size: 1.2rem; margin-bottom: 15px; text-shadow: 0 0 5px rgba(255,0,85,0.5); }
         
-        /* Las "tarjetas" que muestran cada artículo o proyecto */
+        /* 12. TARJETAS DE POSTS (Los artículos) */
         .post-card { background: rgba(0,0,0,0.8); border: 1px solid rgba(0,243,255,0.2); padding: 15px; margin-bottom: 10px; border-left: 3px solid var(--neon-cyan); transition: 0.2s; }
+        
+        /* Al pasar el ratón por la tarjeta completa: cambia el fondo, el borde y se mueve a la derecha (translateX) */
         .post-card:hover { border-color: var(--neon-cyan); border-left-color: var(--neon-magenta); transform: translateX(5px); background: rgba(0,243,255,0.05); }
-        .post-card:hover .post-title { animation: text-decrypt 0.3s forwards; }
+        
         .post-title { font-size: 1.1rem; color: #fff; margin-bottom: 5px; text-transform: uppercase; }
+        
+        /* MODIFICACIÓN: ELIMINAMOS EL GLITCH EN EL TÍTULO */
+        /* Hacemos que simplemente el título cambie a color azul suavemente sin temblar ni separar letras */
+        .post-card:hover .post-title { 
+            color: var(--neon-cyan); 
+            transition: color 0.3s ease; /* transition es lo que hace que el cambio sea suave, sin saltos */
+        }
+        
         .post-date { color: var(--terminal-green); font-size: 0.8rem; margin-bottom: 10px; }
         
-        /* Botoncito pequeño de acción ("EJECUTAR_ARCHIVO", etc.) */
+        /* Botones de acción dentro de los artículos */
         .btn-action { background: var(--neon-cyan); color: var(--bg-dark); text-decoration: none; padding: 4px 10px; font-size: 0.8rem; font-weight: bold; }
         .btn-action:hover { background: #fff; }
 
-        /* LA TERMINAL DE COMANDOS (Abajo a la derecha) */
+        /* 13. LA TERMINAL DE COMANDOS (Abajo a la derecha) */
         #sys-log-container { display: flex; flex-direction: column; overflow-y: auto; }
-        .sys-log { font-size: 0.75rem; color: #aaa; height: 120px; overflow-y: auto; } /* Donde aparecen los mensajes */
-        .terminal-input-wrapper { display: flex; margin-top: 10px; border-top: 1px dashed rgba(0,243,255,0.3); padding-top: 10px; } /* Donde escribes */
-        .terminal-input-wrapper input { background: transparent; border: none; color: var(--terminal-green); font-family: inherit; width: 100%; outline: none; }
+        .sys-log { font-size: 0.75rem; color: #aaa; height: 120px; overflow-y: auto; } /* Caja donde se guardan los textos escritos */
+        .terminal-input-wrapper { display: flex; margin-top: 10px; border-top: 1px dashed rgba(0,243,255,0.3); padding-top: 10px; }
+        .terminal-input-wrapper input { background: transparent; border: none; color: var(--terminal-green); font-family: inherit; width: 100%; outline: none; } /* Le quita los bordes a la caja de texto para que parezca consola pura */
         
-        /* LA PANTALLA NEGRA DE CARGA INICIAL (Splash Screen) */
+        /* 14. PANTALLA NEGRA DE CARGA INICIAL (Splash Screen) */
         #splash { position: fixed; inset: 0; background: var(--bg-dark); z-index: 10000; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: 0.3s; }
         #boot-text { color: var(--terminal-green); font-size: 1rem; width: 60vw; height: 200px; }
-        #enter-btn { background: transparent; color: var(--neon-cyan); border: 2px solid var(--neon-cyan); padding: 15px 40px; font-size: 1.5rem; cursor: pointer; font-family: inherit; display: none; transition: 0.2s; }
+        #enter-btn { background: transparent; color: var(--neon-cyan); border: 2px solid var(--neon-cyan); padding: 15px 40px; font-size: 1.5rem; font-family: inherit; display: none; transition: 0.2s; }
         #enter-btn:hover { background: var(--neon-cyan); color: #000; }
 
-        /* Esto hace que si abres la página en un celular, las 3 columnas se conviertan en 1 sola hacia abajo */
+        /* 15. ADAPTACIÓN A CELULARES (Responsive Design) */
+        /* Si la pantalla es menor a 900px de ancho, las columnas se apilan una debajo de otra (1fr) */
         @media (max-width: 900px) { .main-wrapper { grid-template-columns: 1fr; overflow: auto; height: auto; } .cyan-line { display: none; } }
     </style>
 </head>
@@ -232,35 +254,36 @@ layout: null
 </div>
 
 <script>
-/** * =======================================================
- * JAVASCRIPT: EL CEREBRO DE LA PÁGINA (Funciones y lógica) 
- * ======================================================= 
- **/
+/** * =========================================================================
+ * JAVASCRIPT: EL CEREBRO Y LOS MÚSCULOS DE LA PÁGINA 
+ * Aquí programamos la lógica matemática, los clics, los sonidos y el comportamiento interactivo.
+ * ========================================================================= **/
 
-// 1. GENERADOR DE EFECTOS DE SONIDO Y MÚSICA
-// Prepara el sistema de sonido del navegador
-const audioCtx = window.AudioContext ? new AudioContext() : null;
+// 1. SISTEMA DE AUDIO (Los pitidos y botones)
+const audioCtx = window.AudioContext ? new AudioContext() : null; // Enciende el "motor" de audio del navegador
 
-// Función para crear "pitidos" sintéticos (como máquinas viejas)
+// Esta función es una fábrica de sonidos de "bip" cortos, como los de una consola de los 80s
 const playBeep = (freq, type) => {
-    if(!audioCtx || audioCtx.state !== 'running') return; // Si no hay permiso de audio, no hace nada
-    const osc = audioCtx.createOscillator(), gainNode = audioCtx.createGain();
-    osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime); // Define el tono
-    gainNode.gain.setValueAtTime(0.02, audioCtx.currentTime); // Define el volumen
-    gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05); // Hace que el sonido se apague rápido
-    osc.connect(gainNode); gainNode.connect(audioCtx.destination);
-    osc.start(); osc.stop(audioCtx.currentTime + 0.05); // Reproduce por una fracción de segundo
+    if(!audioCtx || audioCtx.state !== 'running') return; // Si no hay permiso para sonar, no hace nada
+    const osc = audioCtx.createOscillator(), gainNode = audioCtx.createGain(); // Crea el sonido y el control de volumen
+    osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime); // Le dice si suena grave o agudo
+    gainNode.gain.setValueAtTime(0.02, audioCtx.currentTime); // Volumen inicial bajito
+    gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05); // Hace que el volumen se apague rapidísimo (efecto de "bip")
+    osc.connect(gainNode); gainNode.connect(audioCtx.destination); // Conecta los cables virtuales hacia tus bocinas
+    osc.start(); osc.stop(audioCtx.currentTime + 0.05); // Suena solo por una fracción de segundo
 };
 
-// Control del botón para encender/apagar la música de fondo
+// Conecta el botón de la música con la música real de fondo
 const bgm = document.getElementById('bgm');
 const audioBtn = document.getElementById('audioBtn');
 audioBtn.onclick = () => {
+    // Si la música está pausada y le das clic, dale play y pon el botón en modo "encendido" (active)
     if (bgm.paused) { bgm.play(); audioBtn.innerText = "SYS.AUDIO_MUTE()"; audioBtn.classList.add('active'); } 
+    // Si ya está sonando, páusala y quítale el estilo iluminado
     else { bgm.pause(); audioBtn.innerText = "SYS.AUDIO_PLAY()"; audioBtn.classList.remove('active'); }
 };
 
-// DIBUJO SECRETO (Arte ASCII del alienígena guardado en memoria)
+// 2. EL SECRETO ASCII (El alienígena gigante dibujado con texto)
 const alienAscii = `⠀⠀⠀⠀⠀⠀⠀⠄⣀⠢⢀⣤⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⣄⠀⡔⢀⠂⡜⢭⢻⣍⢯⡻⣝⣿⣿⡿⣟⠂
 ⠀⠀⠀⠀⠀⠀⠀⠄⠀⣦⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣷⡔⡀⢂⠜⣪⢗⡾⣶⡽⣾⣟⣯⠛⠀⠀
 ⠀⠀⠀⠀⠀⠄⠀⠠⣶⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣿⣔⠨⡸⡝⣯⣳⢏⣿⠳⠉⠀⢠⣬⡶
@@ -295,132 +318,133 @@ const alienAscii = `⠀⠀⠀⠀⠀⠀⠀⠄⣀⠢⢀⣤⣿⣿⣿⣿⣿⣿⣿⣿
 ⢣⠝⡢⢍⠱⢈⣂⣌⡤⠦⠶⠶⠞⠛⠋⠁⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢰⣿⣿⣿⠛⠷⣭⣂⠌⢠⠓⡴⣻⣿⣿⣿⣿⣿⣿⣯⣿
 ⣇⢾⡱⠞⠈⠉⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⣸⣿⣿⡇⠀⠀⠀⠉⠛⠳⠿⣶⣽⣿⣿⣿⣿⣿⣿⣿⣿`;
 
-// 2. CEREBRO DE LA TERMINAL (La consola donde escribes)
-const terminalLogs = document.getElementById('sys-log-container');
+// 3. LA CONSOLA (TERMINAL)
+const terminalLogs = document.getElementById('sys-log-container'); // Busca en el HTML la caja donde irán los mensajes
 
-// Función que escribe los mensajes en la pantallita de la terminal con la hora actual
+// Esta función se encarga de imprimir texto nuevo en la consola
 const printLog = (txt, err = false) => {
-    const d = new Date().toLocaleTimeString('en-US',{hour12:false});
-    // Si es un error (err = true) lo pinta rojo, si no, azul cian
+    const d = new Date().toLocaleTimeString('en-US',{hour12:false}); // Consigue la hora actual (ej: 14:32:05)
+    // Agrega un renglón nuevo. Si es error (err=true) lo pone rojo, si no, azul.
     terminalLogs.innerHTML += `<div style="color:${err ? '#ff0055' : '#00f3ff'}">[${d}] ${txt}</div>`;
-    terminalLogs.scrollTop = terminalLogs.scrollHeight; // Hace que siempre baje para ver el texto más nuevo
-    if(terminalLogs.childElementCount > 15) terminalLogs.firstElementChild.remove(); // Borra textos viejos si hay muchos
+    terminalLogs.scrollTop = terminalLogs.scrollHeight; // Forza la caja a irse hasta abajo para siempre ver el texto más reciente
+    if(terminalLogs.childElementCount > 15) terminalLogs.firstElementChild.remove(); // Borra textos muy viejos para no saturar la memoria
 };
 
-// Escucha cada vez que presionas una tecla en la caja de texto
+// Se queda "escuchando" cada vez que presionas una tecla en la barra de abajo
 document.getElementById('cmd-input').onkeydown = e => {
-    // Si presionaste 'Enter' y no está vacío...
+    // Si la tecla que presionaste fue "Enter" y la caja no está vacía...
     if (e.key === 'Enter' && e.target.value.trim() !== '') {
-        const cmd = e.target.value.toLowerCase(); // Convierte tu texto a minúsculas
-        e.target.value = ''; // Limpia la caja
-        printLog(`> ${cmd}`, false); // Imprime lo que escribiste
+        const cmd = e.target.value.toLowerCase(); // Guarda lo que escribiste, forzado a minúsculas
+        e.target.value = ''; // Borra el texto de la cajita
+        printLog(`> ${cmd}`, false); // Imprime en pantalla lo que acabas de escribir
         
-        // REACCIONES A TUS COMANDOS:
-        if(cmd === 'help') printLog("CMDS: clear, reboot, hack"); // Te dice qué puedes escribir
-        else if(cmd === 'clear') terminalLogs.innerHTML = ''; // Borra la pantalla de la terminal
-        else if(cmd === 'reboot') location.reload(); // Recarga la página web completa
-        else if (cmd === 'hack') { // EL COMANDO SECRETO
-            // Efecto visual de fallo en toda la pantalla
-            document.getElementById('crt-screen').classList.add('global-glitch');
+        // El cerebro decide qué hacer dependiendo de lo que escribiste:
+        if(cmd === 'help') printLog("CMDS: clear, reboot, hack"); // Te da la lista
+        else if(cmd === 'clear') terminalLogs.innerHTML = ''; // Borra todos los mensajes de la caja
+        else if(cmd === 'reboot') location.reload(); // Recarga la pestaña completa
+        else if (cmd === 'hack') { 
+            // EL COMANDO SECRETO
+            document.getElementById('crt-screen').classList.add('global-glitch'); // Activa el temblor global de la pantalla
             
-            // Prepara un bloque especial para imprimir el alien sin que se deforme
-            const pre = document.createElement('pre');
-            pre.className = 'hack-art-output';
+            const pre = document.createElement('pre'); // Crea una caja especial de texto pre-formateado
+            pre.className = 'hack-art-output'; // Le da los estilos visuales verdes
             pre.textContent = alienAscii; // Pega el dibujo del alien
             
-            terminalLogs.appendChild(pre); // Lo mete en la terminal
+            terminalLogs.appendChild(pre); // Lo mete en la consola
             terminalLogs.scrollTop = terminalLogs.scrollHeight;
             
-            // Quita el fallo de pantalla después de 2 segundos (2000 milisegundos)
+            // Después de 2 segundos (2000 ms), quita el efecto de temblor global
             setTimeout(() => {
                 document.getElementById('crt-screen').classList.remove('global-glitch');
             }, 2000);
         }
-        else printLog("COMANDO_NO_RECONOCIDO", true); // Si escribes otra cosa, da error
+        else printLog("COMANDO_NO_RECONOCIDO", true); // Si escribiste cualquier otra cosa, te da error en rojo
     }
 };
 
-// 3. CONTROL DE LOS BOTONES DE FILTROS (Proyectos, Pensamientos, etc.)
-// Hace que los botones suenen cuando pasas el ratón por encima
+// 4. LOS BOTONES DE LOS FILTROS
+// A todos los botones que tienen la clase "btn-hover-sfx", les pone un sonido al pasar el ratón por encima
 document.querySelectorAll('.btn-hover-sfx').forEach(btn => btn.onmouseenter = () => playBeep(800, 'square'));
 
-// Hace que los botones de filtro oculten o muestren los artículos
+// Esta sección controla qué pasa al dar clic en botones como "/PROYECTOS/" o "/ARTES/"
 document.querySelectorAll('[data-filter]').forEach(btn => {
     btn.onclick = e => {
-        playBeep(150, 'sawtooth'); // Sonido de clic
-        // Desactiva el brillo de todos los botones y activa solo el que tocaste
+        playBeep(150, 'sawtooth'); // Hace un sonido más grave de "clic"
+        
+        // Quita la luz de "encendido" (active) a todos los botones...
         document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('active'));
-        e.target.classList.add('active');
+        e.target.classList.add('active'); // ...y se la pone solo al que le diste clic
         
-        const cat = e.target.dataset.filter; // Lee qué categoría elegiste
+        const cat = e.target.dataset.filter; // Lee el nombre de la categoría del botón
         
-        // Hace un pequeño parpadeo rápido tipo "glitch" al cambiar de sección
+        // Hace un temblor súper rápido (200 ms) como efecto de cambio de carpeta
         document.getElementById('crt-screen').classList.add('global-glitch');
         setTimeout(() => document.getElementById('crt-screen').classList.remove('global-glitch'), 200);
 
-        // Oculta o muestra los artículos dependiendo de lo que elegiste
+        // Revisa cada sección de posts. Si coincide con tu filtro, la muestra ('block'), si no, la oculta ('none')
         document.querySelectorAll('.category-container').forEach(c => {
             c.style.display = (cat === 'ALL' || c.id === `cat-${cat}`) ? 'block' : 'none';
         });
     };
 });
 
-// 4. ANIMACIÓN DE LA LLUVIA DIGITAL (Efecto Matrix de fondo)
+// 5. EFECTO MATRIX (Lluvia de números cayendo)
 const canvas = document.getElementById('matrix-canvas'), ctx = canvas.getContext('2d');
 let w, h, drops;
-const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''); // Letras y números a usar
+const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''); // Convierte el texto en una lista de caracteres individuales
 
-// Configura el tamaño del lienzo para que ocupe toda tu pantalla
+// Ajusta el "lienzo" (canvas) para que cubra exactamente el tamaño de tu pantalla actual
 const initMatrix = () => {
     w = canvas.width = window.innerWidth; h = canvas.height = window.innerHeight;
-    drops = Array(Math.floor(w / 14)).fill(1); // Prepara las "gotas" de letras
+    drops = Array(Math.floor(w / 14)).fill(1); // Crea un arreglo con las "gotas" iniciales en la posición 1
 };
-window.onresize = initMatrix; initMatrix(); // Se reajusta si cambias el tamaño de tu ventana
+window.onresize = initMatrix; initMatrix(); // Si cambias el tamaño de tu ventana, reajusta las matemáticas
 
-// Dibuja constantemente las letras cayendo (se repite cada 50 milisegundos)
+// Cada 50 milisegundos, dibuja un "cuadro" nuevo de la animación
 setInterval(() => {
-    ctx.fillStyle = 'rgba(2, 2, 2, 0.1)'; ctx.fillRect(0, 0, w, h); // Borra un poco el rastro anterior para hacer efecto estela
-    ctx.fillStyle = '#00ff41'; ctx.font = '14px monospace'; // Color verde y letra de consola
+    ctx.fillStyle = 'rgba(2, 2, 2, 0.1)'; ctx.fillRect(0, 0, w, h); // Borra ligeramente el fondo para crear la estela difuminada
+    ctx.fillStyle = '#00ff41'; ctx.font = '14px monospace'; // Elige color verde y letra de programador
+    
+    // Para cada gota...
     drops.forEach((y, i) => {
-        // Dibuja una letra al azar en la posición de la "gota"
+        // ...elige una letra al azar y la estampa en la pantalla
         ctx.fillText(chars[Math.floor(Math.random() * chars.length)], i * 14, y * 14);
-        // Si la gota llegó abajo, a veces la regresa arriba al azar
+        // Si la gota ya se salió por abajo de la pantalla, la regresa arriba (a veces)
         if (y * 14 > h && Math.random() > 0.975) drops[i] = 0;
-        drops[i]++; // Baja la gota un poco más
+        drops[i]++; // Le suma 1 a su posición para que en el siguiente "cuadro" salga más abajo
     });
 }, 50);
 
-// 5. PANTALLA DE CARGA INICIAL Y DATOS FALSOS
-// Textos que aparecerán en la pantalla negra del principio
-const bootSeq = ["> CARGANDO KERNEL_LITE...", "> MEMORIA ASIGNADA...", "> SISTEMA LISTO."];
+// 6. LA PANTALLA NEGRA DE "CARGANDO" (Splash)
+const bootSeq = ["> CARGANDO KERNEL_LITE...", "> MEMORIA ASIGNADA...", "> SISTEMA LISTO."]; // Textos a imprimir
 let bIdx = 0;
 
-// Escribe los textos uno por uno cada 300 milisegundos
+// Cada 300 milisegundos imprime un texto nuevo en la pantalla negra de inicio
 const boot = setInterval(() => {
     if(bIdx < bootSeq.length) { document.getElementById('boot-text').innerHTML += bootSeq[bIdx++] + "<br>"; } 
     else { 
-        clearInterval(boot); // Cuando termina, detiene el proceso
-        document.getElementById('enter-btn').style.display = 'inline-block'; // Y muestra el botón de entrar
+        clearInterval(boot); // Cuando ya imprimió todos, detiene el cronómetro
+        document.getElementById('enter-btn').style.display = 'inline-block'; // Y hace visible el botón de INICIAR_ENLACE
     }
 }, 300);
 
-// Qué pasa cuando le das clic al botón "INICIAR_ENLACE"
+// Qué pasa al darle clic al botón de INICIAR_ENLACE
 document.getElementById('enter-btn').onclick = () => {
-    document.getElementById('splash').style.opacity = '0'; // Desvanece la pantalla negra
-    setTimeout(() => document.getElementById('splash').style.display = 'none', 300); // Y la oculta por completo
-    printLog("ENLACE ESTABLECIDO."); // Escribe el primer mensaje en la terminal
-    if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); // Activa los permisos de sonido
-    bgm.play().catch(e => printLog("AUTO-PLAY RESTRINGIDO", true)); // Intenta reproducir la música de fondo
+    document.getElementById('splash').style.opacity = '0'; // Vuelve transparente la pantalla negra suavemente
+    setTimeout(() => document.getElementById('splash').style.display = 'none', 300); // 300ms después, la elimina por completo
+    printLog("ENLACE ESTABLECIDO."); // Manda el primer mensaje a la consola
+    if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); // Activa el audio, ya que requiere que el usuario haga clic en algo primero por reglas del navegador
+    bgm.play().catch(e => printLog("AUTO-PLAY RESTRINGIDO", true)); // Intenta arrancar la música
 };
 
-// LOS MEDIDORES FALSOS DE LA IZQUIERDA
-// Cada 2 segundos (2000 milisegundos) inventa números aleatorios para la CPU, RAM y el Ping
+// 7. LOS MEDIDORES DE LA IZQUIERDA (Estadísticas "fake")
+// Cada 2 segundos (2000 milisegundos) inventa números aleatorios y cambia el tamaño de las barras visuales
 setInterval(() => {
-    // Genera un número aleatorio para la CPU (entre 10% y 50%) y actualiza la barra
+    // Genera un número del 10 al 50 y se lo asigna al texto y al ancho de la barrita del CPU
     document.getElementById('cpu-val').innerText = (document.getElementById('cpu-meter').style.width = Math.floor(Math.random()*40+10)+'%');
-    // Genera un número aleatorio para la RAM (entre 40% y 70%) y actualiza la barra
+    // Genera un número del 40 al 70 para la RAM
     document.getElementById('ram-val').innerText = (document.getElementById('ram-meter').style.width = Math.floor(Math.random()*30+40)+'%');
-    // Genera un ping falso
+    // Genera un número del 10 al 30 para el "Ping" de internet
     document.getElementById('ping-ms').innerText = Math.floor(Math.random()*20+10);
 }, 2000);
 
