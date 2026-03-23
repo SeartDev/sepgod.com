@@ -450,7 +450,19 @@ layout: null
 
         .neighbor-img:hover { border-color: var(--neon-magenta); filter: contrast(100%) brightness(110%); transform: scale(1.03); }
 
+/* =========================================================================
+           NUEVO: ANIMACIÓN DE DESENCRIPTADO PARA EL CONTENIDO
+           ========================================================================= */
+        .decrypt-anim {
+            /* Usamos steps() para que parezca un barrido de terminal en lugar de un fade suave */
+            animation: decryptFade 0.5s steps(10, end) forwards;
+        }
 
+        @keyframes decryptFade {
+            0% { opacity: 0; filter: blur(4px) hue-rotate(90deg); transform: translateX(-10px); }
+            50% { opacity: 0.8; filter: blur(1px) invert(20%); transform: translateX(5px); }
+            100% { opacity: 1; filter: none; transform: translateX(0); }
+        }
 
         /* 15. RESPONSIVE DESIGN */
 
@@ -852,34 +864,83 @@ const playBeep = (freq, type) => {
 
 
 // =========================================================================
-
-// LÓGICA PARA EXPANDIR/CONTRAER LOS POSTS AL HACER CLIC
-
+// LÓGICA PARA EXPANDIR/CONTRAER POSTS CON EFECTO DE DESENCRIPTADO (GLITCH)
 // =========================================================================
 
-  const toggleAboutBtn = document.getElementById('toggle-about-btn');
-const aboutContent = document.getElementById('about-me-content');
+// Nuestro diccionario de caracteres alienígenas/hack para la animación
+const GLITCH_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*<>[]{}//\\";
 
-if (toggleAboutBtn && aboutContent) {
-    toggleAboutBtn.addEventListener('click', function() {
-        playBeep(450, 'sine'); // Mantiene la inmersión con tu sfx actual
+// Función maestra que hace el efecto Matrix/Cyberpunk en el texto
+function scrambleText(element, finalString) {
+    let iteration = 0;
+    // Limpiamos cualquier animación previa en este elemento para que no se crucen
+    clearInterval(element.glitchInterval);
+    
+    element.glitchInterval = setInterval(() => {
+        element.innerText = finalString
+            .split("")
+            .map((char, index) => {
+                // Si el caracter es un espacio, respetarlo
+                if (char === " ") return " ";
+                // Revelar la letra correcta progresivamente
+                if (index < iteration) return finalString[index];
+                // Mientras no toque, mostrar un caracter al azar
+                return GLITCH_CHARS[Math.floor(Math.random() * GLITCH_CHARS.length)];
+            })
+            .join("");
         
-        if (aboutContent.style.display === 'none') {
-            // Expandir
-            aboutContent.style.display = 'block';
-            this.innerText = 'MINIMIZAR';
+        // Terminar la animación cuando la iteración cubra toda la palabra
+        if (iteration >= finalString.length) { 
+            clearInterval(element.glitchInterval);
+        }
+        // Velocidad de desencriptado (1/3 significa que revela 1 letra cada 3 ciclos)
+        iteration += 1 / 3; 
+    }, 30); // 30ms = velocidad de actualización de la terminal
+}
+
+document.querySelectorAll('.toggle-post-btn').forEach(btn => {
+    btn.addEventListener('click', function(e) {
+        playBeep(450, 'sawtooth'); // Cambié la onda a 'sawtooth' para que suene más agresivo/robótico
+        
+        const contentDiv = this.nextElementSibling;
+        const postCard = this.closest('.post-card');
+        const titleEl = postCard.querySelector('.post-title');
+        
+        // Guardamos el título original en la memoria del HTML la primera vez que hacemos clic
+        if (!titleEl.hasAttribute('data-orig')) {
+            titleEl.setAttribute('data-orig', titleEl.innerText);
+        }
+        const originalTitle = titleEl.getAttribute('data-orig');
+        
+        const isOpen = contentDiv.style.display === 'block';
+
+        if (isOpen) {
+            // == CERRAR ARCHIVO ==
+            contentDiv.style.display = 'none';
+            contentDiv.classList.remove('decrypt-anim'); // Reseteamos la animación CSS
+            
             this.style.background = 'var(--neon-cyan)';
             this.style.color = 'var(--bg-dark)';
+            
+            // Disparamos el glitch en el botón y en el título
+            scrambleText(this, this.getAttribute('data-text-open'));
+            scrambleText(titleEl, originalTitle);
+            
         } else {
-            // Minimizar
-            aboutContent.style.display = 'none';
-            this.innerText = 'MAXIMIZAR';
+            // == ABRIR ARCHIVO ==
+            contentDiv.style.display = 'block';
+            contentDiv.classList.add('decrypt-anim'); // Disparamos la animación CSS
+            
             this.style.background = 'var(--neon-magenta)';
             this.style.color = '#fff';
+            
+            // Disparamos el glitch en el botón y en el título
+            scrambleText(this, this.getAttribute('data-text-close'));
+            scrambleText(titleEl, originalTitle);
         }
     });
-}  
-
+});
+    
 document.querySelectorAll('.toggle-post-btn').forEach(btn => {
 
     btn.addEventListener('click', function(e) {
