@@ -857,6 +857,29 @@ const playBeep = (freq, type) => {
 
 // =========================================================================
 
+  const toggleAboutBtn = document.getElementById('toggle-about-btn');
+const aboutContent = document.getElementById('about-me-content');
+
+if (toggleAboutBtn && aboutContent) {
+    toggleAboutBtn.addEventListener('click', function() {
+        playBeep(450, 'sine'); // Mantiene la inmersión con tu sfx actual
+        
+        if (aboutContent.style.display === 'none') {
+            // Expandir
+            aboutContent.style.display = 'block';
+            this.innerText = 'MINIMIZAR';
+            this.style.background = 'var(--neon-cyan)';
+            this.style.color = 'var(--bg-dark)';
+        } else {
+            // Minimizar
+            aboutContent.style.display = 'none';
+            this.innerText = 'MAXIMIZAR';
+            this.style.background = 'var(--neon-magenta)';
+            this.style.color = '#fff';
+        }
+    });
+}  
+
 document.querySelectorAll('.toggle-post-btn').forEach(btn => {
 
     btn.addEventListener('click', function(e) {
