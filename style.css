@@ -1,28 +1,16 @@
----
----
 /* =========================================================================
    CSS: EL DISEÑO Y LA PINTURA DE LA PÁGINA
    ========================================================================= */
-/* ... el resto de tu código se queda igual ... */
 
-        /* 1. PALETA DE COLORES (Variables Globales) */
-
-        :root {
-
-            --neon-cyan: #00f3ff;       
-
-            --neon-magenta: #ff0055;    
-
-            --neon-yellow: #fcee0a;     
-
-            --bg-dark: #020202;         
-
-            --terminal-green: #00ff41;  
-
-            --font-main: 'Courier New', Courier, monospace; 
-
-        }
-
+/* 1. PALETA DE COLORES (Variables Globales) */
+:root {
+    --neon-cyan: #00f3ff;       
+    --neon-magenta: #ff0055;    
+    --neon-yellow: #fcee0a;     
+    --bg-dark: #020202;         
+    --terminal-green: #00ff41;  
+    --font-main: 'Courier New', Courier, monospace; 
+}
 
 
         /* 2. REGLA UNIVERSAL (*) */
