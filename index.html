@@ -1,573 +1,1145 @@
----
+ ---
+
 layout: null
+
 ---
+
 <!DOCTYPE html>
+
 <html lang="es">
+
 <head>
-    <meta charset="UTF-8"> 
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
-    
-    <meta name="description" content="Bienvenido a SEPGOD_OS. El rincón digital de Sergio Arturo Ramos Rodriguez sobre retro gaming, cultura japonesa, cyberpunk, tecnología y desarrollo web. Entra al Mainframe.">
-    <meta name="keywords" content="Sergio Arturo Ramos Rodriguez, sepgod, sepgod_os, retro gaming, cyberpunk, desarrollo web, blog personal">
-    
-    <title>SEPGOD_OS // V1.0 :: MAINFRAME_ACCESS</title> 
-    
-    <style>
-        /* =========================================================================
-           CSS: EL DISEÑO Y LA PINTURA DE LA PÁGINA
-           ========================================================================= */
 
-        /* 1. PALETA DE COLORES (Variables Globales) */
-        :root {
-            --neon-cyan: #00f3ff;       
-            --neon-magenta: #ff0055;    
-            --neon-yellow: #fcee0a;     
-            --bg-dark: #020202;         
-            --terminal-green: #00ff41;  
-            --font-main: 'Courier New', Courier, monospace; 
-        }
+    <meta charset="UTF-8"> 
 
-        /* 2. REGLA UNIVERSAL (*) */
-        * { 
-            box-sizing: border-box; 
-            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20"><path fill="%2300f3ff" stroke="%23020202" stroke-width="1.5" d="M2,2 L2,18 L7,13 L10,19 L13,17 L10,12 L16,12 Z"/></svg>'), auto;
-            scrollbar-width: thin; 
-            scrollbar-color: var(--neon-cyan) var(--bg-dark); 
-        }
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
 
-        /* 3. EL CUERPO PRINCIPAL (body) */
-        body {
-            background-color: var(--bg-dark); 
-            color: var(--neon-cyan);         
-            font-family: var(--font-main);   
-            margin: 0;                       
-            height: 100vh;                   
-            overflow: hidden;                 
-        }
+    
 
-        /* 4. EFECTOS DE TELEVISIÓN ANTIGUA (CRT) */
-        #crt-screen {
-            position: relative; width: 100vw; height: 100vh; display: flex; flex-direction: column;
-            overflow: hidden; 
-            animation: turn-on 1s ease-out forwards; 
-        }
+    <meta name="description" content="Bienvenido a SEPGOD_OS. El rincón digital de Sergio Arturo Ramos Rodriguez sobre retro gaming, cultura japonesa, cyberpunk, tecnología y desarrollo web. Entra al Mainframe.">
 
-        #matrix-canvas { position: absolute; inset: 0; z-index: -2; opacity: 0.15; }
+    <meta name="keywords" content="Sergio Arturo Ramos Rodriguez, sepgod, sepgod_os, retro gaming, cyberpunk, desarrollo web, blog personal">
 
-        .crt-overlay {
-            position: absolute; inset: 0; z-index: 9998; 
-            pointer-events: none; 
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), radial-gradient(circle, transparent 50%, #000 120%);
-            background-size: 100% 4px, 100% 100%; 
-            animation: flicker 0.2s infinite; 
-        }
+    
 
-        /* 5. EL CREADOR DE ANIMACIONES (@keyframes) */
-        @keyframes turn-on { 0%, 40% { transform: scaleY(0.001); filter: brightness(5); } 100% { transform: scaleY(1); filter: brightness(1); } }
-        @keyframes flicker { 0%, 10% { opacity: 0.95; } 5%, 100% { opacity: 1; } }
-        @keyframes glitch-simple { 0%, 100% { transform: translate(0); } 25% { transform: translate(-2px, 2px); } 75% { transform: translate(2px, -2px); } }
-        @keyframes fadeInContent { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
-        .global-glitch { animation: glitch-simple 0.2s infinite; filter: hue-rotate(90deg); }
+    <title>SEPGOD_OS // V1.0 :: MAINFRAME_ACCESS</title> 
 
-        /* 6. DISEÑO DEL DIBUJO ASCII */
-        .hack-art-output {
-            color: var(--terminal-green); font-family: var(--font-main); 
-            font-size: 4px; 
-            line-height: 1; white-space: pre; margin: 10px 0; overflow-x: hidden; 
-            text-shadow: 0 0 5px rgba(0, 255, 65, 0.5); 
-        }
+    
 
-        /* 7. CABECERA */
-        header { text-align: center; padding: 20px 0; border-bottom: 1px solid rgba(0,243,255,0.3); }
-        .glitch-box { font-size: 2.5rem; font-weight: 900; letter-spacing: 10px; color: var(--neon-cyan); text-shadow: 2px 2px var(--neon-magenta); }
-        .subtitle-header { font-size: 0.8rem; color: var(--neon-yellow); margin-top: 5px; }
+    <style>
 
-        /* 8. ESTRUCTURA PRINCIPAL */
-        .main-wrapper { 
-            display: grid; 
-            max-width: 1800px; 
-            grid-template-columns: 300px 1px 1fr 1px 450px; 
-            gap: 15px; padding: 20px; 
-            height: calc(100vh - 100px); 
-            margin: auto; 
-        }
-        .cyan-line { background: var(--neon-cyan); opacity: 0.3; } 
+        /* =========================================================================
 
-        /* 9. PANELES IZQUIERDOS Y MÓDULOS */
-        .side-panel { display: flex; flex-direction: column; gap: 15px; overflow-y: auto; } 
-        
-        .module { background: rgba(5, 5, 5, 0.9); border: 1px solid rgba(0,243,255,0.3); padding: 15px; position: relative; transition: 0.2s; }
-        .module:hover { border-color: var(--neon-cyan); } 
-        
-        .module-header { color: var(--neon-yellow); font-size: 0.85rem; margin-bottom: 10px; border-bottom: 1px dashed rgba(0,243,255,0.3); padding-bottom: 5px; }
+           CSS: EL DISEÑO Y LA PINTURA DE LA PÁGINA
 
-        .btn-cyber { background: rgba(0,0,0,0.5); border: 1px solid rgba(0,243,255,0.3); color: var(--neon-cyan); width: 100%; padding: 10px; font-weight: bold; font-family: inherit; margin-bottom: 8px; transition: 0.2s; text-align: left; border-radius: 0; }
-        .btn-cyber:hover, .btn-cyber.active { background: rgba(0, 243, 255, 0.1); border-color: var(--neon-cyan); padding-left: 20px; } 
-        .btn-cyber.active { border-color: var(--neon-magenta); color: #fff; background: rgba(255,0,85,0.15); } 
+           ========================================================================= */
 
-        /* FILTRO HORIZONTAL SUPERIOR */
-        .top-filter-module {
-            background: rgba(5, 5, 5, 0.9); border: 1px solid rgba(0,243,255,0.3); padding: 15px; margin-bottom: 25px; transition: 0.2s;
-        }
-        .top-filter-module:hover { border-color: var(--neon-cyan); }
-        .horizontal-filters { display: flex; flex-direction: row; gap: 10px; flex-wrap: wrap; }
-        .horizontal-filters .btn-cyber { width: auto; flex-grow: 1; text-align: center; margin-bottom: 0; }
-        .horizontal-filters .btn-cyber:hover, .horizontal-filters .btn-cyber.active { padding-left: 10px; transform: translateY(-2px); }
 
-        /* 10. ZONA CENTRAL */
-        #center-zone { padding: 0 20px; overflow-y: auto; }
-        .category-container { display: block; margin-bottom: 30px; transition: opacity 0.3s; }
-        .category-header { color: var(--neon-magenta); font-size: 1.2rem; margin-bottom: 15px; text-shadow: 0 0 5px rgba(255,0,85,0.5); }
-        
-        .post-card { background: rgba(0,0,0,0.8); border: 1px solid rgba(0,243,255,0.2); padding: 15px; margin-bottom: 10px; border-left: 3px solid var(--neon-cyan); transition: 0.2s; }
-        .post-card:hover { border-color: var(--neon-cyan); border-left-color: var(--neon-magenta); background: rgba(0,243,255,0.05); }
-        .post-title { font-size: 1.1rem; color: #fff; margin-bottom: 5px; text-transform: uppercase; }
-        .post-card:hover .post-title { color: var(--neon-cyan); transition: color 0.3s ease; }
-        .post-date { color: var(--terminal-green); font-size: 0.8rem; margin-bottom: 10px; }
-        
-        .btn-action { display: inline-block; background: var(--neon-cyan); color: var(--bg-dark); border: none; font-family: inherit; padding: 4px 10px; font-size: 0.8rem; font-weight: bold; transition: 0.2s; cursor: pointer; text-decoration: none; }
-        .btn-action:hover { background: #fff; color: #000; }
 
-        /* CONTENIDO EXPANDIBLE DEL POST */
-        .post-content {
-            display: none;
-            margin-top: 15px;
-            border-top: 1px dashed rgba(0,243,255,0.3);
-            padding-top: 15px;
-            font-size: 0.95rem;
-            color: #d1d1d1;
-            line-height: 1.6;
-            animation: fadeInContent 0.3s ease-in-out;
-            text-shadow: none;
-        }
-        
-        .post-content a { color: var(--neon-magenta); text-decoration: underline; }
-        .post-content img { max-width: 100%; height: auto; border: 1px solid var(--neon-cyan); border-radius: 4px; margin: 10px 0; }
-        .post-content h1, .post-content h2, .post-content h3 { color: #fff; }
-        .post-content code { background: rgba(0, 243, 255, 0.1); padding: 2px 5px; color: var(--terminal-green); }
+        /* 1. PALETA DE COLORES (Variables Globales) */
 
-        /* =========================================================================
-           10.5 NUEVO: MÓDULO ABOUT ME (Perfil del Usuario)
-           ========================================================================= */
-        .about-me-module {
-            background: rgba(5, 5, 5, 0.9);
-            border: 1px solid var(--neon-magenta);
-            padding: 20px;
-            margin-bottom: 25px;
-            position: relative;
-            box-shadow: inset 0 0 15px rgba(255, 0, 85, 0.1);
-            transition: 0.3s;
-        }
-        .about-me-module:hover {
-            border-color: var(--neon-cyan);
-            box-shadow: inset 0 0 15px rgba(0, 243, 255, 0.1);
-        }
-        .about-me-content {
-            color: #d1d1d1;
-            font-size: 0.95rem;
-            line-height: 1.6;
-            animation: fadeInContent 0.5s ease-in-out;
-        }
-        .about-me-content h3 {
-            color: var(--neon-cyan);
-            margin: 5px 0 15px 0;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            text-shadow: 0 0 5px rgba(0, 243, 255, 0.5);
-        }
-        .about-me-content h4 {
-            color: var(--neon-yellow);
-            margin: 20px 0 10px 0;
-            font-size: 0.9rem;
-        }
-        .about-me-content ul {
-            padding-left: 20px;
-            margin: 10px 0;
-        }
-        .about-me-content li {
-            margin-bottom: 8px;
-            color: var(--terminal-green); /* Color de las viñetas */
-        }
-        .about-me-content li .text {
-            color: #d1d1d1; /* Color del texto de la lista */
-        }
-        .highlight-magenta {
-            color: var(--neon-magenta);
-            font-weight: bold;
-        }
-        .about-me-content blockquote {
-            border-left: 3px solid var(--neon-cyan);
-            background: rgba(0, 243, 255, 0.05);
-            margin: 20px 0 0 0;
-            padding: 15px;
-            font-style: italic;
-            color: var(--terminal-green);
-        }
+        :root {
 
-        /* 11. ESTRUCTURA DE LA COLUMNA DERECHA */
-        .side-panel-right { display: grid; grid-template-columns: 200px 1fr; gap: 15px; height: 100%; overflow: hidden; }
-        .sub-col-gifs { display: flex; flex-direction: column; gap: 15px; overflow-y: auto; }
-        .terminal-module { display: flex; flex-direction: column; height: 100%; margin: 0; }
+            --neon-cyan: #00f3ff;       
 
-        /* 12. LA TERMINAL DE COMANDOS */
-        #sys-log-container { display: flex; flex-direction: column; flex-grow: 1; height: 0; overflow-y: auto; font-size: 0.75rem; color: #aaa; }
-        .terminal-input-wrapper { display: flex; margin-top: 10px; border-top: 1px dashed rgba(0,243,255,0.3); padding-top: 10px; }
-        .terminal-input-wrapper input { background: transparent; border: none; color: var(--terminal-green); font-family: inherit; width: 100%; outline: none; }
-        
-        /* 13. PANTALLA NEGRA DE CARGA */
-        #splash { position: fixed; inset: 0; background: var(--bg-dark); z-index: 10000; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: 0.3s; }
-        #boot-text { color: var(--terminal-green); font-size: 1rem; width: 60vw; height: 200px; }
-        #enter-btn { background: transparent; color: var(--neon-cyan); border: 2px solid var(--neon-cyan); padding: 15px 40px; font-size: 1.5rem; font-family: inherit; display: none; transition: 0.2s; }
-        #enter-btn:hover { background: var(--neon-cyan); color: #000; }
+            --neon-magenta: #ff0055;    
 
-        /* 14. LOS GIFs DE MONITOREO */
-        .cyber-gif { width: 100%; height: auto; display: block; border: 1px solid rgba(0,243,255,0.3); filter: contrast(120%) brightness(90%); }
-        .neighbor-img { width: 100%; height: auto; display: block; border: 1px solid rgba(0,243,255,0.3); filter: contrast(120%) brightness(80%); transition: all 0.3s ease; }
-        .neighbor-img:hover { border-color: var(--neon-magenta); filter: contrast(100%) brightness(110%); transform: scale(1.03); }
+            --neon-yellow: #fcee0a;     
 
-        /* 15. RESPONSIVE DESIGN */
-        @media (max-width: 1200px) { 
-            .main-wrapper { grid-template-columns: 1fr; height: auto; overflow: auto; } 
-            .cyan-line { display: none; } 
-            .side-panel-right { grid-template-columns: 1fr; height: auto; } 
-            .terminal-module { height: 400px; }
-            .horizontal-filters .btn-cyber { width: 100%; flex-basis: 100%; }
-        }
-    </style>
+            --bg-dark: #020202;         
+
+            --terminal-green: #00ff41;  
+
+            --font-main: 'Courier New', Courier, monospace; 
+
+        }
+
+
+
+        /* 2. REGLA UNIVERSAL (*) */
+
+        * { 
+
+            box-sizing: border-box; 
+
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 20 20"><path fill="%2300f3ff" stroke="%23020202" stroke-width="1.5" d="M2,2 L2,18 L7,13 L10,19 L13,17 L10,12 L16,12 Z"/></svg>'), auto;
+
+            scrollbar-width: thin; 
+
+            scrollbar-color: var(--neon-cyan) var(--bg-dark); 
+
+        }
+
+
+
+        /* 3. EL CUERPO PRINCIPAL (body) */
+
+        body {
+
+            background-color: var(--bg-dark); 
+
+            color: var(--neon-cyan);         
+
+            font-family: var(--font-main);   
+
+            margin: 0;                       
+
+            height: 100vh;                   
+
+            overflow: hidden;                 
+
+        }
+
+
+
+        /* 4. EFECTOS DE TELEVISIÓN ANTIGUA (CRT) */
+
+        #crt-screen {
+
+            position: relative; width: 100vw; height: 100vh; display: flex; flex-direction: column;
+
+            overflow: hidden; 
+
+            animation: turn-on 1s ease-out forwards; 
+
+        }
+
+
+
+        #matrix-canvas { position: absolute; inset: 0; z-index: -2; opacity: 0.15; }
+
+
+
+        .crt-overlay {
+
+            position: absolute; inset: 0; z-index: 9998; 
+
+            pointer-events: none; 
+
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), radial-gradient(circle, transparent 50%, #000 120%);
+
+            background-size: 100% 4px, 100% 100%; 
+
+            animation: flicker 0.2s infinite; 
+
+        }
+
+
+
+        /* 5. EL CREADOR DE ANIMACIONES (@keyframes) */
+
+        @keyframes turn-on { 0%, 40% { transform: scaleY(0.001); filter: brightness(5); } 100% { transform: scaleY(1); filter: brightness(1); } }
+
+        @keyframes flicker { 0%, 10% { opacity: 0.95; } 5%, 100% { opacity: 1; } }
+
+        @keyframes glitch-simple { 0%, 100% { transform: translate(0); } 25% { transform: translate(-2px, 2px); } 75% { transform: translate(2px, -2px); } }
+
+        @keyframes fadeInContent { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
+
+        .global-glitch { animation: glitch-simple 0.2s infinite; filter: hue-rotate(90deg); }
+
+
+
+        /* 6. DISEÑO DEL DIBUJO ASCII */
+
+        .hack-art-output {
+
+            color: var(--terminal-green); font-family: var(--font-main); 
+
+            font-size: 4px; 
+
+            line-height: 1; white-space: pre; margin: 10px 0; overflow-x: hidden; 
+
+            text-shadow: 0 0 5px rgba(0, 255, 65, 0.5); 
+
+        }
+
+
+
+        /* 7. CABECERA */
+
+        header { text-align: center; padding: 20px 0; border-bottom: 1px solid rgba(0,243,255,0.3); }
+
+        .glitch-box { font-size: 2.5rem; font-weight: 900; letter-spacing: 10px; color: var(--neon-cyan); text-shadow: 2px 2px var(--neon-magenta); }
+
+        .subtitle-header { font-size: 0.8rem; color: var(--neon-yellow); margin-top: 5px; }
+
+
+
+        /* 8. ESTRUCTURA PRINCIPAL */
+
+        .main-wrapper { 
+
+            display: grid; 
+
+            max-width: 1800px; 
+
+            grid-template-columns: 300px 1px 1fr 1px 450px; 
+
+            gap: 15px; padding: 20px; 
+
+            height: calc(100vh - 100px); 
+
+            margin: auto; 
+
+        }
+
+        .cyan-line { background: var(--neon-cyan); opacity: 0.3; } 
+
+
+
+        /* 9. PANELES IZQUIERDOS Y MÓDULOS */
+
+        .side-panel { display: flex; flex-direction: column; gap: 15px; overflow-y: auto; } 
+
+        
+
+        .module { background: rgba(5, 5, 5, 0.9); border: 1px solid rgba(0,243,255,0.3); padding: 15px; position: relative; transition: 0.2s; }
+
+        .module:hover { border-color: var(--neon-cyan); } 
+
+        
+
+        .module-header { color: var(--neon-yellow); font-size: 0.85rem; margin-bottom: 10px; border-bottom: 1px dashed rgba(0,243,255,0.3); padding-bottom: 5px; }
+
+
+
+        .btn-cyber { background: rgba(0,0,0,0.5); border: 1px solid rgba(0,243,255,0.3); color: var(--neon-cyan); width: 100%; padding: 10px; font-weight: bold; font-family: inherit; margin-bottom: 8px; transition: 0.2s; text-align: left; border-radius: 0; }
+
+        .btn-cyber:hover, .btn-cyber.active { background: rgba(0, 243, 255, 0.1); border-color: var(--neon-cyan); padding-left: 20px; } 
+
+        .btn-cyber.active { border-color: var(--neon-magenta); color: #fff; background: rgba(255,0,85,0.15); } 
+
+
+
+        /* FILTRO HORIZONTAL SUPERIOR */
+
+        .top-filter-module {
+
+            background: rgba(5, 5, 5, 0.9); border: 1px solid rgba(0,243,255,0.3); padding: 15px; margin-bottom: 25px; transition: 0.2s;
+
+        }
+
+        .top-filter-module:hover { border-color: var(--neon-cyan); }
+
+        .horizontal-filters { display: flex; flex-direction: row; gap: 10px; flex-wrap: wrap; }
+
+        .horizontal-filters .btn-cyber { width: auto; flex-grow: 1; text-align: center; margin-bottom: 0; }
+
+        .horizontal-filters .btn-cyber:hover, .horizontal-filters .btn-cyber.active { padding-left: 10px; transform: translateY(-2px); }
+
+
+
+        /* 10. ZONA CENTRAL */
+
+        #center-zone { padding: 0 20px; overflow-y: auto; }
+
+        .category-container { display: block; margin-bottom: 30px; transition: opacity 0.3s; }
+
+        .category-header { color: var(--neon-magenta); font-size: 1.2rem; margin-bottom: 15px; text-shadow: 0 0 5px rgba(255,0,85,0.5); }
+
+        
+
+        .post-card { background: rgba(0,0,0,0.8); border: 1px solid rgba(0,243,255,0.2); padding: 15px; margin-bottom: 10px; border-left: 3px solid var(--neon-cyan); transition: 0.2s; }
+
+        .post-card:hover { border-color: var(--neon-cyan); border-left-color: var(--neon-magenta); background: rgba(0,243,255,0.05); }
+
+        .post-title { font-size: 1.1rem; color: #fff; margin-bottom: 5px; text-transform: uppercase; }
+
+        .post-card:hover .post-title { color: var(--neon-cyan); transition: color 0.3s ease; }
+
+        .post-date { color: var(--terminal-green); font-size: 0.8rem; margin-bottom: 10px; }
+
+        
+
+        .btn-action { display: inline-block; background: var(--neon-cyan); color: var(--bg-dark); border: none; font-family: inherit; padding: 4px 10px; font-size: 0.8rem; font-weight: bold; transition: 0.2s; cursor: pointer; text-decoration: none; }
+
+        .btn-action:hover { background: #fff; color: #000; }
+
+
+
+        /* CONTENIDO EXPANDIBLE DEL POST */
+
+        .post-content {
+
+            display: none;
+
+            margin-top: 15px;
+
+            border-top: 1px dashed rgba(0,243,255,0.3);
+
+            padding-top: 15px;
+
+            font-size: 0.95rem;
+
+            color: #d1d1d1;
+
+            line-height: 1.6;
+
+            animation: fadeInContent 0.3s ease-in-out;
+
+            text-shadow: none;
+
+        }
+
+        
+
+        .post-content a { color: var(--neon-magenta); text-decoration: underline; }
+
+        .post-content img { max-width: 100%; height: auto; border: 1px solid var(--neon-cyan); border-radius: 4px; margin: 10px 0; }
+
+        .post-content h1, .post-content h2, .post-content h3 { color: #fff; }
+
+        .post-content code { background: rgba(0, 243, 255, 0.1); padding: 2px 5px; color: var(--terminal-green); }
+
+
+
+        /* =========================================================================
+
+           10.5 NUEVO: MÓDULO ABOUT ME (Perfil del Usuario)
+
+           ========================================================================= */
+
+        .about-me-module {
+
+            background: rgba(5, 5, 5, 0.9);
+
+            border: 1px solid var(--neon-magenta);
+
+            padding: 20px;
+
+            margin-bottom: 25px;
+
+            position: relative;
+
+            box-shadow: inset 0 0 15px rgba(255, 0, 85, 0.1);
+
+            transition: 0.3s;
+
+        }
+
+        .about-me-module:hover {
+
+            border-color: var(--neon-cyan);
+
+            box-shadow: inset 0 0 15px rgba(0, 243, 255, 0.1);
+
+        }
+
+        .about-me-content {
+
+            color: #d1d1d1;
+
+            font-size: 0.95rem;
+
+            line-height: 1.6;
+
+            animation: fadeInContent 0.5s ease-in-out;
+
+        }
+
+        .about-me-content h3 {
+
+            color: var(--neon-cyan);
+
+            margin: 5px 0 15px 0;
+
+            text-transform: uppercase;
+
+            letter-spacing: 1px;
+
+            text-shadow: 0 0 5px rgba(0, 243, 255, 0.5);
+
+        }
+
+        .about-me-content h4 {
+
+            color: var(--neon-yellow);
+
+            margin: 20px 0 10px 0;
+
+            font-size: 0.9rem;
+
+        }
+
+        .about-me-content ul {
+
+            padding-left: 20px;
+
+            margin: 10px 0;
+
+        }
+
+        .about-me-content li {
+
+            margin-bottom: 8px;
+
+            color: var(--terminal-green); /* Color de las viñetas */
+
+        }
+
+        .about-me-content li .text {
+
+            color: #d1d1d1; /* Color del texto de la lista */
+
+        }
+
+        .highlight-magenta {
+
+            color: var(--neon-magenta);
+
+            font-weight: bold;
+
+        }
+
+        .about-me-content blockquote {
+
+            border-left: 3px solid var(--neon-cyan);
+
+            background: rgba(0, 243, 255, 0.05);
+
+            margin: 20px 0 0 0;
+
+            padding: 15px;
+
+            font-style: italic;
+
+            color: var(--terminal-green);
+
+        }
+
+
+
+        /* 11. ESTRUCTURA DE LA COLUMNA DERECHA */
+
+        .side-panel-right { display: grid; grid-template-columns: 200px 1fr; gap: 15px; height: 100%; overflow: hidden; }
+
+        .sub-col-gifs { display: flex; flex-direction: column; gap: 15px; overflow-y: auto; }
+
+        .terminal-module { display: flex; flex-direction: column; height: 100%; margin: 0; }
+
+
+
+        /* 12. LA TERMINAL DE COMANDOS */
+
+        #sys-log-container { display: flex; flex-direction: column; flex-grow: 1; height: 0; overflow-y: auto; font-size: 0.75rem; color: #aaa; }
+
+        .terminal-input-wrapper { display: flex; margin-top: 10px; border-top: 1px dashed rgba(0,243,255,0.3); padding-top: 10px; }
+
+        .terminal-input-wrapper input { background: transparent; border: none; color: var(--terminal-green); font-family: inherit; width: 100%; outline: none; }
+
+        
+
+        /* 13. PANTALLA NEGRA DE CARGA */
+
+        #splash { position: fixed; inset: 0; background: var(--bg-dark); z-index: 10000; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: 0.3s; }
+
+        #boot-text { color: var(--terminal-green); font-size: 1rem; width: 60vw; height: 200px; }
+
+        #enter-btn { background: transparent; color: var(--neon-cyan); border: 2px solid var(--neon-cyan); padding: 15px 40px; font-size: 1.5rem; font-family: inherit; display: none; transition: 0.2s; }
+
+        #enter-btn:hover { background: var(--neon-cyan); color: #000; }
+
+
+
+        /* 14. LOS GIFs DE MONITOREO */
+
+        .cyber-gif { width: 100%; height: auto; display: block; border: 1px solid rgba(0,243,255,0.3); filter: contrast(120%) brightness(90%); }
+
+        .neighbor-img { width: 100%; height: auto; display: block; border: 1px solid rgba(0,243,255,0.3); filter: contrast(120%) brightness(80%); transition: all 0.3s ease; }
+
+        .neighbor-img:hover { border-color: var(--neon-magenta); filter: contrast(100%) brightness(110%); transform: scale(1.03); }
+
+
+
+        /* 15. RESPONSIVE DESIGN */
+
+        @media (max-width: 1200px) { 
+
+            .main-wrapper { grid-template-columns: 1fr; height: auto; overflow: auto; } 
+
+            .cyan-line { display: none; } 
+
+            .side-panel-right { grid-template-columns: 1fr; height: auto; } 
+
+            .terminal-module { height: 400px; }
+
+            .horizontal-filters .btn-cyber { width: 100%; flex-basis: 100%; }
+
+        }
+
+    </style>
+
 </head>
+
 <body>
 
+
+
 <div id="crt-screen">
-    <canvas id="matrix-canvas"></canvas>
-    <div class="crt-overlay"></div>
 
-    <div id="splash">
-        <div id="boot-text"></div>
-        <button id="enter-btn">INICIAR_ENLACE</button>
-    </div>
+    <canvas id="matrix-canvas"></canvas>
 
-    <header>
-        <h1 class="glitch-box" style="margin: 0;">SEPGOD_OS_V1.0</h1>
-        <div class="subtitle-header">SECURE CONDUIT // KERNEL MATRIX</div>
-    </header>
+    <div class="crt-overlay"></div>
 
-    <div class="main-wrapper">
-        
-        <div class="side-panel">
-            <div class="module">
-                <div class="module-header">> ARE WE JUST DATA?</div>
-                <div style="font-size: 0.8rem; line-height: 1.5;">
-                    USR: <span style="color:var(--neon-magenta)">GUEST_GHOST</span><br>
-                    NET: <span style="color:var(--terminal-green)">LINK_ESTABLISHED</span><br>
-                    PING: <span id="ping-ms">12</span>ms
-                </div>
-                <div style="margin-top:10px; font-size:0.7rem;">
-                    <div>CPU: <span id="cpu-val">12%</span></div>
-                    <div style="height:3px; background:#222;"><div id="cpu-meter" style="height:100%; width:12%; background:var(--neon-cyan); transition:0.5s;"></div></div>
-                    <div style="margin-top:5px;">RAM: <span id="ram-val">45%</span></div>
-                    <div style="height:3px; background:#222;"><div id="ram-meter" style="height:100%; width:45%; background:var(--neon-magenta); transition:0.5s;"></div></div>
-                </div>
-            </div>
-            
-            <div class="module">
-                <div class="module-header">> ECHOES OF EXISTENCE.</div>
-                <button class="btn-cyber active" id="audioBtn">SYS.AUDIO_MUTE()</button>
-                <audio id="bgm" loop src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"></audio>
-            </div>
 
-            <div class="module" style="padding: 10px;">
-                <div class="module-header">> TRUTH IS A GLITCH.</div>
-                <img src="https://i.gifer.com/Bh1M.gif" alt="Señal interceptada" class="cyber-gif">
-            </div>
 
-            <div class="module" style="padding: 10px;">
-                <div class="module-header">> TIME IS A FLAT CIRCLE.</div>
-                <img src="https://i.gifer.com/C2pO.gif" alt="Flujo de red" class="cyber-gif">
-            </div>
-        </div>
+    <div id="splash">
 
-        <div class="cyan-line"></div>
+        <div id="boot-text"></div>
 
-        <div id="center-zone">
-            
-            <div class="about-me-module">
-                <div class="module-header">> KNOW THYSELF.</div>
-                <div class="about-me-content">
-                    <h3>Welcome to My Digital Corner</h3>
-                    <p>Hi there! I’m Sepgod, a digital culture enthusiast with a passion for stories that transcend the screen. This space was born from a simple need: to document and share my fascination with the worlds we inhabit—whether through a controller, a line of code, or an animated series.</p>
+        <button id="enter-btn">INICIAR_ENLACE</button>
 
-                    <h4>> What Will You Find Here?</h4>
-                    <p>My goal is to explore the intersection of nostalgia and innovation. On this blog, we dive deep into:</p>
-                    <ul>
-                        <li><span class="text"><span class="highlight-magenta">Retro Gaming:</span> From the magic of 8 and 16-bit eras to the hunt for classic hardware. We celebrate the art of collecting and the titles that defined entire genres.</span></li>
-                        <li><span class="text"><span class="highlight-magenta">Anime and Japan:</span> Analysis of impactful stories—ranging from gritty cyberpunk to laid-back slice-of-life—alongside my journey learning the language and exploring the culture.</span></li>
-                        <li><span class="text"><span class="highlight-magenta">Tech and PC Gaming:</span> Guides on components, building powerful rigs, and how modern technology can elevate our favorite hobbies.</span></li>
-                        <li><span class="text"><span class="highlight-magenta">Personal Projects:</span> A look behind the scenes of my own experiments, from creating pixel art to managing small-scale digital projects.</span></li>
-                    </ul>
+    </div>
 
-                    <h4>> My Philosophy</h4>
-                    <p>I firmly believe that hobbies aren't just a way to pass the time; they are a way to understand the world and connect with others. Whether I’m analyzing the economy of an RPG or hunting for the perfect aesthetic on a vintage digital camera, this blog is for those who see details where others only see pixels.</p>
 
-                    <blockquote>
-                        "Exploring the past, building the future, and enjoying every frame of the present."
-                    </blockquote>
-                </div>
-            </div>
-            <div class="top-filter-module">
-                <div class="module-header">> PERCEPTION IS REALITY.</div>
-                <div class="horizontal-filters">
-                    <button class="btn-cyber active btn-hover-sfx" data-filter="ALL">SELECT * FROM DATA</button>
-                    <button class="btn-cyber btn-hover-sfx" data-filter="PROYECTOS">/PROYECTOS/</button>
-                    <button class="btn-cyber btn-hover-sfx" data-filter="PENSAMIENTOS">/PENSAMIENTOS/</button>
-                    <button class="btn-cyber btn-hover-sfx" data-filter="ARTES">/ARTES/</button>
-                </div>
-            </div>
 
-            <div class="category-container" id="cat-PROYECTOS">
-                <div class="category-header">SYS.DIR // PROYECTOS</div>
-                {% for post in site.categories.PROYECTOS %}
-                <div class="post-card">
-                    <div class="post-title">{{ post.title }}</div>
-                    <div class="post-date">TS: {{ post.date | date: "%Y-%m-%d" }}</div>
-                    <button class="btn-action btn-hover-sfx toggle-post-btn" data-text-open="EJECUTAR_ARCHIVO" data-text-close="CERRAR_ARCHIVO">EJECUTAR_ARCHIVO</button>
-                    <div class="post-content">
-                        {{ post.content }}
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
+    <header>
 
-            <div class="category-container" id="cat-PENSAMIENTOS">
-                <div class="category-header">SYS.DIR // PENSAMIENTOS</div>
-                {% for post in site.categories.PENSAMIENTOS %}
-                <div class="post-card">
-                    <div class="post-title">{{ post.title }}</div>
-                    <div class="post-date">TS: {{ post.date | date: "%Y-%m-%d" }}</div>
-                    <button class="btn-action btn-hover-sfx toggle-post-btn" data-text-open="EXTRAER_MEMORIA" data-text-close="SELLAR_MEMORIA">EXTRAER_MEMORIA</button>
-                    <div class="post-content">
-                        {{ post.content }}
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-            
-            <div class="category-container" id="cat-ARTES">
-                <div class="category-header">SYS.DIR // ARTES</div>
-                {% for post in site.categories.ARTES %}
-                <div class="post-card">
-                    <div class="post-title">{{ post.title }}</div>
-                    <div class="post-date">TS: {{ post.date | date: "%Y-%m-%d" }}</div>
-                    <button class="btn-action btn-hover-sfx toggle-post-btn" data-text-open="VISUALIZAR_RENDER" data-text-close="APAGAR_RENDER">VISUALIZAR_RENDER</button>
-                    <div class="post-content">
-                        {{ post.content }}
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-        </div>
+        <h1 class="glitch-box" style="margin: 0;">SEPGOD_OS_V1.0</h1>
 
-        <div class="cyan-line"></div>
+        <div class="subtitle-header">SECURE CONDUIT // KERNEL MATRIX</div>
 
-        <div class="side-panel-right">
-            <div class="sub-col-gifs">
-                <div class="module" style="padding: 10px;">
-                    <div class="module-header">> WHERE DO WE GO NOW?</div>
-                    <img src="https://i.gifer.com/Bh1W.gif" alt="Mapa de red" class="cyber-gif">
-                </div>
+    </header>
 
-                <div class="module" style="padding: 10px;">
-                    <div class="module-header">> WHAT IS REAL?</div>
-                    <img src="https://i.gifer.com/Bh1Q.gif" alt="Núcleo del sistema" class="cyber-gif">
-                </div>
 
-                <div class="module" style="padding: 10px; text-align: center;">
-                    <div class="module-header">> DIGITAL_NEIGHBOR</div>
-                    <p style="font-size: 0.8rem; color: #aaa; margin-bottom: 10px; margin-top: 5px;">Enlace externo detectado en el radar de red:</p>
-                    <a href="https://asciicrawler.com/" target="_blank" class="btn-hover-sfx" style="display: block;">
-                        <img src="https://asciicrawler.com/assets/profile._WERjmoF_Z9iJTC.webp" alt="ASCii CRAWLER Node" class="neighbor-img">
-                    </a>
-                </div>
-            </div>
 
-            <div class="module terminal-module">
-                <div class="module-header">> THE ABYSS STARES BACK.</div>
-                <div class="sys-log" id="sys-log-container"></div>
-                <div class="terminal-input-wrapper">
-                    <span style="color:var(--neon-magenta); margin-right:5px;">$</span>
-                    <input type="text" id="cmd-input" placeholder="Comando (ej: help)" autocomplete="off">
-                </div>
-            </div>
+    <div class="main-wrapper">
 
-        </div> 
-    </div>
+        
+
+        <div class="side-panel">
+
+            <div class="module">
+
+                <div class="module-header">> ARE WE JUST DATA?</div>
+
+                <div style="font-size: 0.8rem; line-height: 1.5;">
+
+                    USR: <span style="color:var(--neon-magenta)">GUEST_GHOST</span><br>
+
+                    NET: <span style="color:var(--terminal-green)">LINK_ESTABLISHED</span><br>
+
+                    PING: <span id="ping-ms">12</span>ms
+
+                </div>
+
+                <div style="margin-top:10px; font-size:0.7rem;">
+
+                    <div>CPU: <span id="cpu-val">12%</span></div>
+
+                    <div style="height:3px; background:#222;"><div id="cpu-meter" style="height:100%; width:12%; background:var(--neon-cyan); transition:0.5s;"></div></div>
+
+                    <div style="margin-top:5px;">RAM: <span id="ram-val">45%</span></div>
+
+                    <div style="height:3px; background:#222;"><div id="ram-meter" style="height:100%; width:45%; background:var(--neon-magenta); transition:0.5s;"></div></div>
+
+                </div>
+
+            </div>
+
+            
+
+            <div class="module">
+
+                <div class="module-header">> ECHOES OF EXISTENCE.</div>
+
+                <button class="btn-cyber active" id="audioBtn">SYS.AUDIO_MUTE()</button>
+
+                <audio id="bgm" loop src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"></audio>
+
+            </div>
+
+
+
+            <div class="module" style="padding: 10px;">
+
+                <div class="module-header">> TRUTH IS A GLITCH.</div>
+
+                <img src="https://i.gifer.com/Bh1M.gif" alt="Señal interceptada" class="cyber-gif">
+
+            </div>
+
+
+
+            <div class="module" style="padding: 10px;">
+
+                <div class="module-header">> TIME IS A FLAT CIRCLE.</div>
+
+                <img src="https://i.gifer.com/C2pO.gif" alt="Flujo de red" class="cyber-gif">
+
+            </div>
+
+        </div>
+
+
+
+        <div class="cyan-line"></div>
+
+
+
+        <div id="center-zone">
+
+            
+
+            <div class="about-me-module">
+
+                <div class="module-header">> KNOW THYSELF.</div>
+
+                <div class="about-me-content">
+
+                    <h3>Welcome to My Digital Corner</h3>
+
+                    <p>Hi there! I’m Sepgod, a digital culture enthusiast with a passion for stories that transcend the screen. This space was born from a simple need: to document and share my fascination with the worlds we inhabit—whether through a controller, a line of code, or an animated series.</p>
+
+
+
+                    <h4>> What Will You Find Here?</h4>
+
+                    <p>My goal is to explore the intersection of nostalgia and innovation. On this blog, we dive deep into:</p>
+
+                    <ul>
+
+                        <li><span class="text"><span class="highlight-magenta">Retro Gaming:</span> From the magic of 8 and 16-bit eras to the hunt for classic hardware. We celebrate the art of collecting and the titles that defined entire genres.</span></li>
+
+                        <li><span class="text"><span class="highlight-magenta">Anime and Japan:</span> Analysis of impactful stories—ranging from gritty cyberpunk to laid-back slice-of-life—alongside my journey learning the language and exploring the culture.</span></li>
+
+                        <li><span class="text"><span class="highlight-magenta">Tech and PC Gaming:</span> Guides on components, building powerful rigs, and how modern technology can elevate our favorite hobbies.</span></li>
+
+                        <li><span class="text"><span class="highlight-magenta">Personal Projects:</span> A look behind the scenes of my own experiments, from creating pixel art to managing small-scale digital projects.</span></li>
+
+                    </ul>
+
+
+
+                    <h4>> My Philosophy</h4>
+
+                    <p>I firmly believe that hobbies aren't just a way to pass the time; they are a way to understand the world and connect with others. Whether I’m analyzing the economy of an RPG or hunting for the perfect aesthetic on a vintage digital camera, this blog is for those who see details where others only see pixels.</p>
+
+
+
+                    <blockquote>
+
+                        "Exploring the past, building the future, and enjoying every frame of the present."
+
+                    </blockquote>
+
+                </div>
+
+            </div>
+
+            <div class="top-filter-module">
+
+                <div class="module-header">> PERCEPTION IS REALITY.</div>
+
+                <div class="horizontal-filters">
+
+                    <button class="btn-cyber active btn-hover-sfx" data-filter="ALL">SELECT * FROM DATA</button>
+
+                    <button class="btn-cyber btn-hover-sfx" data-filter="PROYECTOS">/PROYECTOS/</button>
+
+                    <button class="btn-cyber btn-hover-sfx" data-filter="PENSAMIENTOS">/PENSAMIENTOS/</button>
+
+                    <button class="btn-cyber btn-hover-sfx" data-filter="ARTES">/ARTES/</button>
+
+                </div>
+
+            </div>
+
+
+
+            <div class="category-container" id="cat-PROYECTOS">
+
+                <div class="category-header">SYS.DIR // PROYECTOS</div>
+
+                {% for post in site.categories.PROYECTOS %}
+
+                <div class="post-card">
+
+                    <div class="post-title">{{ post.title }}</div>
+
+                    <div class="post-date">TS: {{ post.date | date: "%Y-%m-%d" }}</div>
+
+                    <button class="btn-action btn-hover-sfx toggle-post-btn" data-text-open="EJECUTAR_ARCHIVO" data-text-close="CERRAR_ARCHIVO">EJECUTAR_ARCHIVO</button>
+
+                    <div class="post-content">
+
+                        {{ post.content }}
+
+                    </div>
+
+                </div>
+
+                {% endfor %}
+
+            </div>
+
+
+
+            <div class="category-container" id="cat-PENSAMIENTOS">
+
+                <div class="category-header">SYS.DIR // PENSAMIENTOS</div>
+
+                {% for post in site.categories.PENSAMIENTOS %}
+
+                <div class="post-card">
+
+                    <div class="post-title">{{ post.title }}</div>
+
+                    <div class="post-date">TS: {{ post.date | date: "%Y-%m-%d" }}</div>
+
+                    <button class="btn-action btn-hover-sfx toggle-post-btn" data-text-open="EXTRAER_MEMORIA" data-text-close="SELLAR_MEMORIA">EXTRAER_MEMORIA</button>
+
+                    <div class="post-content">
+
+                        {{ post.content }}
+
+                    </div>
+
+                </div>
+
+                {% endfor %}
+
+            </div>
+
+            
+
+            <div class="category-container" id="cat-ARTES">
+
+                <div class="category-header">SYS.DIR // ARTES</div>
+
+                {% for post in site.categories.ARTES %}
+
+                <div class="post-card">
+
+                    <div class="post-title">{{ post.title }}</div>
+
+                    <div class="post-date">TS: {{ post.date | date: "%Y-%m-%d" }}</div>
+
+                    <button class="btn-action btn-hover-sfx toggle-post-btn" data-text-open="VISUALIZAR_RENDER" data-text-close="APAGAR_RENDER">VISUALIZAR_RENDER</button>
+
+                    <div class="post-content">
+
+                        {{ post.content }}
+
+                    </div>
+
+                </div>
+
+                {% endfor %}
+
+            </div>
+
+        </div>
+
+
+
+        <div class="cyan-line"></div>
+
+
+
+        <div class="side-panel-right">
+
+            <div class="sub-col-gifs">
+
+                <div class="module" style="padding: 10px;">
+
+                    <div class="module-header">> WHERE DO WE GO NOW?</div>
+
+                    <img src="https://i.gifer.com/Bh1W.gif" alt="Mapa de red" class="cyber-gif">
+
+                </div>
+
+
+
+                <div class="module" style="padding: 10px;">
+
+                    <div class="module-header">> WHAT IS REAL?</div>
+
+                    <img src="https://i.gifer.com/Bh1Q.gif" alt="Núcleo del sistema" class="cyber-gif">
+
+                </div>
+
+
+
+                <div class="module" style="padding: 10px; text-align: center;">
+
+                    <div class="module-header">> DIGITAL_NEIGHBOR</div>
+
+                    <p style="font-size: 0.8rem; color: #aaa; margin-bottom: 10px; margin-top: 5px;">Enlace externo detectado en el radar de red:</p>
+
+                    <a href="https://asciicrawler.com/" target="_blank" class="btn-hover-sfx" style="display: block;">
+
+                        <img src="https://asciicrawler.com/assets/profile._WERjmoF_Z9iJTC.webp" alt="ASCii CRAWLER Node" class="neighbor-img">
+
+                    </a>
+
+                </div>
+
+            </div>
+
+
+
+            <div class="module terminal-module">
+
+                <div class="module-header">> THE ABYSS STARES BACK.</div>
+
+                <div class="sys-log" id="sys-log-container"></div>
+
+                <div class="terminal-input-wrapper">
+
+                    <span style="color:var(--neon-magenta); margin-right:5px;">$</span>
+
+                    <input type="text" id="cmd-input" placeholder="Comando (ej: help)" autocomplete="off">
+
+                </div>
+
+            </div>
+
+
+
+        </div> 
+
+    </div>
+
 </div>
 
-<script>
-/** * =========================================================================
- * JAVASCRIPT: EL CEREBRO LÓGICO Y MATEMÁTICO
- * ========================================================================= **/
 
-const audioCtx = window.AudioContext ? new AudioContext() : null; 
+
+<script>
+
+/** * =========================================================================
+
+ * JAVASCRIPT: EL CEREBRO LÓGICO Y MATEMÁTICO
+
+ * ========================================================================= **/
+
+
+
+const audioCtx = window.AudioContext ? new AudioContext() : null; 
+
+
 
 const playBeep = (freq, type) => {
-    if(!audioCtx || audioCtx.state !== 'running') return; 
-    
-    const osc = audioCtx.createOscillator(), gainNode = audioCtx.createGain(); 
-    osc.type = type; 
-    osc.frequency.setValueAtTime(freq, audioCtx.currentTime); 
-    
-    gainNode.gain.setValueAtTime(0.02, audioCtx.currentTime); 
-    gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05); 
-    
-    osc.connect(gainNode); gainNode.connect(audioCtx.destination); 
-    osc.start(); 
-    osc.stop(audioCtx.currentTime + 0.05); 
+
+    if(!audioCtx || audioCtx.state !== 'running') return; 
+
+    
+
+    const osc = audioCtx.createOscillator(), gainNode = audioCtx.createGain(); 
+
+    osc.type = type; 
+
+    osc.frequency.setValueAtTime(freq, audioCtx.currentTime); 
+
+    
+
+    gainNode.gain.setValueAtTime(0.02, audioCtx.currentTime); 
+
+    gainNode.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05); 
+
+    
+
+    osc.connect(gainNode); gainNode.connect(audioCtx.destination); 
+
+    osc.start(); 
+
+    osc.stop(audioCtx.currentTime + 0.05); 
+
 };
 
-// =========================================================================
-// LÓGICA PARA EXPANDIR/CONTRAER LOS POSTS AL HACER CLIC
-// =========================================================================
-document.querySelectorAll('.toggle-post-btn').forEach(btn => {
-    btn.addEventListener('click', function(e) {
-        playBeep(450, 'sine');
-        
-        const contentDiv = this.nextElementSibling;
-        const isOpen = contentDiv.style.display === 'block';
 
-        if (isOpen) {
-            contentDiv.style.display = 'none';
-            this.innerText = this.getAttribute('data-text-open');
-            this.style.background = 'var(--neon-cyan)';
-            this.style.color = 'var(--bg-dark)';
-        } else {
-            contentDiv.style.display = 'block';
-            this.innerText = this.getAttribute('data-text-close');
-            this.style.background = 'var(--neon-magenta)';
-            this.style.color = '#fff';
-        }
-    });
+
+// =========================================================================
+
+// LÓGICA PARA EXPANDIR/CONTRAER LOS POSTS AL HACER CLIC
+
+// =========================================================================
+
+document.querySelectorAll('.toggle-post-btn').forEach(btn => {
+
+    btn.addEventListener('click', function(e) {
+
+        playBeep(450, 'sine');
+
+        
+
+        const contentDiv = this.nextElementSibling;
+
+        const isOpen = contentDiv.style.display === 'block';
+
+
+
+        if (isOpen) {
+
+            contentDiv.style.display = 'none';
+
+            this.innerText = this.getAttribute('data-text-open');
+
+            this.style.background = 'var(--neon-cyan)';
+
+            this.style.color = 'var(--bg-dark)';
+
+        } else {
+
+            contentDiv.style.display = 'block';
+
+            this.innerText = this.getAttribute('data-text-close');
+
+            this.style.background = 'var(--neon-magenta)';
+
+            this.style.color = '#fff';
+
+        }
+
+    });
+
 });
 
-const bgm = document.getElementById('bgm'); 
-const audioBtn = document.getElementById('audioBtn'); 
+
+
+const bgm = document.getElementById('bgm'); 
+
+const audioBtn = document.getElementById('audioBtn'); 
+
+
 
 audioBtn.onclick = () => {
-    if (bgm.paused) { 
-        bgm.play(); 
-        audioBtn.innerText = "SYS.AUDIO_MUTE()"; 
-        audioBtn.classList.add('active'); 
-    } else { 
-        bgm.pause(); 
-        audioBtn.innerText = "SYS.AUDIO_PLAY()"; 
-        audioBtn.classList.remove('active'); 
-    } 
+
+    if (bgm.paused) { 
+
+        bgm.play(); 
+
+        audioBtn.innerText = "SYS.AUDIO_MUTE()"; 
+
+        audioBtn.classList.add('active'); 
+
+    } else { 
+
+        bgm.pause(); 
+
+        audioBtn.innerText = "SYS.AUDIO_PLAY()"; 
+
+        audioBtn.classList.remove('active'); 
+
+    } 
+
 };
+
+
 
 const alienAscii = `[TEXTO ASCII OMITIDO PARA BREVEDAD, SE MANTIENE EL TUYO AQUÍ]`;
 
-const terminalLogs = document.getElementById('sys-log-container'); 
+
+
+const terminalLogs = document.getElementById('sys-log-container'); 
+
+
 
 const printLog = (txt, err = false) => {
-    const d = new Date().toLocaleTimeString('en-US',{hour12:false}); 
-    terminalLogs.innerHTML += `<div style="color:${err ? '#ff0055' : '#00f3ff'}">[${d}] ${txt}</div>`;
-    terminalLogs.scrollTop = terminalLogs.scrollHeight; 
-    if(terminalLogs.childElementCount > 35) terminalLogs.firstElementChild.remove(); 
+
+    const d = new Date().toLocaleTimeString('en-US',{hour12:false}); 
+
+    terminalLogs.innerHTML += `<div style="color:${err ? '#ff0055' : '#00f3ff'}">[${d}] ${txt}</div>`;
+
+    terminalLogs.scrollTop = terminalLogs.scrollHeight; 
+
+    if(terminalLogs.childElementCount > 35) terminalLogs.firstElementChild.remove(); 
+
 };
 
+
+
 document.getElementById('cmd-input').onkeydown = e => {
-    if (e.key === 'Enter' && e.target.value.trim() !== '') {
-        const cmd = e.target.value.toLowerCase(); 
-        e.target.value = ''; 
-        printLog(`> ${cmd}`, false); 
-        
-        if(cmd === 'help') printLog("CMDS: clear, reboot, hack"); 
-        else if(cmd === 'clear') terminalLogs.innerHTML = ''; 
-        else if(cmd === 'reboot') location.reload(); 
-        else if (cmd === 'hack') { 
-            document.getElementById('crt-screen').classList.add('global-glitch'); 
-            const pre = document.createElement('pre'); 
-            pre.className = 'hack-art-output'; 
-            pre.textContent = alienAscii; 
-            terminalLogs.appendChild(pre); 
-            terminalLogs.scrollTop = terminalLogs.scrollHeight; 
-            setTimeout(() => { document.getElementById('crt-screen').classList.remove('global-glitch'); }, 2000);
-        }
-        else printLog("COMANDO_NO_RECONOCIDO", true); 
-    }
+
+    if (e.key === 'Enter' && e.target.value.trim() !== '') {
+
+        const cmd = e.target.value.toLowerCase(); 
+
+        e.target.value = ''; 
+
+        printLog(`> ${cmd}`, false); 
+
+        
+
+        if(cmd === 'help') printLog("CMDS: clear, reboot, hack"); 
+
+        else if(cmd === 'clear') terminalLogs.innerHTML = ''; 
+
+        else if(cmd === 'reboot') location.reload(); 
+
+        else if (cmd === 'hack') { 
+
+            document.getElementById('crt-screen').classList.add('global-glitch'); 
+
+            const pre = document.createElement('pre'); 
+
+            pre.className = 'hack-art-output'; 
+
+            pre.textContent = alienAscii; 
+
+            terminalLogs.appendChild(pre); 
+
+            terminalLogs.scrollTop = terminalLogs.scrollHeight; 
+
+            setTimeout(() => { document.getElementById('crt-screen').classList.remove('global-glitch'); }, 2000);
+
+        }
+
+        else printLog("COMANDO_NO_RECONOCIDO", true); 
+
+    }
+
 };
+
+
 
 document.querySelectorAll('.btn-hover-sfx').forEach(btn => btn.onmouseenter = () => playBeep(800, 'square'));
 
-document.querySelectorAll('[data-filter]').forEach(btn => {
-    btn.onclick = e => {
-        playBeep(150, 'sawtooth'); 
-        document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('active'));
-        e.target.classList.add('active'); 
-        
-        const cat = e.target.dataset.filter; 
-        
-        document.getElementById('crt-screen').classList.add('global-glitch');
-        setTimeout(() => document.getElementById('crt-screen').classList.remove('global-glitch'), 200);
 
-        document.querySelectorAll('.category-container').forEach(c => {
-            c.style.display = (cat === 'ALL' || c.id === `cat-${cat}`) ? 'block' : 'none';
-        });
-    };
+
+document.querySelectorAll('[data-filter]').forEach(btn => {
+
+    btn.onclick = e => {
+
+        playBeep(150, 'sawtooth'); 
+
+        document.querySelectorAll('[data-filter]').forEach(b => b.classList.remove('active'));
+
+        e.target.classList.add('active'); 
+
+        
+
+        const cat = e.target.dataset.filter; 
+
+        
+
+        document.getElementById('crt-screen').classList.add('global-glitch');
+
+        setTimeout(() => document.getElementById('crt-screen').classList.remove('global-glitch'), 200);
+
+
+
+        document.querySelectorAll('.category-container').forEach(c => {
+
+            c.style.display = (cat === 'ALL' || c.id === `cat-${cat}`) ? 'block' : 'none';
+
+        });
+
+    };
+
 });
 
-const canvas = document.getElementById('matrix-canvas'); 
-const ctx = canvas.getContext('2d'); 
-let w, h, drops; 
-const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''); 
+
+
+const canvas = document.getElementById('matrix-canvas'); 
+
+const ctx = canvas.getContext('2d'); 
+
+let w, h, drops; 
+
+const chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''); 
+
+
 
 const initMatrix = () => {
-    w = canvas.width = window.innerWidth; 
-    h = canvas.height = window.innerHeight;
-    drops = Array(Math.floor(w / 14)).fill(1); 
+
+    w = canvas.width = window.innerWidth; 
+
+    h = canvas.height = window.innerHeight;
+
+    drops = Array(Math.floor(w / 14)).fill(1); 
+
 };
-window.onresize = initMatrix; 
-initMatrix(); 
+
+window.onresize = initMatrix; 
+
+initMatrix(); 
+
+
 
 setInterval(() => {
-    ctx.fillStyle = 'rgba(2, 2, 2, 0.1)'; 
-    ctx.fillRect(0, 0, w, h); 
-    ctx.fillStyle = '#00ff41'; 
-    ctx.font = '14px monospace'; 
-    
-    drops.forEach((y, i) => {
-        ctx.fillText(chars[Math.floor(Math.random() * chars.length)], i * 14, y * 14);
-        if (y * 14 > h && Math.random() > 0.975) drops[i] = 0;
-        drops[i]++; 
-    });
+
+    ctx.fillStyle = 'rgba(2, 2, 2, 0.1)'; 
+
+    ctx.fillRect(0, 0, w, h); 
+
+    ctx.fillStyle = '#00ff41'; 
+
+    ctx.font = '14px monospace'; 
+
+    
+
+    drops.forEach((y, i) => {
+
+        ctx.fillText(chars[Math.floor(Math.random() * chars.length)], i * 14, y * 14);
+
+        if (y * 14 > h && Math.random() > 0.975) drops[i] = 0;
+
+        drops[i]++; 
+
+    });
+
 }, 50);
 
-const bootSeq = ["> CARGANDO SEPGOD_KERNEL...", "> MEMORIA ASIGNADA...", "> SISTEMA LISTO."]; 
-let bIdx = 0; 
+
+
+const bootSeq = ["> CARGANDO SEPGOD_KERNEL...", "> MEMORIA ASIGNADA...", "> SISTEMA LISTO."]; 
+
+let bIdx = 0; 
+
+
 
 const boot = setInterval(() => {
-    if(bIdx < bootSeq.length) { document.getElementById('boot-text').innerHTML += bootSeq[bIdx++] + "<br>"; } 
-    else { 
-        clearInterval(boot); 
-        document.getElementById('enter-btn').style.display = 'inline-block'; 
-    }
+
+    if(bIdx < bootSeq.length) { document.getElementById('boot-text').innerHTML += bootSeq[bIdx++] + "<br>"; } 
+
+    else { 
+
+        clearInterval(boot); 
+
+        document.getElementById('enter-btn').style.display = 'inline-block'; 
+
+    }
+
 }, 300);
 
+
+
 document.getElementById('enter-btn').onclick = () => {
-    document.getElementById('splash').style.opacity = '0'; 
-    setTimeout(() => document.getElementById('splash').style.display = 'none', 300); 
-    
-    printLog("ENLACE ESTABLECIDO."); 
-    
-    if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); 
-    bgm.play().catch(e => printLog("AUTO-PLAY RESTRINGIDO", true)); 
+
+    document.getElementById('splash').style.opacity = '0'; 
+
+    setTimeout(() => document.getElementById('splash').style.display = 'none', 300); 
+
+    
+
+    printLog("ENLACE ESTABLECIDO."); 
+
+    
+
+    if(audioCtx && audioCtx.state === 'suspended') audioCtx.resume(); 
+
+    bgm.play().catch(e => printLog("AUTO-PLAY RESTRINGIDO", true)); 
+
 };
 
+
+
 setInterval(() => {
-    document.getElementById('cpu-val').innerText = (document.getElementById('cpu-meter').style.width = Math.floor(Math.random()*40+10)+'%');
-    document.getElementById('ram-val').innerText = (document.getElementById('ram-meter').style.width = Math.floor(Math.random()*30+40)+'%');
-    document.getElementById('ping-ms').innerText = Math.floor(Math.random()*20+10);
+
+    document.getElementById('cpu-val').innerText = (document.getElementById('cpu-meter').style.width = Math.floor(Math.random()*40+10)+'%');
+
+    document.getElementById('ram-val').innerText = (document.getElementById('ram-meter').style.width = Math.floor(Math.random()*30+40)+'%');
+
+    document.getElementById('ping-ms').innerText = Math.floor(Math.random()*20+10);
+
 }, 2000);
 
+
+
 </script>
+
 </body>
+
 </html>
