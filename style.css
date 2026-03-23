@@ -421,18 +421,11 @@
             100% { opacity: 1; filter: none; transform: translateX(0); }
         }
 
-        /* 15. RESPONSIVE DESIGN */
-
-        @media (max-width: 1200px) { 
-
-            .main-wrapper { grid-template-columns: 1fr; height: auto; overflow: auto; } 
-
-            .cyan-line { display: none; } 
-
-            .side-panel-right { grid-template-columns: 1fr; height: auto; } 
-
-            .terminal-module { height: 400px; }
-
-            .horizontal-filters .btn-cyber { width: 100%; flex-basis: 100%; }
-
-        }
+      /* 15. RESPONSIVE DESIGN */
+    @media (max-width: 1200px) { 
+        .main-wrapper { grid-template-columns: 1fr; height: auto; overflow: auto; } 
+        .cyan-line { display: none; } 
+        .side-panel-right { grid-template-columns: 1fr; height: auto; } 
+        .terminal-module { height: 400px; }
+        .horizontal-filters .btn-cyber { width: 100%; flex-basis: 100%; }
+    }
