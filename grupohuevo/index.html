@@ -1,1 +1,131 @@
 
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Buscador de Grupos Huevo Pokémon</title>
+    
+    <style>
+        /* --- ESTILOS CSS SENCILLOS --- */
+        
+        /* Estilos generales para centrar el contenido y darle una fuente bonita */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f2f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+
+        /* Contenedor principal que parece una tarjeta */
+        .contenedor {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+        }
+
+        /* Estilo para el campo de texto (input) */
+        input {
+            padding: 10px;
+            width: 70%;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        /* Estilo para el botón de buscar */
+        button {
+            padding: 10px 20px;
+            background-color: #e3350d; /* Rojo estilo Pokémon */
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+
+        /* Efecto al pasar el mouse sobre el botón */
+        button:hover {
+            background-color: #b32a0a;
+        }
+
+        /* Espacio donde aparecerá el resultado o los errores */
+        #resultado {
+            margin-top: 20px;
+            font-size: 18px;
+            color: #333;
+            min-height: 50px; /* Evita que la tarjeta salte mucho al mostrar texto */
+        }
+    </style>
+</head>
+<body>
+
+    <div class="contenedor">
+        <h2>Grupos Huevo Pokémon</h2>
+        
+        <input type="text" id="pokeInput" placeholder="Ej. pikachu, charizard...">
+        
+        <button onclick="buscarGrupoHuevo()">Buscar</button>
+        
+        <div id="resultado"></div>
+    </div>
+
+    <script>
+        /* --- LÓGICA JAVASCRIPT --- */
+
+        // Función asíncrona porque vamos a pedir datos a internet (PokéAPI)
+        async function buscarGrupoHuevo() {
+            
+            // 1. Obtenemos el texto que escribió el usuario
+            // Lo pasamos a minúsculas y quitamos espacios a los lados porque la API es estricta con eso
+            const nombrePokemon = document.getElementById('pokeInput').value.toLowerCase().trim();
+            const divResultado = document.getElementById('resultado');
+
+            // Si el usuario no escribió nada, le pedimos que lo haga
+            if (!nombrePokemon) {
+                divResultado.innerHTML = "Por favor, escribe el nombre de un Pokémon.";
+                return; // Detenemos la función aquí
+            }
+
+            // Mostramos un mensaje de carga mientras la API responde
+            divResultado.innerHTML = "Buscando...";
+
+            try {
+                // 2. Hacemos la petición a la PokéAPI (usamos pokemon-species para ver los grupos huevo)
+                const respuesta = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${nombrePokemon}`);
+
+                // Si la respuesta no es "ok" (ej. escribieron un nombre que no existe), lanzamos un error
+                if (!respuesta.ok) {
+                    throw new Error("Pokémon no encontrado. Verifica que el nombre esté bien escrito en inglés.");
+                }
+
+                // 3. Convertimos la respuesta a formato JSON (un objeto que Javascript puede leer fácil)
+                const datos = await respuesta.json();
+
+                // 4. Extraemos los grupos huevo
+                // 'datos.egg_groups' es un arreglo. Usamos .map() para sacar solo los nombres y .join() para unirlos con una coma
+                const gruposHuevo = datos.egg_groups.map(grupo => grupo.name).join(', ');
+
+                // 5. Mostramos el resultado en la pantalla
+                // Usamos la primera letra en mayúscula para que se vea más bonito
+                const nombreCapitalizado = nombrePokemon.charAt(0).toUpperCase() + nombrePokemon.slice(1);
+                divResultado.innerHTML = `El grupo huevo de <strong>${nombreCapitalizado}</strong> es:<br><br> <strong><span style="color:#e3350d;">${gruposHuevo}</span></strong>`;
+
+            } catch (error) {
+                // Si hubo algún error (el nombre no existe o se cayó el internet), lo mostramos aquí
+                divResultado.innerHTML = `<span style="color:red;">Error: ${error.message}</span>`;
+            }
+        }
+    </script>
+
+</body>
+</html>
