@@ -180,9 +180,10 @@
     </style>
 </head>
 <body>
+   <body class="dark-mode">
     <button id="btnTema" class="btn-tema" onclick="alternarTema()">
-        <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/94.gif" alt="Gengar">
-        Modo Oscuro
+        <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/77.gif" alt="Ponyta">
+        Modo Luz
     </button>
 
 <div class="contenedor">
@@ -777,7 +778,61 @@
             }
         }
 
-        // --- CALCULADORA 2: MOVIMIENTOS ---
+       // --- CALCULADORA 2: MOVIMIENTOS ---
+        
+        // Sub-función: Radar de alternativas en el mismo grupo huevo
+        async function generarAlternativasHtml(gruposDestino, pokeDestinoOriginal, movName, pokemonsConAtaque) {
+            let candidatosAlt = [];
+            for (let g of gruposDestino) {
+                if (!especiesPorGrupo[g]) continue;
+                especiesPorGrupo[g].forEach(n => {
+                    // Si no es el destino original y SÍ sabe el ataque
+                    if (n !== pokeDestinoOriginal && pokemonsConAtaque.includes(n)) {
+                        candidatosAlt.push(n);
+                    }
+                });
+            }
+            candidatosAlt = [...new Set(candidatosAlt)];
+            if (candidatosAlt.length === 0) return "";
+
+            // Pedimos los datos de las alternativas para verificar Gen 6 y sacar la foto
+            const promesasAlt = candidatosAlt.map(nombre => fetch(`https://pokeapi.co/api/v2/pokemon/${nombre}`).then(r => r.json()).catch(()=>null));
+            const datosAlt = await Promise.all(promesasAlt);
+
+            let validos = [];
+            datosAlt.forEach(dataPoke => {
+                if (!dataPoke) return;
+                let loAprende = false;
+                dataPoke.moves.forEach(m => {
+                    if (m.move.name === movName) {
+                        const enGen6 = m.version_group_details.filter(d => 
+                            (d.version_group.name === 'x-y' || d.version_group.name === 'omega-ruby-alpha-sapphire')
+                        );
+                        if (enGen6.length > 0) loAprende = true;
+                    }
+                });
+                if (loAprende) {
+                    validos.push({
+                        nombre: dataPoke.name.charAt(0).toUpperCase() + dataPoke.name.slice(1),
+                        foto: extraerMejorSprite(dataPoke)
+                    });
+                }
+            });
+
+            if (validos.length === 0) return "";
+
+            validos.sort((a,b) => a.nombre.localeCompare(b.nombre));
+
+            let html = `<div style="margin-top: 20px; background: var(--bg-step); border: 1px solid var(--border-main); border-radius: 12px; padding: 15px; text-align: left; animation: aparecerSuave 0.5s;">`;
+            html += `<div style="font-weight:700; color: #d97706; margin-bottom: 15px; font-size: 1.05em;">💡 Alternativas válidas en el grupo [${gruposDestino.join(', ')}]:</div>`;
+            html += `<div style="display:flex; flex-wrap:wrap; gap:10px; justify-content: center;">`;
+            validos.forEach(v => {
+                html += `<div class="badge badge-meta" style="background: var(--bg-box); border: 1px solid #fde68a; padding: 6px 12px;"><img src="${v.foto}" style="height:35px; margin-right:8px;">${v.nombre}</div>`;
+            });
+            html += `</div></div>`;
+            return html;
+        }
+
         async function calcularRutaMovimientos() {
             const p1 = document.getElementById('pokeInput1Mov').value.toLowerCase().trim();
             const g1 = document.getElementById('genero1Mov').value;
@@ -843,8 +898,18 @@
                     }
                 });
 
+                // Cargamos la lista maestra de movimientos porque la usaremos si hay error o si buscamos nexos
+                const moveDataRes = await fetch(`https://pokeapi.co/api/v2/move/${movName}`);
+                const moveData = await moveDataRes.json();
+                const pokemonsQueSabenAtaque = moveData.learned_by_pokemon.map(p => p.name);
+
+                // --- ESCENARIO DE ERROR 1: El destino no aprende el ataque ---
                 if (!destinoPuedeHeredar) {
-                    divRes.innerHTML = htmlInfo + `<div class="alerta alerta-roja">❌ <strong>Genéticamente Imposible:</strong> ${n2C} no tiene compatibilidad para heredar ${movText} en la Sexta Generación.</div>`;
+                    let errorHtml = htmlInfo + `<div class="alerta alerta-roja">❌ <strong>Genéticamente Imposible:</strong> ${n2C} no tiene compatibilidad para heredar ${movText} en la Sexta Generación.</div>`;
+                    divRes.innerHTML = errorHtml + "<div style='text-align:center; color:#0284c7; margin-top:15px;'>Escaneando alternativas...</div>";
+                    
+                    const alternativasHtml = await generarAlternativasHtml(grp2, p2, movName, pokemonsQueSabenAtaque);
+                    divRes.innerHTML = errorHtml + alternativasHtml;
                     return;
                 }
 
@@ -852,10 +917,6 @@
                     divRes.innerHTML = htmlInfo + `<div class="alerta alerta-verde"><strong>¡Compatibles Directos!</strong> Comparten grupo huevo. Cruza a un ${n1C} con el ataque + una ${n2C} Hembra.</div>`; 
                     return; 
                 }
-
-                const moveDataRes = await fetch(`https://pokeapi.co/api/v2/move/${movName}`);
-                const moveData = await moveDataRes.json();
-                const pokemonsQueSabenAtaque = moveData.learned_by_pokemon.map(p => p.name);
 
                 let candidatosBrutos = [];
                 for (let g of grp1) {
@@ -898,13 +959,17 @@
                     }
                 });
 
+                // --- ESCENARIO DE ERROR 2: No hay puentes ---
                 if (nexosValidos.length === 0) {
-                     let mensaje = htmlInfo + `<div class="alerta alerta-roja">No hay Nexos en Gen 6.`;
+                     let mensaje = htmlInfo + `<div class="alerta alerta-roja">No hay Nexos que conecten los grupos en Gen 6.`;
                      if (grp1.includes('ground') || grp2.includes('ground')) { 
                          mensaje += `<br><br>💡 <em>Alerta Smeargle:</em> Uno de los Pokémon es grupo Campo, puedes usar a Smeargle con 'Esquema'.`;
                      }
                      mensaje += `</div>`;
-                     divRes.innerHTML = mensaje;
+                     
+                     divRes.innerHTML = mensaje + "<div style='text-align:center; color:#0284c7; margin-top:15px;'>Escaneando alternativas en el destino...</div>";
+                     const alternativasHtml = await generarAlternativasHtml(grp2, p2, movName, pokemonsQueSabenAtaque);
+                     divRes.innerHTML = mensaje + alternativasHtml;
                      return;
                 }
 
