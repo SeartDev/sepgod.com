@@ -189,8 +189,8 @@
 <div class="contenedor">
         
         <div id="menuSeleccion">
-            <h2>  🧬 Genética Pokémon</h2>
-            <p style="color: #64748b; margin-bottom: 24px;">2.0 Selecciona la herramienta que necesitas hoy:</p>
+            <h2>🧬 Genética Pokémon</h2>
+            <p style="color: #64748b; margin-bottom: 24px;">3.0 Selecciona la herramienta que necesitas hoy:</p>
             
             <div style="display: flex; flex-direction: column; gap: 16px;">
                 <button class="btn-menu btn-ivs" onclick="abrirHerramienta('ivs')">
@@ -200,11 +200,47 @@
                 
                 <button class="btn-menu btn-movimientos" onclick="abrirHerramienta('movimientos')">
                     <span style="font-size: 2em;">⚔️</span>
-                    Heredar Movimientos Huevo
+                    Ruta de Movimientos Huevo
+                </button>
+
+                <button class="btn-menu" style="border-color: #10b981;" onclick="abrirHerramienta('buscar_padres')" onmouseover="this.style.backgroundColor='var(--bg-step)'" onmouseout="this.style.backgroundColor='var(--bg-box)'">
+                    <span style="font-size: 2em;">🔍</span>
+                    Buscar Padres por Movimiento
                 </button>
             </div>
         </div>
 
+        <div id="herramientaBuscarMov" style="display: none;">
+            <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 25px; text-align: left;">
+                <button class="btn-volver" onclick="volverMenuPrincipal()">⬅ Volver</button>
+                <h2 style="margin: 0; font-size: 1.2em;">🔍 Buscar Padres (Gen 6)</h2>
+            </div>
+            
+            <div class="fila-input" style="align-items: flex-start;">
+                <div class="slot-foto" id="fotoInputReceptor" style="margin-top: 5px;">
+                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/0.png" alt="esperando">
+                </div>
+                
+                <div style="display: flex; flex-direction: column; width: 100%; gap: 10px;">
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="pokeInputReceptor" list="listaPokemon" placeholder="Pokémon a criar (Ej. bagon)" style="width: 60%; margin-bottom: 0;" onchange="cargarMovimientosReceptor()">
+                        <select id="generoReceptor" style="width: 40%;">
+                            <option value="hembra">Hembra ♀</option>
+                            <option value="macho">Macho ♂</option>
+                            <option value="sin_genero" hidden>Sin Género ❌</option>
+                        </select>
+                    </div>
+                    
+                    <select id="movimientoReceptorElegido" disabled style="width: 100%; font-weight: bold; color: #047857; background-color: #d1fae5; border: 1px solid #6ee7b7;">
+                        <option value="">Esperando Pokémon objetivo...</option>
+                    </select>
+                </div>
+            </div>
+            
+            <button onclick="buscarPadresMovimiento()" style="background-color: #10b981; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);">Encontrar Padres Compatibles</button>
+            <div id="resultadoBuscarMov"></div>
+        </div>
+    
         <div id="herramientaIVs" style="display: none;">
             
             <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 25px; text-align: left;">
@@ -331,12 +367,15 @@
         }
 
         // --- NAVEGACIÓN Y UTILIDADES ---
+       // --- NAVEGACIÓN Y UTILIDADES ---
         function abrirHerramienta(tipo) {
             document.getElementById('menuSeleccion').style.display = 'none';
             if (tipo === 'ivs') {
                 document.getElementById('herramientaIVs').style.display = 'block';
             } else if (tipo === 'movimientos') {
                 document.getElementById('menuGeneraciones').style.display = 'block';
+            } else if (tipo === 'buscar_padres') {
+                document.getElementById('herramientaBuscarMov').style.display = 'block';
             }
         }
 
@@ -344,9 +383,11 @@
             document.getElementById('herramientaIVs').style.display = 'none';
             document.getElementById('menuGeneraciones').style.display = 'none';
             document.getElementById('herramientaMovimientos').style.display = 'none';
+            document.getElementById('herramientaBuscarMov').style.display = 'none';
             document.getElementById('menuSeleccion').style.display = 'block';
             document.getElementById('resultado').innerHTML = ''; 
             document.getElementById('resultadoMovimientos').innerHTML = '';
+            document.getElementById('resultadoBuscarMov').innerHTML = '';
         }
 
         function volverMenuGeneraciones() {
@@ -1083,6 +1124,208 @@
                     });
                     htmlListas += `</div>`;
                 }
+
+                divRes.innerHTML = htmlInfo + espacioFormula + htmlListas;
+
+            } catch (error) {
+                divRes.innerHTML = `<div class="alerta alerta-roja">Error: ${error.message}</div>`;
+            }
+        }
+        // --- CALCULADORA 3: BÚSQUEDA INVERSA DE PADRES ---
+
+        async function cargarMovimientosReceptor() {
+            await verificarGenero('pokeInputReceptor', 'generoReceptor', 'fotoInputReceptor');
+            const nombrePoke = document.getElementById('pokeInputReceptor').value.toLowerCase().trim();
+            const selectMov = document.getElementById('movimientoReceptorElegido');
+
+            if (!nombrePoke) {
+                selectMov.innerHTML = '<option value="">Esperando Pokémon objetivo...</option>';
+                selectMov.disabled = true; return;
+            }
+            selectMov.innerHTML = '<option value="">Descargando genética (Gen 6)...</option>';
+            selectMov.disabled = true;
+
+            try {
+                const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${nombrePoke}`);
+                if (!res.ok) throw new Error("No encontrado");
+                const data = await res.json();
+
+                let movsNivel = []; let movsMT = []; let movsHuevo = []; let movsTutor = []; 
+                data.moves.forEach(moveData => {
+                    const detallesGen6 = moveData.version_group_details.filter(details => 
+                        details.version_group.name === 'x-y' || details.version_group.name === 'omega-ruby-alpha-sapphire'
+                    );
+                    if (detallesGen6.length > 0) {
+                        let nivel = 0;
+                        const metodos = detallesGen6.map(d => {
+                            if (d.move_learn_method.name === 'level-up' && d.level_learned_at > 0) { nivel = d.level_learned_at; }
+                            return d.move_learn_method.name;
+                        });
+                        let nombreLimpio = moveData.move.name.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                        if (nivel > 0) { nombreLimpio += ` (Nv. ${nivel})`; }
+
+                        const objMov = { val: moveData.move.name, text: nombreLimpio };
+                        if (metodos.includes('level-up')) { movsNivel.push(objMov); } 
+                        else if (metodos.includes('machine')) { movsMT.push(objMov); } 
+                        else if (metodos.includes('egg')) { movsHuevo.push(objMov); } 
+                        else { movsTutor.push(objMov); }
+                    }
+                });
+
+                if (movsNivel.length === 0 && movsMT.length === 0 && movsHuevo.length === 0 && movsTutor.length === 0) {
+                    selectMov.innerHTML = '<option value="">No hay datos para Gen 6</option>'; return;
+                }
+
+                const ordenar = (arr) => arr.sort((a, b) => a.text.localeCompare(b.text));
+                ordenar(movsNivel); ordenar(movsMT); ordenar(movsHuevo); ordenar(movsTutor);
+
+                let opcHtml = '<option value="">-- ¿Qué movimiento deseas que herede? --</option>';
+                if (movsNivel.length > 0) { opcHtml += `<optgroup label="🟢 Por Nivel">${movsNivel.map(m=>`<option value="${m.val}">${m.text}</option>`).join('')}</optgroup>`; }
+                if (movsMT.length > 0) { opcHtml += `<optgroup label="🟡 Por MT/MO">${movsMT.map(m=>`<option value="${m.val}">${m.text}</option>`).join('')}</optgroup>`; }
+                if (movsHuevo.length > 0) { opcHtml += `<optgroup label="🟣 Movimiento Huevo">${movsHuevo.map(m=>`<option value="${m.val}">${m.text}</option>`).join('')}</optgroup>`; }
+                if (movsTutor.length > 0) { opcHtml += `<optgroup label="🔵 Tutor/Evento">${movsTutor.map(m=>`<option value="${m.val}">${m.text}</option>`).join('')}</optgroup>`; }
+
+                selectMov.innerHTML = opcHtml; selectMov.disabled = false;
+            } catch (error) { selectMov.innerHTML = '<option value="">Error.</option>'; }
+        }
+
+        function mostrarFormulaBuscarPadre(nPadre, fPadre, nHijo, gHijo, fHijo) {
+            let finalGenSigno = gHijo === 'macho' ? '♂' : '♀';
+            let pasosHtml = `
+                <div class="paso-fila paso-3" style="border-left-color: #10b981;">
+                    <div class="badge badge-macho"><img src="${fPadre}">${nPadre} ♂</div>
+                    <span class="operador">➕</span>
+                    <div class="badge badge-hembra"><img src="${fHijo}">Madre ${nHijo} ♀</div>
+                    <span class="operador">➔</span>
+                    <div class="badge badge-meta" style="background: #d1fae5; color: #047857;"><img src="${fHijo}">Cría ${nHijo} ${finalGenSigno} ✨</div>
+                </div>`;
+                
+            let esquemaHtml = `
+                <div class="formula-box animar-entrada">
+                    <div class="formula-titulo" style="color: #047857;">📍 Ruta Genética</div>
+                    ${pasosHtml}
+                    <p style="margin:16px 0 0 0; font-size:0.85em; color:var(--text-main); text-align:center;">💡 <em>Nota: El padre debe conocer el ataque antes de entrar a la guardería.</em></p>
+                </div>`;
+            const cont = document.getElementById('contenedorFormulaBuscar');
+            if (cont) {
+                cont.innerHTML = esquemaHtml;
+                cont.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
+
+        async function buscarPadresMovimiento() {
+            const pObj = document.getElementById('pokeInputReceptor').value.toLowerCase().trim();
+            const gObj = document.getElementById('generoReceptor').value;
+            const movName = document.getElementById('movimientoReceptorElegido').value;
+            const selectEl = document.getElementById('movimientoReceptorElegido');
+            const movText = selectEl.options[selectEl.selectedIndex] ? selectEl.options[selectEl.selectedIndex].text : '';
+            const divRes = document.getElementById('resultadoBuscarMov');
+
+            if (!pObj || !movName) { divRes.innerHTML = `<div class="alerta alerta-roja">Llena todos los campos.</div>`; return; }
+            divRes.innerHTML = "<div style='text-align:center; color:#10b981; font-weight:600;'>Buscando Padres Compatibles...</div>";
+
+            try {
+                await cargarGruposGlobales();
+                const [specObj, pokeObjData] = await Promise.all([
+                    fetch(`https://pokeapi.co/api/v2/pokemon-species/${pObj}`).then(r => r.json()),
+                    fetch(`https://pokeapi.co/api/v2/pokemon/${pObj}`).then(r => r.json())
+                ]);
+
+                const fotoObj = extraerMejorSprite(pokeObjData);
+                const grpObj = specObj.egg_groups.map(g => g.name);
+                const nObjC = pObj.charAt(0).toUpperCase() + pObj.slice(1);
+
+                let htmlInfo = `
+                    <div style="background: var(--bg-step); border: 1px solid var(--border-main); border-radius: 12px; padding: 15px; margin-bottom: 20px;">
+                        <div style="color: #047857; font-weight: 800; text-align: center; margin-bottom: 15px; font-size: 1.1em;">
+                            🎯 Objetivo: Que ${nObjC} nazca con ${movText}
+                        </div>
+                        <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                            <div><strong>Receptor:</strong> ${nObjC} ${gObj === 'macho' ? '♂' : '♀'}</div>
+                            <div style="color:var(--text-main); font-size:0.9em;">[${grpObj.join(', ')}]</div>
+                        </div>
+                    </div>`;
+
+                if (specObj.gender_rate === -1) { divRes.innerHTML = htmlInfo + `<div class="alerta alerta-roja">⛔ ${nObjC} no tiene género. Solo cría con Ditto y no puede heredar movimientos.</div>`; return; }
+                if (grpObj.includes('no-eggs')) { divRes.innerHTML = htmlInfo + `<div class="alerta alerta-roja">⛔ ${nObjC} no puede criar.</div>`; return; }
+
+                const moveDataRes = await fetch(`https://pokeapi.co/api/v2/move/${movName}`);
+                const moveData = await moveDataRes.json();
+                const pokemonsQueSabenAtaque = moveData.learned_by_pokemon.map(p => p.name);
+
+                let padresBrutos = [];
+                for (let g of grpObj) {
+                    if (!especiesPorGrupo[g]) continue;
+                    especiesPorGrupo[g].forEach(n => {
+                        // El padre no puede ser Ditto, Smeargle va aparte, y el padre debe saber el ataque
+                        if (n !== 'ditto' && n !== 'smeargle' && pokemonsQueSabenAtaque.includes(n)) {
+                            padresBrutos.push(n);
+                        }
+                    });
+                }
+                padresBrutos = [...new Set(padresBrutos)];
+
+                const promesasPadres = padresBrutos.map(nombre => Promise.all([
+                    fetch(`https://pokeapi.co/api/v2/pokemon-species/${nombre}`).then(r => r.json()),
+                    fetch(`https://pokeapi.co/api/v2/pokemon/${nombre}`).then(r => r.json())
+                ]));
+                const datosPadresPairs = await Promise.all(promesasPadres);
+
+                let padresValidos = [];
+                datosPadresPairs.forEach(([dataSpec, dataPoke]) => {
+                    // EL PADRE DEBE PODER SER MACHO (gender_rate < 8 y gender_rate >= 0)
+                    if (dataSpec.gender_rate >= 0 && dataSpec.gender_rate < 8) {
+                        let loAprendeGen6 = false;
+                        dataPoke.moves.forEach(m => {
+                            if (m.move.name === movName) {
+                                const enGen6 = m.version_group_details.filter(d => 
+                                    (d.version_group.name === 'x-y' || d.version_group.name === 'omega-ruby-alpha-sapphire') &&
+                                    ['egg', 'machine', 'level-up'].includes(d.move_learn_method.name)
+                                );
+                                if (enGen6.length > 0) loAprendeGen6 = true;
+                            }
+                        });
+
+                        if (loAprendeGen6) {
+                            const urlF = extraerMejorSprite(dataPoke);
+                            padresValidos.push({ nombre: dataSpec.name, id: dataSpec.id, foto: urlF });
+                        }
+                    }
+                });
+
+                if (padresValidos.length === 0) {
+                     let mensaje = htmlInfo + `<div class="alerta alerta-roja">No existe ningún padre directo en el mismo grupo huevo que aprenda este movimiento en Gen 6.`;
+                     if (grpObj.includes('ground')) { 
+                         mensaje += `<br><br>💡 <em>Alerta Smeargle:</em> Como es grupo Campo, puedes atrapar un Smeargle Macho y usar 'Esquema' para pasar el ataque.`;
+                     }
+                     mensaje += `</div>`;
+                     divRes.innerHTML = mensaje; return;
+                }
+
+                let espacioFormula = `<div id="contenedorFormulaBuscar"><div style="background: var(--bg-input); padding: 15px; border-radius: 12px; text-align: center; color: var(--text-main); margin: 20px 0;">👆 <em>Clic en un padre para generar la fórmula.</em></div></div>`;
+                let htmlListas = `<div style="font-weight:700; color:#10b981; margin-top:10px;">🟢 Padres Directos Disponibles (Macho):</div>`;
+                
+                const obtenerReg = (id) => {
+                    if (id <= 151) return "Kanto"; if (id <= 251) return "Johto"; if (id <= 386) return "Hoenn";
+                    if (id <= 493) return "Sinnoh"; if (id <= 649) return "Teselia"; return "Modernos (Kalos+)";
+                };
+
+                const padresAgrupados = {};
+                padresValidos.forEach(nx => {
+                    const reg = obtenerReg(nx.id);
+                    if (!padresAgrupados[reg]) padresAgrupados[reg] = []; 
+                    padresAgrupados[reg].push({n: nx.nombre.charAt(0).toUpperCase() + nx.nombre.slice(1), f: nx.foto});
+                });
+
+                ["Kanto", "Johto", "Hoenn", "Sinnoh", "Teselia", "Modernos (Kalos+)"].forEach(reg => {
+                    if (padresAgrupados[reg]) {
+                        padresAgrupados[reg].sort((a,b) => a.n.localeCompare(b.n)); 
+                        let botones = padresAgrupados[reg].map(nx => {
+                            return `<span class="nexo-tag" style="border-color:#6ee7b7; background:#ecfdf5; color:#065f46;" onclick="mostrarFormulaBuscarPadre('${nx.n}', '${nx.f}', '${nObjC}', '${gObj}', '${fotoObj}')" onmouseover="this.style.backgroundColor='#10b981'; this.style.color='white'" onmouseout="this.style.backgroundColor='#ecfdf5'; this.style.color='#065f46'">${nx.n}</span>`;
+                        }).join(' ');
+                        htmlListas += `<div class="gen-box" style="border-left: 4px solid #10b981;"><div class="gen-titulo">${reg}</div><div>${botones}</div></div>`;
+                    }
+                });
 
                 divRes.innerHTML = htmlInfo + espacioFormula + htmlListas;
 
