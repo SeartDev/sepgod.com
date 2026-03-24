@@ -106,7 +106,7 @@
                 return; 
             }
 
-            divResultado.innerHTML = "Calculando árbol genealógico y aislando nodos...";
+            divResultado.innerHTML = "Calculando árbol genealógico...";
 
             try {
                 const buscarDatosPoke = async (nombre) => {
@@ -133,37 +133,26 @@
                     <hr style="border: 0; border-top: 1px solid #ccc; margin: 15px 0;">
                 `;
 
-                // --- REGLAS ESTRICTAS DE CRIANZA (TEORÍA DE GRAFOS) ---
-
-                // 1. Pokémon Sin Género (Nodos Aislados)
                 if (rate1 === -1 || rate2 === -1) {
-                    divResultado.innerHTML = htmlResultado + `<p style="color:red;"><strong>⛔ Nodos Aislados:</strong> Uno de estos Pokémon no tiene género. Son callejones sin salida genéticos y solo pueden criar con Ditto. No se pueden calcular puentes.</p>`;
+                    divResultado.innerHTML = htmlResultado + `<p style="color:red;"><strong>⛔ Nodos Aislados:</strong> Uno de estos Pokémon no tiene género y solo puede criar con Ditto.</p>`;
                     return;
                 }
-
-                // 2. Pokémon 100% Hembra como inicio (Receptor Final / Sumidero)
                 if (rate1 === 8) {
-                    divResultado.innerHTML = htmlResultado + `<p style="color:#d97706;"><strong>⛔ Receptor Final:</strong> <strong>${nombre1Cap}</strong> es 100% Hembra. Es un sumidero genético, la cría siempre será de su especie. No puede tener "flechas de salida" hacia otra especie.</p>`;
+                    divResultado.innerHTML = htmlResultado + `<p style="color:#d97706;"><strong>⛔ Receptor Final:</strong> <strong>${nombre1Cap}</strong> es 100% Hembra. La cría siempre será de su especie.</p>`;
                     return;
                 }
-
-                // 3. Pokémon 100% Macho como final (Donante Exclusivo)
                 if (rate2 === 0) {
-                    divResultado.innerHTML = htmlResultado + `<p style="color:#d97706;"><strong>⛔ Donante Exclusivo:</strong> <strong>${nombre2Cap}</strong> es 100% Macho. Al no existir hembras de su especie, nunca podrá recibir "flechas de entrada" desde otra especie.</p>`;
+                    divResultado.innerHTML = htmlResultado + `<p style="color:#d97706;"><strong>⛔ Donante Exclusivo:</strong> <strong>${nombre2Cap}</strong> es 100% Macho. No puede recibir genes de otra especie.</p>`;
                     return;
                 }
-
-                // Validación de lógica del usuario (Macho -> Nexo -> Hembra)
                 if (genero1 === 'hembra' || genero2 === 'macho') {
-                    divResultado.innerHTML = htmlResultado + `<p style="color:#d97706;"><strong>⚠️ Error de flujo:</strong> Para hacer una cadena hacia otra especie, el 1er Pokémon debe ser <strong>Macho</strong> (donante) y el Pokémon final debe ser <strong>Hembra</strong> (receptora). Por favor, ajusta los selectores.</p>`;
+                    divResultado.innerHTML = htmlResultado + `<p style="color:#d97706;"><strong>⚠️ Error de flujo:</strong> Para pasar movimientos, el 1er Pokémon debe ser <strong>Macho</strong> (donante) y el Pokémon final debe ser <strong>Hembra</strong> (receptora).</p>`;
                     return;
                 }
-
                 if (grupos1.includes('no-eggs') || grupos2.includes('no-eggs')) {
-                    divResultado.innerHTML = htmlResultado + `<p style="color:red;">Uno de estos Pokémon pertenece al grupo Desconocido (no puede criar).</p>`;
+                    divResultado.innerHTML = htmlResultado + `<p style="color:red;">Uno de estos Pokémon no puede criar.</p>`;
                     return;
                 }
-
                 if (grupos1.some(g => grupos2.includes(g))) {
                     divResultado.innerHTML = htmlResultado + `<p style="color:green;">¡Comparten grupo huevo! Pueden criar directamente sin nexos.</p>`;
                     return;
@@ -200,13 +189,8 @@
                 const datosNexos = await Promise.all(promesasNexos);
 
                 let nexosFiltrados = [];
-
                 datosNexos.forEach(data => {
                     const rate = data.gender_rate;
-                    
-                    // REGLA DEL NEXO: Debe poder funcionar como "Madre" (Paso 1) y "Padre" (Paso 2)
-                    // Por lo tanto, rate DEBE estar entre 1 y 7. 
-                    // Excluimos 0 (100% Macho), 8 (100% Hembra) y -1 (Sin género).
                     if (rate >= 1 && rate <= 7) {
                         nexosFiltrados.push({ nombre: data.name, id: data.id });
                     }
@@ -216,6 +200,29 @@
                      divResultado.innerHTML = htmlResultado + `<p style="color:red;">No existe un Pokémon puente válido para esta cadena genética.</p>`;
                      return;
                 }
+
+                // --- NUEVO BLOQUE: ESQUEMA VISUAL DE LA CADENA ---
+                let esquemaCrianza = `
+                    <div style="background-color: #f8f9fa; border-left: 5px solid #0d6efd; padding: 15px; margin: 20px 0; font-size: 0.95em; text-align: left; overflow-x: auto;">
+                        <h4 style="margin: 0 0 15px 0; color: #333;">🧬 Cómo hacer el cruce:</h4>
+                        
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; white-space: nowrap;">
+                            <strong>Paso 1:</strong> 
+                            <span style="background: #e2e3e5; padding: 4px 8px; border-radius: 4px;">${nombre1Cap} ♂️</span> ➕ 
+                            <span style="background: #ffe6e6; padding: 4px 8px; border-radius: 4px; color: #e3350d; font-weight: bold;">[Nexo] ♀️</span> 🟰 
+                            <span style="background: #d1e7dd; padding: 4px 8px; border-radius: 4px;">Cría [Nexo] ♂️</span>
+                        </div>
+                        
+                        <div style="display: flex; align-items: center; gap: 8px; white-space: nowrap;">
+                            <strong>Paso 2:</strong> 
+                            <span style="background: #d1e7dd; padding: 4px 8px; border-radius: 4px;">Cría [Nexo] ♂️</span> ➕ 
+                            <span style="background: #e2e3e5; padding: 4px 8px; border-radius: 4px;">${nombre2Cap} ♀️</span> 🟰 
+                            <span style="background: #ffecb5; padding: 4px 8px; border-radius: 4px; font-weight: bold;">Cría ${nombre2Cap} ✨</span>
+                        </div>
+                        
+                        <p style="margin: 15px 0 0 0; font-size: 0.85em; color: #666;"><em>* Sustituye <strong>[Nexo]</strong> con cualquier Pokémon de la lista de abajo.</em></p>
+                    </div>
+                `;
 
                 const obtenerGeneracion = (id) => {
                     if (id <= 151) return "Primera Generación";
@@ -237,7 +244,7 @@
                     nexosAgrupados[gen].push(nombreCap);
                 });
 
-                let htmlNexos = `<p>Nexos válidos (capaces de ser macho y hembra):</p>`;
+                let htmlNexos = `<p>Elige tu <strong>[Nexo]</strong> de las siguientes opciones:</p>`;
                 const ordenGeneraciones = ["Primera Generación", "Segunda Generación", "Tercera Generación", "Cuarta Generación", "Quinta Generación", "Sexta Generación", "Séptima Generación", "Octava Generación", "Novena Generación"];
 
                 ordenGeneraciones.forEach(gen => {
@@ -254,7 +261,8 @@
                     }
                 });
 
-                divResultado.innerHTML = htmlResultado + htmlNexos;
+                // Aquí inyectamos el esquema justo antes de la lista de nexos
+                divResultado.innerHTML = htmlResultado + esquemaCrianza + htmlNexos;
 
             } catch (error) {
                 divResultado.innerHTML = `<span style="color:red;">Error: Verifica la ortografía. ${error.message}</span>`;
