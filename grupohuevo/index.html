@@ -93,7 +93,7 @@
         <div id="resultado"></div>
     </div>
     <script>
-      async function buscarGrupoHuevo() {
+     async function buscarGrupoHuevo() {
             
             const nombrePoke1 = document.getElementById('pokeInput1').value.toLowerCase().trim();
             const genero1 = document.getElementById('genero1').value;
@@ -126,10 +126,9 @@
                 const nombre1Cap = nombrePoke1.charAt(0).toUpperCase() + nombrePoke1.slice(1);
                 const nombre2Cap = nombrePoke2.charAt(0).toUpperCase() + nombrePoke2.slice(1);
 
-                // Advertencia técnica de crianza (Opcional pero útil)
                 let advertencia = "";
                 if (genero1 === 'hembra') {
-                    advertencia = `<p style="color:#d97706; font-size:0.9em;">⚠️ Nota: Si el 1er Pokémon es hembra, la cría será de su especie. Para saltar a la especie final, el 1er Pokémon suele ser Macho.</p>`;
+                    advertencia = `<p style="color:#d97706; font-size:0.9em;">⚠️ Nota: Si el 1er Pokémon es hembra, la cría será de su especie. Para pasar movimientos a la especie final, el 1er Pokémon suele ser Macho.</p>`;
                 }
 
                 let htmlResultado = `
@@ -151,7 +150,6 @@
 
                 divResultado.innerHTML = htmlResultado + "<em>Buscando nexos compatibles con los géneros...</em>";
 
-                // 2. Buscamos TODOS los posibles nexos por grupo huevo
                 const obtenerEspeciesDeGrupos = async (grupos) => {
                     let especies = new Map(); 
                     for (let grupo of grupos) {
@@ -168,7 +166,6 @@
                     obtenerEspeciesDeGrupos(grupos2)
                 ]);
 
-                // 3. Cruzamos los datos para encontrar coincidencias iniciales
                 let nexosBasicos = [];
                 for (let nombre of especiesLado1.keys()) {
                     if (especiesLado2.has(nombre) && nombre !== nombrePoke1 && nombre !== nombrePoke2) {
@@ -176,8 +173,6 @@
                     }
                 }
 
-                // 4. NUEVO: Verificamos el género de los nexos encontrados
-                // Hacemos una petición por cada nexo para ver su "gender_rate"
                 const promesasNexos = nexosBasicos.map(nombre => 
                     fetch(`https://pokeapi.co/api/v2/pokemon-species/${nombre}`).then(res => res.json())
                 );
@@ -188,29 +183,23 @@
                 datosNexos.forEach(data => {
                     const rate = data.gender_rate;
                     
-                    // En la PokeAPI, gender_rate va de 0 a 8. 
-                    // -1 es sin género, 0 es 100% macho, 8 es 100% hembra.
                     let puedeSerMacho = (rate >= 0 && rate <= 7);
                     let puedeSerHembra = (rate >= 1 && rate <= 8);
                     let esSinGenero = (rate === -1);
 
-                    if (esSinGenero) return; // Descartamos los sin género (como Beldum)
+                    if (esSinGenero) return; 
 
                     let nexoValido = true;
 
-                    // Si el Poke 1 es Macho, necesitamos que el Nexo pueda ser Hembra para cruzarlos
                     if (genero1 === 'macho' && !puedeSerHembra) nexoValido = false;
-                    // Si el Poke 2 es Hembra, necesitamos que la cría del Nexo pueda ser Macho para cruzarla con el Poke 2
                     if (genero2 === 'hembra' && !puedeSerMacho) nexoValido = false;
                     
-                    // Validaciones inversas por si el usuario hace cadenas raras
                     if (genero1 === 'hembra' && !puedeSerMacho) nexoValido = false;
                     if (genero2 === 'macho' && !puedeSerHembra) nexoValido = false;
 
                     if (nexoValido) {
-                        const urlParts = data.url.split('/');
-                        const id = parseInt(urlParts[urlParts.length - 2]);
-                        nexosFiltrados.push({ nombre: data.name, id: id });
+                        // ¡AQUÍ ESTÁ LA CORRECCIÓN! Usamos data.id directamente.
+                        nexosFiltrados.push({ nombre: data.name, id: data.id });
                     }
                 });
 
@@ -219,7 +208,6 @@
                      return;
                 }
 
-                // 5. Agrupamos y mostramos (Código igual al anterior)
                 const obtenerGeneracion = (id) => {
                     if (id <= 151) return "Primera Generación";
                     if (id <= 251) return "Segunda Generación";
