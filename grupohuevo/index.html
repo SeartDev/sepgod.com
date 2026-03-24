@@ -69,11 +69,11 @@
 </head>
 <body>
 
-  <div class="contenedor">
+<div class="contenedor">
         <h2>Grupos Huevo Pokémon</h2>
         
         <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-            <input type="text" id="pokeInput1" placeholder="1er Pokémon (Ej. pikachu)" style="width: 60%; margin-bottom: 0;">
+            <input type="text" id="pokeInput1" list="listaPokemon" placeholder="1er Pokémon (Ej. pikachu)" style="width: 60%; margin-bottom: 0;">
             <select id="genero1" style="width: 40%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px;">
                 <option value="macho">Macho ♂️</option>
                 <option value="hembra">Hembra ♀️</option>
@@ -81,12 +81,14 @@
         </div>
         
         <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-            <input type="text" id="pokeInput2" placeholder="Pokémon final (Ej. squirtle)" style="width: 60%; margin-bottom: 0;">
+            <input type="text" id="pokeInput2" list="listaPokemon" placeholder="Pokémon final (Ej. squirtle)" style="width: 60%; margin-bottom: 0;">
             <select id="genero2" style="width: 40%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px;">
                 <option value="hembra">Hembra ♀️</option>
                 <option value="macho">Macho ♂️</option>
             </select>
         </div>
+        
+        <datalist id="listaPokemon"></datalist>
         
         <button onclick="buscarGrupoHuevo()">Buscar</button>
         
