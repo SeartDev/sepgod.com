@@ -179,7 +179,7 @@
         
     </style>
 </head>
-
+<body>
    <body class="dark-mode">
     <button id="btnTema" class="btn-tema" onclick="alternarTema()">
         <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/77.gif" alt="Ponyta">
@@ -244,7 +244,7 @@
         <div id="herramientaIVs" style="display: none;">
             
             <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 25px; text-align: left;">
-              <button class="btn-volver" onclick="volverMenuPrincipal()">⬅ Volver</button>
+               <button class="btn-volver" onclick="volverMenuPrincipal()">⬅ Volver</button>
                 <h2 style="margin: 0; font-size: 1.3em;">💯 Heredar IVs</h2>
             </div>
             
@@ -480,6 +480,7 @@
 
         async function cargarMovimientosGen6() {
             await verificarGenero('pokeInput1Mov', 'genero1Mov', 'fotoInput1Mov');
+
             const nombrePoke = document.getElementById('pokeInput1Mov').value.toLowerCase().trim();
             const selectMov = document.getElementById('movimientoElegido');
 
@@ -497,7 +498,10 @@
                 if (!res.ok) throw new Error("Pokémon no encontrado");
                 const data = await res.json();
 
-                let movsNivel = [], movsMT = [], movsHuevo = [], movsTutor = []; 
+                let movsNivel = [];
+                let movsMT = [];
+                let movsHuevo = [];
+                let movsTutor = []; 
 
                 data.moves.forEach(moveData => {
                     const detallesGen6 = moveData.version_group_details.filter(details => 
@@ -516,9 +520,9 @@
 
                         let nombreLimpio = moveData.move.name.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
                         if (nivel > 0) { nombreLimpio += ` (Nv. ${nivel})`; }
+
                         const objMov = { val: moveData.move.name, text: nombreLimpio };
 
-                        // Clasificación dentro del loop
                         if (metodos.includes('level-up')) { movsNivel.push(objMov); } 
                         else if (metodos.includes('machine')) { movsMT.push(objMov); } 
                         else if (metodos.includes('egg')) { movsHuevo.push(objMov); } 
@@ -526,34 +530,43 @@
                     }
                 });
 
+                if (movsNivel.length === 0 && movsMT.length === 0 && movsHuevo.length === 0 && movsTutor.length === 0) {
+                    selectMov.innerHTML = '<option value="">No hay datos de movimientos para Gen 6</option>';
+                    return;
+                }
+
                 const ordenar = (arr) => arr.sort((a, b) => a.text.localeCompare(b.text));
                 ordenar(movsNivel); ordenar(movsMT); ordenar(movsHuevo); ordenar(movsTutor);
 
                 let opcionesHtml = '<option value="">-- Elige el movimiento a heredar --</option>';
+
                 if (movsNivel.length > 0) {
                     opcionesHtml += `<optgroup label="🟢 Por Nivel" style="color: #15803d; background: #f0fdf4;">`;
-                    movsNivel.forEach(m => opcionesHtml += `<option value="${m.val}">${m.text}</option>`);
+                    movsNivel.forEach(m => opcionesHtml += `<option value="${m.val}" style="color: #334155; background: #fff;">${m.text}</option>`);
                     opcionesHtml += `</optgroup>`;
                 }
                 if (movsMT.length > 0) {
-                    opcionesHtml += `<optgroup label="🟡 Por MT / MO" style="color: #b45309; background: #fffbeb;">`;
-                    movsMT.forEach(m => opcionesHtml += `<option value="${m.val}">${m.text}</option>`);
+                    opcionesHtml += `<optgroup label="🟡 Por MT/MO" style="color: #b45309; background: #fffbeb;">`;
+                    movsMT.forEach(m => opcionesHtml += `<option value="${m.val}" style="color: #334155; background: #fff;">${m.text}</option>`);
                     opcionesHtml += `</optgroup>`;
                 }
                 if (movsHuevo.length > 0) {
                     opcionesHtml += `<optgroup label="🟣 Movimiento Huevo" style="color: #7e22ce; background: #faf5ff;">`;
-                    movsHuevo.forEach(m => opcionesHtml += `<option value="${m.val}">${m.text}</option>`);
+                    movsHuevo.forEach(m => opcionesHtml += `<option value="${m.val}" style="color: #334155; background: #fff;">${m.text}</option>`);
                     opcionesHtml += `</optgroup>`;
                 }
                 if (movsTutor.length > 0) {
-                    opcionesHtml += `<optgroup label="🔵 Tutor / Evento" style="color: #0369a1; background: #f0f9ff;">`;
-                    movsTutor.forEach(m => opcionesHtml += `<option value="${m.val}">${m.text}</option>`);
+                    opcionesHtml += `<optgroup label="🔵 Tutor/Evento" style="color: #0369a1; background: #f0f9ff;">`;
+                    movsTutor.forEach(m => opcionesHtml += `<option value="${m.val}" style="color: #334155; background: #fff;">${m.text}</option>`);
                     opcionesHtml += `</optgroup>`;
                 }
 
                 selectMov.innerHTML = opcionesHtml;
                 selectMov.disabled = false;
-            } catch (error) { selectMov.innerHTML = '<option value="">Error al cargar.</option>'; }
+
+            } catch (error) {
+                selectMov.innerHTML = '<option value="">Error al cargar movimientos.</option>';
+            }
         }
 
         // --- CÓDIGO VISUAL (GRAFICOS DE FÓRMULAS) ---
@@ -1296,10 +1309,9 @@
                     let h = `<div style="font-weight:700; color:${color}; margin-top:15px;">${titulo}:</div>`;
                     h += `<div class="gen-box" style="border-left: 4px solid ${color};">`;
                     lista.sort((a,b)=>a.n.localeCompare(b.n)).forEach(p => {
-                        // Enviamos los grupos del padre (grpObj) para que el buscador encuentre un abuelo compatible
-                        // Convertimos el array de grupos a string para pasarlo por el onclick
-                        const gruposPadreTxt = gruposDeEspecie[p.n.toLowerCase()].join(',');
-                        h += `<span class="nexo-tag" style="border-color:${color}aa;" onclick="prepararLinaje('${p.n}','${p.f}','${p.met}','${movName}','${nObjC}','${fotoObj}','${gObj}','${gruposPadreTxt}')">${p.n}</span> `;
+                        // Buscamos un "Abuelo" solo si el padre es por cadena (Egg Move)
+                        // Para simplificar, si es Egg Move, buscamos CUALQUIER pokemon que lo aprenda por nivel fuera de este grupo
+                        h += `<span class="nexo-tag" style="border-color:${color}aa;" onclick="prepararLinaje('${p.n}','${p.f}','${p.met}','${movName}','${nObjC}','${fotoObj}','${gObj}')">${p.n}</span> `;
                     });
                     h += `<p style="font-size:0.75em; color:var(--text-main); margin-top:8px;">${sub}</p></div>`;
                     return h;
@@ -1313,49 +1325,28 @@
             } catch (e) { divRes.innerHTML = `<div class="alerta alerta-roja">Error: ${e.message}</div>`; }
         }
 
-      // Función avanzada para buscar al "Abuelo" compatible
-        async function prepararLinaje(nPadre, fPadre, metPadre, movName, nHijo, fHijo, gHijo, gruposPadreTxt) {
-            let nAbuelo = "Donante Desconocido";
+        // Función puente para buscar al "Abuelo" (quién le enseña al padre)
+        async function prepararLinaje(nPadre, fPadre, metPadre, movName, nHijo, fHijo, gHijo) {
+            let nAbuelo = "Donante Externo";
             let fAbuelo = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/0.png";
-            const gruposPadre = gruposPadreTxt.split(',');
 
             if (metPadre !== 'level-up') {
                 const moveRes = await fetch(`https://pokeapi.co/api/v2/move/${movName}`).then(r=>r.json());
                 const aprendices = moveRes.learned_by_pokemon;
                 
-                // Buscamos un Pokémon que aprenda el movimiento por nivel Y sea compatible con el padre
-                let encontrado = false;
-                
-                // Prioridad 1: Buscar alguien en el MISMO grupo huevo que lo aprenda por nivel
-                for (let p de aprendices) {
-                    const nombreAprendiz = p.name;
-                    
-                    // ¿Este aprendiz está en alguno de los grupos del padre?
-                    if (gruposDeEspecie[nombreAprendiz]) {
-                        const esCompatible = gruposDeEspecie[nombreAprendiz].some(g => gruposPadre.includes(g));
-                        
-                        if (esCompatible) {
-                            const pData = await fetch(`https://pokeapi.co/api/v2/pokemon/${nombreAprendiz}`).then(r=>r.json());
-                            
-                            // Verificar si lo sabe por nivel en Gen 6
-                            const loSabePorNivel = pData.moves.some(m => m.move.name === movName && m.version_group_details.some(d => 
-                                (d.version_group.name === 'x-y' || d.version_group.name === 'omega-ruby-alpha-sapphire') && 
-                                d.move_learn_method.name === 'level-up'
-                            ));
-
-                            if (loSabePorNivel) {
-                                nAbuelo = pData.name.charAt(0).toUpperCase() + pData.name.slice(1);
-                                fAbuelo = extraerMejorSprite(pData);
-                                encontrado = true;
-                                break; 
-                            }
-                        }
+                // Buscamos al primer Pokémon de la lista que lo aprenda por nivel en Gen 6 para usarlo de ejemplo de origen
+                for (let p of aprendices.slice(0, 20)) { // Limitamos búsqueda para velocidad
+                    const pData = await fetch(p.url).then(r=>r.json());
+                    const loSabePorNivel = pData.moves.some(m => m.move.name === movName && m.version_group_details.some(d => 
+                        (d.version_group.name === 'x-y' || d.version_group.name === 'omega-ruby-alpha-sapphire') && d.move_learn_method.name === 'level-up'
+                    ));
+                    if (loSabePorNivel) {
+                        nAbuelo = pData.name.charAt(0).toUpperCase() + pData.name.slice(1);
+                        fAbuelo = extraerMejorSprite(pData);
+                        break;
                     }
                 }
-                
-                if (!encontrado) nAbuelo = "Abuelo No encontrado en este grupo";
             }
-            
             mostrarLinajeCompleto(nAbuelo, fAbuelo, nPadre, fPadre, nHijo, fHijo, metPadre, gHijo);
         }
     </script>
