@@ -72,7 +72,8 @@
     <div class="contenedor">
         <h2>Grupos Huevo Pokémon</h2>
         
-        <input type="text" id="pokeInput" placeholder="Ej. pikachu, charizard...">
+        <input type="text" id="pokeInput1" placeholder="1er Pokémon (Ej. pichu)">
+        <input type="text" id="pokeInput2" placeholder="Evolución final (Ej. raichu)">
         
         <button onclick="buscarGrupoHuevo()">Buscar</button>
         
@@ -82,47 +83,54 @@
     <script>
         /* --- LÓGICA JAVASCRIPT --- */
 
-        // Función asíncrona porque vamos a pedir datos a internet (PokéAPI)
+        // Función principal que se ejecuta al hacer clic en el botón
         async function buscarGrupoHuevo() {
             
-            // 1. Obtenemos el texto que escribió el usuario
-            // Lo pasamos a minúsculas y quitamos espacios a los lados porque la API es estricta con eso
-            const nombrePokemon = document.getElementById('pokeInput').value.toLowerCase().trim();
+            // 1. Obtenemos el texto de ambos inputs
+            const nombrePoke1 = document.getElementById('pokeInput1').value.toLowerCase().trim();
+            const nombrePoke2 = document.getElementById('pokeInput2').value.toLowerCase().trim();
             const divResultado = document.getElementById('resultado');
 
-            // Si el usuario no escribió nada, le pedimos que lo haga
-            if (!nombrePokemon) {
-                divResultado.innerHTML = "Por favor, escribe el nombre de un Pokémon.";
-                return; // Detenemos la función aquí
+            // Validamos que el usuario haya llenado ambos campos
+            if (!nombrePoke1 || !nombrePoke2) {
+                divResultado.innerHTML = "Por favor, escribe el nombre de ambos Pokémon.";
+                return; 
             }
 
-            // Mostramos un mensaje de carga mientras la API responde
             divResultado.innerHTML = "Buscando...";
 
             try {
-                // 2. Hacemos la petición a la PokéAPI (usamos pokemon-species para ver los grupos huevo)
-                const respuesta = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${nombrePokemon}`);
+                // 2. Creamos una función pequeñita (helper) solo para buscar un Pokémon a la vez
+                const buscarUnPokemon = async (nombre) => {
+                    const respuesta = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${nombre}`);
+                    if (!respuesta.ok) {
+                        throw new Error(`No se encontró a ${nombre}`);
+                    }
+                    const datos = await respuesta.json();
+                    // Extraemos los grupos huevo y los unimos con coma
+                    return datos.egg_groups.map(grupo => grupo.name).join(', ');
+                };
 
-                // Si la respuesta no es "ok" (ej. escribieron un nombre que no existe), lanzamos un error
-                if (!respuesta.ok) {
-                    throw new Error("Pokémon no encontrado. Verifica que el nombre esté bien escrito en inglés.");
-                }
+                // 3. Ejecutamos la búsqueda para ambos Pokémon al mismo tiempo (es más rápido así)
+                const [gruposHuevo1, gruposHuevo2] = await Promise.all([
+                    buscarUnPokemon(nombrePoke1),
+                    buscarUnPokemon(nombrePoke2)
+                ]);
 
-                // 3. Convertimos la respuesta a formato JSON (un objeto que Javascript puede leer fácil)
-                const datos = await respuesta.json();
+                // 4. Ponemos la primera letra en mayúscula para que se vea presentable
+                const nombre1Cap = nombrePoke1.charAt(0).toUpperCase() + nombrePoke1.slice(1);
+                const nombre2Cap = nombrePoke2.charAt(0).toUpperCase() + nombrePoke2.slice(1);
 
-                // 4. Extraemos los grupos huevo
-                // 'datos.egg_groups' es un arreglo. Usamos .map() para sacar solo los nombres y .join() para unirlos con una coma
-                const gruposHuevo = datos.egg_groups.map(grupo => grupo.name).join(', ');
-
-                // 5. Mostramos el resultado en la pantalla
-                // Usamos la primera letra en mayúscula para que se vea más bonito
-                const nombreCapitalizado = nombrePokemon.charAt(0).toUpperCase() + nombrePokemon.slice(1);
-                divResultado.innerHTML = `El grupo huevo de <strong>${nombreCapitalizado}</strong> es:<br><br> <strong><span style="color:#e3350d;">${gruposHuevo}</span></strong>`;
+                // 5. Mostramos el resultado de los dos Pokémon en pantalla
+                divResultado.innerHTML = `
+                    <p>Grupo huevo de <strong>${nombre1Cap}</strong>:<br> <strong><span style="color:#e3350d;">${gruposHuevo1}</span></strong></p>
+                    <hr style="border: 0; border-top: 1px solid #ccc; margin: 15px 0;">
+                    <p>Grupo huevo de <strong>${nombre2Cap}</strong>:<br> <strong><span style="color:#e3350d;">${gruposHuevo2}</span></strong></p>
+                `;
 
             } catch (error) {
-                // Si hubo algún error (el nombre no existe o se cayó el internet), lo mostramos aquí
-                divResultado.innerHTML = `<span style="color:red;">Error: ${error.message}</span>`;
+                // Si uno de los dos nombres falla, mostramos el error
+                divResultado.innerHTML = `<span style="color:red;">Error: ${error.message}. Verifica la ortografía.</span>`;
             }
         }
     </script>
