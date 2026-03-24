@@ -188,7 +188,7 @@
 <div class="contenedor">
         
         <div id="menuSeleccion">
-            <h2>🧬 Genética Pokémon</h2>
+            <h2> 2.0 🧬 Genética Pokémon</h2>
             <p style="color: #64748b; margin-bottom: 24px;">2.0 Selecciona la herramienta que necesitas hoy:</p>
             
             <div style="display: flex; flex-direction: column; gap: 16px;">
@@ -239,7 +239,74 @@
             <button onclick="buscarGrupoHuevo()">Calcular Ruta de Crianza</button>
             <div id="resultado"></div>
         </div>
+    <div id="menuGeneraciones" style="display: none;">
+            <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 25px; text-align: left;">
+                <button class="btn-volver" onclick="volverMenuPrincipal()">⬅ Volver</button>
+                <h2 style="margin: 0; font-size: 1.3em;">⚔️ Elige la Generación</h2>
+            </div>
+            
+            <p style="color: #64748b; margin-bottom: 24px;">Las reglas de crianza cambian según el juego. Elige tu versión:</p>
+            
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+                <button class="btn-menu" style="border-color: #ec4899;" onclick="abrirHerramientaMovimientos('gen6')">
+                    <span style="font-size: 1.5em;">🔵🔴</span>
+                    Gen 6 (X-Y / Rubí Omega - Zafiro Alfa)
+                </button>
+                
+                <button class="btn-menu" style="opacity: 0.5; cursor: not-allowed;">
+                    <span style="font-size: 1.5em;">☀️🌙</span>
+                    Gen 7 (Sol-Luna) - Próximamente
+                </button>
+                <button class="btn-menu" style="opacity: 0.5; cursor: not-allowed;">
+                    <span style="font-size: 1.5em;">⚔️🛡️</span>
+                    Gen 8 (Espada-Escudo) - Próximamente
+                </button>
+            </div>
+        </div>
 
+        <div id="herramientaMovimientos" style="display: none;">
+            
+            <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 25px; text-align: left;">
+                <button class="btn-volver" onclick="volverMenuGeneraciones()">⬅ Volver</button>
+                <h2 style="margin: 0; font-size: 1.2em;">⚔️ Movimientos (Gen 6)</h2>
+            </div>
+            
+            <div class="fila-input" style="align-items: flex-start;">
+                <div class="slot-foto" id="fotoInput1Mov" style="margin-top: 5px;">
+                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/0.png" alt="esperando">
+                </div>
+                
+                <div style="display: flex; flex-direction: column; width: 100%; gap: 10px;">
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="pokeInput1Mov" list="listaPokemon" placeholder="Donante origen (Ej. charizard)" style="width: 60%; margin-bottom: 0;" onchange="cargarMovimientosGen6()">
+                        <select id="genero1Mov" style="width: 40%;">
+                            <option value="macho">Macho ♂</option>
+                            <option value="hembra">Hembra ♀</option>
+                            <option value="sin_genero" hidden>Sin Género ❌</option>
+                        </select>
+                    </div>
+                    
+                    <select id="movimientoElegido" disabled style="width: 100%; font-weight: bold; color: #0284c7; background-color: #e0f2fe; border: 1px solid #bae6fd;">
+                        <option value="">Esperando Pokémon donante...</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="fila-input">
+                <div class="slot-foto" id="fotoInput2Mov">
+                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/0.png" alt="esperando">
+                </div>
+                <input type="text" id="pokeInput2Mov" list="listaPokemon" placeholder="Receptor final (Ej. bagon)" onchange="verificarGenero('pokeInput2Mov', 'genero2Mov', 'fotoInput2Mov')">
+                <select id="genero2Mov">
+                    <option value="hembra">Hembra ♀</option>
+                    <option value="macho">Macho ♂</option>
+                    <option value="sin_genero" hidden>Sin Género ❌</option>
+                </select>
+            </div>
+            
+            <button onclick="calcularRutaMovimientos()">Trazar Ruta de Movimientos</button>
+            <div id="resultadoMovimientos"></div>
+        </div>
     </div>
     <script>
         // --- MODO OSCURO (GENGAR / PONYTA) ---
@@ -263,36 +330,35 @@
                 `;
             }
         }
-       // --- NAVEGACIÓN Y UTILIDADES ---
+      // --- NAVEGACIÓN Y UTILIDADES ---
         function abrirHerramienta(tipo) {
+            document.getElementById('menuSeleccion').style.display = 'none';
             if (tipo === 'ivs') {
-                document.getElementById('menuSeleccion').style.display = 'none';
                 document.getElementById('herramientaIVs').style.display = 'block';
             } else if (tipo === 'movimientos') {
-                alert("🛠️ La calculadora de Movimientos Huevo está en construcción. ¡Próximamente!");
+                document.getElementById('menuGeneraciones').style.display = 'block';
             }
         }
 
-        function volverMenu() {
+        function volverMenuPrincipal() {
             document.getElementById('herramientaIVs').style.display = 'none';
+            document.getElementById('menuGeneraciones').style.display = 'none';
+            document.getElementById('herramientaMovimientos').style.display = 'none';
             document.getElementById('menuSeleccion').style.display = 'block';
-            // Opcional: limpiar resultados anteriores
-            document.getElementById('resultado').innerHTML = '';
+            document.getElementById('resultado').innerHTML = ''; // Limpia resultados previos
         }
 
-        const cacheEspecies = {}; 
-        
-        // Obtiene info de /pokemon-species (para género e ID gen)
-        async function getEspecieInfo(nombre) {
-            if (cacheEspecies[nombre]) return cacheEspecies[nombre];
-            try {
-                const res = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${nombre}`);
-                if(!res.ok) return null;
-                const data = await res.json();
-                const info = { rate: data.gender_rate, id: data.id };
-                cacheEspecies[nombre] = info;
-                return info;
-            } catch(e) { return null; }
+        function volverMenuGeneraciones() {
+            document.getElementById('herramientaMovimientos').style.display = 'none';
+            document.getElementById('menuGeneraciones').style.display = 'block';
+            document.getElementById('resultadoMovimientos').innerHTML = '';
+        }
+
+        function abrirHerramientaMovimientos(gen) {
+            if (gen === 'gen6') {
+                document.getElementById('menuGeneraciones').style.display = 'none';
+                document.getElementById('herramientaMovimientos').style.display = 'block';
+            }
         }
 
         // --- NUEVA FUNCIÓN MÁGICA: Extrae GIF animado o foto estática oficial ---
@@ -633,6 +699,83 @@
             } catch (error) {
                 divRes.innerHTML = `<div class="alerta alerta-roja">Error técnico o de conexión. ${error.message}</div>`;
             }
+        }
+
+        // --- LÓGICA DE HERRAMIENTA MOVIMIENTOS (GEN 6) ---
+
+        async function cargarMovimientosGen6() {
+            // 1. Ejecutar la función visual que ya tenemos para la foto y el género
+            await verificarGenero('pokeInput1Mov', 'genero1Mov', 'fotoInput1Mov');
+
+            const nombrePoke = document.getElementById('pokeInput1Mov').value.toLowerCase().trim();
+            const selectMov = document.getElementById('movimientoElegido');
+
+            if (!nombrePoke) {
+                selectMov.innerHTML = '<option value="">Esperando Pokémon donante...</option>';
+                selectMov.disabled = true;
+                return;
+            }
+
+            selectMov.innerHTML = '<option value="">Descargando datos genéticos (Gen 6)...</option>';
+            selectMov.disabled = true;
+
+            try {
+                const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${nombrePoke}`);
+                if (!res.ok) throw new Error("Pokémon no encontrado");
+                const data = await res.json();
+
+                let movimientosValidos = [];
+
+                // 2. Extraer y filtrar movimientos estrictamente para Gen 6
+                data.moves.forEach(moveData => {
+                    const detallesGen6 = moveData.version_group_details.filter(details => 
+                        details.version_group.name === 'x-y' || 
+                        details.version_group.name === 'omega-ruby-alpha-sapphire'
+                    );
+
+                    // Si el Pokémon podía aprender este movimiento en Gen 6, lo guardamos
+                    if (detallesGen6.length > 0) {
+                        movimientosValidos.push(moveData.move.name);
+                    }
+                });
+
+                if (movimientosValidos.length === 0) {
+                    selectMov.innerHTML = '<option value="">No hay datos de movimientos para Gen 6</option>';
+                    return;
+                }
+
+                // 3. Ordenar alfabéticamente para que el usuario encuentre fácil el ataque
+                movimientosValidos.sort();
+
+                // 4. Llenar el desplegable
+                selectMov.innerHTML = '<option value="">-- Elige el movimiento a heredar --</option>';
+                movimientosValidos.forEach(movName => {
+                    const opcion = document.createElement('option');
+                    opcion.value = movName;
+                    
+                    // Limpiamos el nombre (Ej: "dragon-dance" -> "Dragon Dance")
+                    const nombreLimpio = movName.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                    opcion.textContent = nombreLimpio;
+                    
+                    selectMov.appendChild(opcion);
+                });
+
+                selectMov.disabled = false;
+
+            } catch (error) {
+                selectMov.innerHTML = '<option value="">Error al cargar movimientos.</option>';
+            }
+        }
+
+        // Función "Placeholder" para cuando le den al botón de Calcular (Lo haremos en el próximo paso)
+        function calcularRutaMovimientos() {
+            const divRes = document.getElementById('resultadoMovimientos');
+            divRes.innerHTML = `
+                <div class="alerta alerta-verde" style="margin-top: 20px;">
+                    <strong>¡Interfaz Lista!</strong><br><br>
+                    Has seleccionado todo correctamente. El "Cerebro Matemático" para buscar el puente de este movimiento se programará en el siguiente paso.
+                </div>
+            `;
         }
     </script>
 
