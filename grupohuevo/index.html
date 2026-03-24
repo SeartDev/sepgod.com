@@ -317,20 +317,19 @@
             
             const btnTema = document.getElementById('btnTema');
             if (esModoOscuro) {
-                // Al estar oscuro, mostramos a Ponyta invitando a volver al Modo Luz
                 btnTema.innerHTML = `
                     <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/77.gif" alt="Ponyta">
                     Modo Luz
                 `;
             } else {
-                // Al estar en luz, mostramos a Gengar invitando al Modo Oscuro
                 btnTema.innerHTML = `
                     <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/94.gif" alt="Gengar">
                     Modo Oscuro
                 `;
             }
         }
-      // --- NAVEGACIÓN Y UTILIDADES ---
+
+        // --- NAVEGACIÓN Y UTILIDADES ---
         function abrirHerramienta(tipo) {
             document.getElementById('menuSeleccion').style.display = 'none';
             if (tipo === 'ivs') {
@@ -345,7 +344,8 @@
             document.getElementById('menuGeneraciones').style.display = 'none';
             document.getElementById('herramientaMovimientos').style.display = 'none';
             document.getElementById('menuSeleccion').style.display = 'block';
-            document.getElementById('resultado').innerHTML = ''; // Limpia resultados previos
+            document.getElementById('resultado').innerHTML = ''; 
+            document.getElementById('resultadoMovimientos').innerHTML = '';
         }
 
         function volverMenuGeneraciones() {
@@ -361,21 +361,25 @@
             }
         }
 
-        // --- NUEVA FUNCIÓN MÁGICA: Extrae GIF animado o foto estática oficial ---
         function extraerMejorSprite(dataPokemon) {
-            // 1. Intentar obtener el GIF animado (Generaciones 1-5)
-            // Ruta: sprites -> versions -> generation-v -> black-white -> animated -> front_default
             const gifUrl = dataPokemon.sprites?.versions?.["generation-v"]?.["black-white"]?.animated?.front_default;
-            
-            if (gifUrl) {
-                return gifUrl; // Encontramos GIF!
-            }
-            
-            // 2. Fallback: Si no hay GIF (Gen 6+), usar la imagen oficial estática de alta calidad
+            if (gifUrl) return gifUrl;
             return dataPokemon.sprites?.other?.["official-artwork"]?.front_default || '';
         }
 
-        // Cargar autocompletado nativo al iniciar
+        const cacheEspecies = {}; 
+        async function getEspecieInfo(nombre) {
+            if (cacheEspecies[nombre]) return cacheEspecies[nombre];
+            try {
+                const res = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${nombre}`);
+                if(!res.ok) return null;
+                const data = await res.json();
+                const info = { rate: data.gender_rate, id: data.id };
+                cacheEspecies[nombre] = info;
+                return info;
+            } catch(e) { return null; }
+        }
+
         window.onload = async function() {
             try {
                 const res = await fetch('https://pokeapi.co/api/v2/pokemon-species?limit=10000');
@@ -389,7 +393,7 @@
             } catch (e) {}
         };
 
-        // Bloquear géneros imposibles y CARGAR FOTO al escribir
+        // --- MANEJO DE INTERFAZ Y EVENTOS ---
         async function verificarGenero(inputId, selectId, fotoContId) {
             const nombre = document.getElementById(inputId).value.toLowerCase().trim();
             const selectElement = document.getElementById(selectId);
@@ -403,7 +407,6 @@
                 return;
             }
             try {
-                // Pedimos info de especie y pokemon en paralelo para ser rápidos
                 const [resEspecie, resPoke] = await Promise.all([
                     fetch(`https://pokeapi.co/api/v2/pokemon-species/${nombre}`),
                     fetch(`https://pokeapi.co/api/v2/pokemon/${nombre}`)
@@ -417,11 +420,9 @@
                 const dataEspecie = await resEspecie.json();
                 const dataPoke = await resPoke.json();
 
-                // 1. Cargar la foto/GIF en el slot
                 const urlFoto = extraerMejorSprite(dataPoke);
                 fotoContainer.innerHTML = `<img src="${urlFoto}" alt="${nombre}" class="animar-entrada">`;
 
-                // 2. Lógica de bloqueo de género
                 const rate = dataEspecie.gender_rate;
                 if (rate === -1) { selectElement.value = 'sin_genero'; selectElement.disabled = true; } 
                 else if (rate === 0) { selectElement.value = 'macho'; selectElement.disabled = true; } 
@@ -435,7 +436,98 @@
             }
         }
 
-        // --- GENERADORES DE FÓRMULAS VISUALES (Ahora aceptan URLs de fotos) ---
+        async function cargarMovimientosGen6() {
+            await verificarGenero('pokeInput1Mov', 'genero1Mov', 'fotoInput1Mov');
+
+            const nombrePoke = document.getElementById('pokeInput1Mov').value.toLowerCase().trim();
+            const selectMov = document.getElementById('movimientoElegido');
+
+            if (!nombrePoke) {
+                selectMov.innerHTML = '<option value="">Esperando Pokémon donante...</option>';
+                selectMov.disabled = true;
+                return;
+            }
+
+            selectMov.innerHTML = '<option value="">Descargando datos genéticos (Gen 6)...</option>';
+            selectMov.disabled = true;
+
+            try {
+                const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${nombrePoke}`);
+                if (!res.ok) throw new Error("Pokémon no encontrado");
+                const data = await res.json();
+
+                let movsNivel = [];
+                let movsMT = [];
+                let movsHuevo = [];
+                let movsTutor = []; 
+
+                data.moves.forEach(moveData => {
+                    const detallesGen6 = moveData.version_group_details.filter(details => 
+                        details.version_group.name === 'x-y' || 
+                        details.version_group.name === 'omega-ruby-alpha-sapphire'
+                    );
+
+                    if (detallesGen6.length > 0) {
+                        let nivel = 0;
+                        const metodos = detallesGen6.map(d => {
+                            if (d.move_learn_method.name === 'level-up' && d.level_learned_at > 0) {
+                                nivel = d.level_learned_at;
+                            }
+                            return d.move_learn_method.name;
+                        });
+
+                        let nombreLimpio = moveData.move.name.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                        if (nivel > 0) { nombreLimpio += ` (Nv. ${nivel})`; }
+
+                        const objMov = { val: moveData.move.name, text: nombreLimpio };
+
+                        if (metodos.includes('level-up')) { movsNivel.push(objMov); } 
+                        else if (metodos.includes('machine')) { movsMT.push(objMov); } 
+                        else if (metodos.includes('egg')) { movsHuevo.push(objMov); } 
+                        else { movsTutor.push(objMov); }
+                    }
+                });
+
+                if (movsNivel.length === 0 && movsMT.length === 0 && movsHuevo.length === 0 && movsTutor.length === 0) {
+                    selectMov.innerHTML = '<option value="">No hay datos de movimientos para Gen 6</option>';
+                    return;
+                }
+
+                const ordenar = (arr) => arr.sort((a, b) => a.text.localeCompare(b.text));
+                ordenar(movsNivel); ordenar(movsMT); ordenar(movsHuevo); ordenar(movsTutor);
+
+                let opcionesHtml = '<option value="">-- Elige el movimiento a heredar --</option>';
+
+                if (movsNivel.length > 0) {
+                    opcionesHtml += `<optgroup label="🟢 Por Nivel" style="color: #15803d; background: #f0fdf4;">`;
+                    movsNivel.forEach(m => opcionesHtml += `<option value="${m.val}" style="color: #334155; background: #fff;">${m.text}</option>`);
+                    opcionesHtml += `</optgroup>`;
+                }
+                if (movsMT.length > 0) {
+                    opcionesHtml += `<optgroup label="🟡 Por MT/MO" style="color: #b45309; background: #fffbeb;">`;
+                    movsMT.forEach(m => opcionesHtml += `<option value="${m.val}" style="color: #334155; background: #fff;">${m.text}</option>`);
+                    opcionesHtml += `</optgroup>`;
+                }
+                if (movsHuevo.length > 0) {
+                    opcionesHtml += `<optgroup label="🟣 Movimiento Huevo" style="color: #7e22ce; background: #faf5ff;">`;
+                    movsHuevo.forEach(m => opcionesHtml += `<option value="${m.val}" style="color: #334155; background: #fff;">${m.text}</option>`);
+                    opcionesHtml += `</optgroup>`;
+                }
+                if (movsTutor.length > 0) {
+                    opcionesHtml += `<optgroup label="🔵 Tutor/Evento" style="color: #0369a1; background: #f0f9ff;">`;
+                    movsTutor.forEach(m => opcionesHtml += `<option value="${m.val}" style="color: #334155; background: #fff;">${m.text}</option>`);
+                    opcionesHtml += `</optgroup>`;
+                }
+
+                selectMov.innerHTML = opcionesHtml;
+                selectMov.disabled = false;
+
+            } catch (error) {
+                selectMov.innerHTML = '<option value="">Error al cargar movimientos.</option>';
+            }
+        }
+
+        // --- CÓDIGO VISUAL (GRAFICOS DE FÓRMULAS) ---
         function mostrarFormula(n1, g1, f1, n2, g2, f2, nexoN, nexoF) {
             let pasosHtml = "";
             let donanteBadg = `<div class="badge badge-macho"><img src="${f1}">${n1} ♂</div>`;
@@ -496,17 +588,19 @@
                 <div class="formula-box animar-entrada">
                     <div class="formula-titulo">${titulo}</div>
                     ${pasosHtml}
-                    <p style="margin:16px 0 0 0; font-size:0.85em; color:#94a3b8; text-align:center;">Equipa el <strong>Lazo Destino</strong> para heredar los IVs.</p>
+                    <p style="margin:16px 0 0 0; font-size:0.85em; color:var(--text-main); text-align:center;">💡 <em>Nota: Si estás heredando IVs, equipa el Lazo Destino.</em></p>
                 </div>`;
             const cont = document.getElementById('contenedorFormula');
-            cont.innerHTML = esquemaHtml;
-            cont.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            if (cont) {
+                cont.innerHTML = esquemaHtml;
+                cont.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
         }
 
-        // 4. LÓGICA DE GRAFOS (Actualizada para cachear URLs de fotos)
+        // --- CEREBRO: MEMORIA CACHÉ GLOBAL ---
         let especiesPorGrupo = null;
         let gruposDeEspecie = null;
-        const cacheFotosNexos = {}; // Guardar URLs de fotos para no re-pedirlas al clicar
+        const cacheFotosNexos = {}; 
 
         async function cargarGruposGlobales() {
             if (especiesPorGrupo) return;
@@ -524,6 +618,7 @@
             });
         }
 
+        // --- CALCULADORA 1: IVS ---
         async function buscarGrupoHuevo() {
             const p1 = document.getElementById('pokeInput1').value.toLowerCase().trim();
             const g1 = document.getElementById('genero1').value;
@@ -533,12 +628,11 @@
 
             if (!p1 || !p2) { divRes.innerHTML = `<div class="alerta alerta-roja">Escribe ambos Pokémon.</div>`; return; }
 
-            divRes.innerHTML = "<div style='text-align:center; color:#94a3b8; font-weight:600;'>Analizando ADN y Sprites...</div>";
+            divRes.innerHTML = "<div style='text-align:center; color:var(--text-main); font-weight:600;'>Analizando ADN...</div>";
 
             try {
                 await cargarGruposGlobales();
                 
-                // Pedimos /species y /pokemon de ambos iniciales para tener fotos y datos biológicos
                 const [spec1, spec2, poke1Data, poke2Data] = await Promise.all([
                     fetch(`https://pokeapi.co/api/v2/pokemon-species/${p1}`).then(r => r.json()),
                     fetch(`https://pokeapi.co/api/v2/pokemon-species/${p2}`).then(r => r.json()),
@@ -546,10 +640,8 @@
                     fetch(`https://pokeapi.co/api/v2/pokemon/${p2}`).then(r => r.json())
                 ]);
 
-                // Guardar URLs de fotos de los iniciales
                 const foto1 = extraerMejorSprite(poke1Data);
                 const foto2 = extraerMejorSprite(poke2Data);
-
                 const grp1 = spec1.egg_groups.map(g => g.name);
                 const grp2 = spec2.egg_groups.map(g => g.name);
                 const n1C = p1.charAt(0).toUpperCase() + p1.slice(1);
@@ -558,11 +650,11 @@
                 let htmlInfo = `
                     <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
                         <div><strong>${n1C}</strong> ${g1 === 'macho' ? '♂' : '♀'}</div>
-                        <div style="color:#64748b; font-size:0.9em;">[${grp1.join(', ')}]</div>
+                        <div style="color:var(--text-main); font-size:0.9em;">[${grp1.join(', ')}]</div>
                     </div>
                     <div style="display:flex; justify-content:space-between;">
                         <div><strong>${n2C}</strong> ${g2 === 'macho' ? '♂' : '♀'}</div>
-                        <div style="color:#64748b; font-size:0.9em;">[${grp2.join(', ')}]</div>
+                        <div style="color:var(--text-main); font-size:0.9em;">[${grp2.join(', ')}]</div>
                     </div><hr>`;
 
                 if (spec1.gender_rate === -1 || spec2.gender_rate === -1) { divRes.innerHTML = htmlInfo + `<div class="alerta alerta-roja">⛔ Sin género.</div>`; return; }
@@ -571,7 +663,6 @@
                 if (grp1.includes('no-eggs') || grp2.includes('no-eggs')) { divRes.innerHTML = htmlInfo + `<div class="alerta alerta-roja">No pueden criar.</div>`; return; }
                 if (grp1.some(g => grp2.includes(g))) { divRes.innerHTML = htmlInfo + `<div class="alerta alerta-verde"><strong>¡Compatibles Directos!</strong></div>`; return; }
 
-                // FASE 1: Nexos Sencillos
                 let sencillosBasicos = [];
                 for (let g of grp1) {
                     if (!especiesPorGrupo[g]) continue;
@@ -583,10 +674,9 @@
                 }
                 sencillosBasicos = [...new Set(sencillosBasicos)];
                 
-                // Pedimos info y FOTOS de los nexos sencillos en paralelo
                 const promesasSencillos = sencillosBasicos.map(nombre => Promise.all([
                     fetch(`https://pokeapi.co/api/v2/pokemon-species/${nombre}`).then(r => r.json()),
-                    fetch(`https://pokeapi.co/api/v2/pokemon/${nombre}`).then(r => r.json()) // Foto aquí
+                    fetch(`https://pokeapi.co/api/v2/pokemon/${nombre}`).then(r => r.json())
                 ]));
                 const datosSencillosPairs = await Promise.all(promesasSencillos);
 
@@ -594,17 +684,14 @@
                 datosSencillosPairs.forEach(([dataSpec, dataPoke]) => {
                     if (dataSpec.gender_rate >= 1 && dataSpec.gender_rate <= 7) {
                         const urlF = extraerMejorSprite(dataPoke);
-                        cacheFotosNexos[dataSpec.name] = urlF; // Guardar foto en cache
+                        cacheFotosNexos[dataSpec.name] = urlF;
                         sencillosValidos.push({ nombre: dataSpec.name, id: dataSpec.id, foto: urlF });
                     }
                 });
 
-                // FASE 2: Nexos Múltiples (Lógica simplificada para velocidad, pero incluye fotos)
                 let multiplesValidos = [];
                 let combinacionesVistas = new Set();
                 
-                // Para múltiples, solo guardamos nombres, pediremos fotos solo si clican
-                // (Para no saturar la API con 10 peticiones extra ahora mismo)
                 for (let g1 of grp1) {
                     for (let g2 of grp2) {
                         if (multiplesValidos.length >= 5) break;
@@ -622,7 +709,6 @@
                                     let hash = nx1N + "|" + nx2N;
                                     if (!combinacionesVistas.has(hash)) {
                                         combinacionesVistas.add(hash);
-                                        // Guardamos nombres capitalizados listos para mostrar
                                         let Cnx1 = nx1N.charAt(0).toUpperCase() + nx1N.slice(1);
                                         let Cnx2 = nx2N.charAt(0).toUpperCase() + nx2N.slice(1);
                                         multiplesValidos.push([Cnx1, Cnx2]);
@@ -637,13 +723,11 @@
                      divRes.innerHTML = htmlInfo + `<div class="alerta alerta-roja">Imposible conectar biológicamente.</div>`; return;
                 }
 
-                // --- CONSTRUCCIÓN DE LA INTERFAZ ---
-                let espacioFormula = `<div id="contenedorFormula"><div style="background: #f1f5f9; padding: 15px; border-radius: 12px; text-align: center; color: #64748b; margin: 20px 0;">👆 <em>Clic en un puente para ver la ruta con fotos.</em></div></div>`;
+                let espacioFormula = `<div id="contenedorFormula"><div style="background: var(--bg-input); padding: 15px; border-radius: 12px; text-align: center; color: var(--text-main); margin: 20px 0;">👆 <em>Clic en un puente para ver la ruta.</em></div></div>`;
                 let htmlListas = "";
 
                 if (sencillosValidos.length > 0) {
                     htmlListas += `<div style="font-weight:700; color:#15803d; margin-top:10px;">🟢 Nexos Sencillos (1 Salto):</div>`;
-                    
                     const obtenerReg = (id) => {
                         if (id <= 151) return "Kanto"; if (id <= 251) return "Johto"; if (id <= 386) return "Hoenn";
                         if (id <= 493) return "Sinnoh"; if (id <= 649) return "Teselia"; if (id <= 721) return "Kalos";
@@ -661,7 +745,6 @@
                         if (nexosAgrupados[reg]) {
                             nexosAgrupados[reg].sort((a,b) => a.n.localeCompare(b.n)); 
                             let botones = nexosAgrupados[reg].map(nx => {
-                                // Al clicar, pasamos las URLs de las fotos que ya tenemos capturadas
                                 return `<span class="nexo-tag" onclick="mostrarFormula('${n1C}', '${g1}', '${foto1}', '${n2C}', '${g2}', '${foto2}', '${nx.n}', '${nx.f}')">${nx.n}</span>`;
                             }).join(' ');
                             htmlListas += `<div class="gen-box"><div class="gen-titulo">${reg}</div><div>${botones}</div></div>`;
@@ -670,16 +753,11 @@
                 }
 
                 if (multiplesValidos.length > 0) {
-                    htmlListas += `<div style="font-weight:700; color:#9333ea; margin-top:20px;">🟣 Cadenas Múltiples (2 Saltos - Máx 5):</div><div class="gen-box">`;
-                    
-                    // Usamos Promise.all para cargar las fotos de los múltiplos ANTES de dibujar los botones,
-                    // así el onclick ya lleva las URLs preparadas.
+                    htmlListas += `<div style="font-weight:700; color:#9333ea; margin-top:20px;">🟣 Cadenas Múltiples (Máx 5):</div><div class="gen-box">`;
                     const promesasFotosMultiples = multiplesValidos.map(async (par) => {
-                        const n1Nom = par[0].toLowerCase();
-                        const n2Nom = par[1].toLowerCase();
                         const [dPoke1, dPoke2] = await Promise.all([
-                            fetch(`https://pokeapi.co/api/v2/pokemon/${n1Nom}`).then(r => r.json()),
-                            fetch(`https://pokeapi.co/api/v2/pokemon/${n2Nom}`).then(r => r.json())
+                            fetch(`https://pokeapi.co/api/v2/pokemon/${par[0].toLowerCase()}`).then(r => r.json()),
+                            fetch(`https://pokeapi.co/api/v2/pokemon/${par[1].toLowerCase()}`).then(r => r.json())
                         ]);
                         return [extraerMejorSprite(dPoke1), extraerMejorSprite(dPoke2)];
                     });
@@ -687,9 +765,7 @@
                     const urlsFotosMultiples = await Promise.all(promesasFotosMultiples);
 
                     multiplesValidos.forEach((par, index) => {
-                        const fotoNx1 = urlsFotosMultiples[index][0];
-                        const fotoNx2 = urlsFotosMultiples[index][1];
-                        htmlListas += `<span class="nexo-tag nexo-tag-multi" onclick="mostrarFormulaMultiple('${n1C}', '${g1}', '${foto1}', '${n2C}', '${g2}', '${foto2}', '${par[0]}', '${fotoNx1}', '${par[1]}', '${fotoNx2}')">${par[0]} ➔ ${par[1]}</span>`;
+                        htmlListas += `<span class="nexo-tag nexo-tag-multi" onclick="mostrarFormulaMultiple('${n1C}', '${g1}', '${foto1}', '${n2C}', '${g2}', '${foto2}', '${par[0]}', '${urlsFotosMultiples[index][0]}', '${par[1]}', '${urlsFotosMultiples[index][1]}')">${par[0]} ➔ ${par[1]}</span>`;
                     });
                     htmlListas += `</div>`;
                 }
@@ -697,160 +773,31 @@
                 divRes.innerHTML = htmlInfo + espacioFormula + htmlListas;
 
             } catch (error) {
-                divRes.innerHTML = `<div class="alerta alerta-roja">Error técnico o de conexión. ${error.message}</div>`;
+                divRes.innerHTML = `<div class="alerta alerta-roja">Error de red. ${error.message}</div>`;
             }
         }
 
-        // --- LÓGICA DE HERRAMIENTA MOVIMIENTOS (GEN 6) ---
-
-        async function cargarMovimientosGen6() {
-            // 1. Ejecutar la función visual que ya tenemos para la foto y el género
-            await verificarGenero('pokeInput1Mov', 'genero1Mov', 'fotoInput1Mov');
-
-            const nombrePoke = document.getElementById('pokeInput1Mov').value.toLowerCase().trim();
-            const selectMov = document.getElementById('movimientoElegido');
-
-            if (!nombrePoke) {
-                selectMov.innerHTML = '<option value="">Esperando Pokémon donante...</option>';
-                selectMov.disabled = true;
-                return;
-            }
-
-            selectMov.innerHTML = '<option value="">Descargando datos genéticos (Gen 6)...</option>';
-            selectMov.disabled = true;
-
-            try {
-                const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${nombrePoke}`);
-                if (!res.ok) throw new Error("Pokémon no encontrado");
-                const data = await res.json();
-
-                // Arreglos para separar los movimientos por categoría
-                let movsNivel = [];
-                let movsMT = [];
-                let movsHuevo = [];
-                let movsTutor = []; 
-
-                // 2. Extraer y filtrar movimientos estrictamente para Gen 6
-                data.moves.forEach(moveData => {
-                    const detallesGen6 = moveData.version_group_details.filter(details => 
-                        details.version_group.name === 'x-y' || 
-                        details.version_group.name === 'omega-ruby-alpha-sapphire'
-                    );
-
-                    if (detallesGen6.length > 0) {
-                        // Buscamos si lo aprende por nivel y a qué nivel
-                        let nivel = 0;
-                        const metodos = detallesGen6.map(d => {
-                            if (d.move_learn_method.name === 'level-up' && d.level_learned_at > 0) {
-                                nivel = d.level_learned_at;
-                            }
-                            return d.move_learn_method.name;
-                        });
-
-                        let nombreLimpio = moveData.move.name.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-                        
-                        // Si es por nivel, le agregamos el texto (Nv. X)
-                        if (nivel > 0) {
-                            nombreLimpio += ` (Nv. ${nivel})`;
-                        }
-
-                        const objMov = { val: moveData.move.name, text: nombreLimpio };
-
-                        // 3. Clasificamos con jerarquía
-                        if (metodos.includes('level-up')) {
-                            movsNivel.push(objMov);
-                        } else if (metodos.includes('machine')) {
-                            movsMT.push(objMov);
-                        } else if (metodos.includes('egg')) {
-                            movsHuevo.push(objMov);
-                        } else {
-                            movsTutor.push(objMov);
-                        }
-                    }
-                });
-
-                        // 3. Clasificamos con jerarquía (Nivel > MT > Huevo > Tutor)
-                        if (metodos.includes('level-up')) {
-                            movsNivel.push(objMov);
-                        } else if (metodos.includes('machine')) {
-                            movsMT.push(objMov);
-                        } else if (metodos.includes('egg')) {
-                            movsHuevo.push(objMov);
-                        } else {
-                            movsTutor.push(objMov);
-                        }
-                    }
-                });
-
-                if (movsNivel.length === 0 && movsMT.length === 0 && movsHuevo.length === 0 && movsTutor.length === 0) {
-                    selectMov.innerHTML = '<option value="">No hay datos de movimientos para Gen 6</option>';
-                    return;
-                }
-
-                // 4. Ordenar alfabéticamente cada grupo por separado
-                const ordenar = (arr) => arr.sort((a, b) => a.text.localeCompare(b.text));
-                ordenar(movsNivel); 
-                ordenar(movsMT); 
-                ordenar(movsHuevo); 
-                ordenar(movsTutor);
-
-                // 5. Construir el HTML con Grupos Optativos (<optgroup>) y colores
-                let opcionesHtml = '<option value="">-- Elige el movimiento a heredar --</option>';
-
-                if (movsNivel.length > 0) {
-                    opcionesHtml += `<optgroup label="🟢 Por Nivel (Level-Up)" style="color: #15803d; background: #f0fdf4;">`;
-                    movsNivel.forEach(m => opcionesHtml += `<option value="${m.val}" style="color: #334155; background: #fff;">${m.text}</option>`);
-                    opcionesHtml += `</optgroup>`;
-                }
-                
-                if (movsMT.length > 0) {
-                    opcionesHtml += `<optgroup label="🟡 Por MT / MO (Machine)" style="color: #b45309; background: #fffbeb;">`;
-                    movsMT.forEach(m => opcionesHtml += `<option value="${m.val}" style="color: #334155; background: #fff;">${m.text}</option>`);
-                    opcionesHtml += `</optgroup>`;
-                }
-                
-                if (movsHuevo.length > 0) {
-                    opcionesHtml += `<optgroup label="🟣 Movimiento Huevo (Egg Move)" style="color: #7e22ce; background: #faf5ff;">`;
-                    movsHuevo.forEach(m => opcionesHtml += `<option value="${m.val}" style="color: #334155; background: #fff;">${m.text}</option>`);
-                    opcionesHtml += `</optgroup>`;
-                }
-                
-                if (movsTutor.length > 0) {
-                    opcionesHtml += `<optgroup label="🔵 Tutor / Evento" style="color: #0369a1; background: #f0f9ff;">`;
-                    movsTutor.forEach(m => opcionesHtml += `<option value="${m.val}" style="color: #334155; background: #fff;">${m.text}</option>`);
-                    opcionesHtml += `</optgroup>`;
-                }
-
-                selectMov.innerHTML = opcionesHtml;
-                selectMov.disabled = false;
-
-            } catch (error) {
-                selectMov.innerHTML = '<option value="">Error al cargar movimientos.</option>';
-            }
-        }
-
-      // --- CEREBRO MATEMÁTICO: RUTAS DE MOVIMIENTOS HUEVO (GEN 6) ---
-
+        // --- CALCULADORA 2: MOVIMIENTOS ---
         async function calcularRutaMovimientos() {
             const p1 = document.getElementById('pokeInput1Mov').value.toLowerCase().trim();
             const g1 = document.getElementById('genero1Mov').value;
             const p2 = document.getElementById('pokeInput2Mov').value.toLowerCase().trim();
             const g2 = document.getElementById('genero2Mov').value;
             const movName = document.getElementById('movimientoElegido').value;
-            const movText = document.getElementById('movimientoElegido').options[document.getElementById('movimientoElegido').selectedIndex].text;
+            const selectEl = document.getElementById('movimientoElegido');
+            const movText = selectEl.options[selectEl.selectedIndex] ? selectEl.options[selectEl.selectedIndex].text : '';
             const divRes = document.getElementById('resultadoMovimientos');
 
             if (!p1 || !p2 || !movName) { 
-                divRes.innerHTML = `<div class="alerta alerta-roja">Completa todos los campos y elige un movimiento.</div>`; 
+                divRes.innerHTML = `<div class="alerta alerta-roja">Completa todos los campos.</div>`; 
                 return; 
             }
 
-            divRes.innerHTML = "<div style='text-align:center; color:#0284c7; font-weight:600;'>Analizando Árbol Genealógico de Movimientos...</div>";
+            divRes.innerHTML = "<div style='text-align:center; color:#0284c7; font-weight:600;'>Analizando Herencia...</div>";
 
             try {
                 await cargarGruposGlobales();
                 
-                // 1. Cargar datos de los padres
                 const [spec1, spec2, poke1Data, poke2Data] = await Promise.all([
                     fetch(`https://pokeapi.co/api/v2/pokemon-species/${p1}`).then(r => r.json()),
                     fetch(`https://pokeapi.co/api/v2/pokemon-species/${p2}`).then(r => r.json()),
@@ -880,13 +827,11 @@
                         </div>
                     </div>`;
 
-                // Bloqueos de Género y Grupo
-                if (spec1.gender_rate === -1 || spec2.gender_rate === -1) { divRes.innerHTML = htmlInfo + `<div class="alerta alerta-roja">⛔ Sin género. Solo Ditto puede criar con ellos, rompiendo la cadena de movimientos.</div>`; return; }
-                if (spec1.gender_rate === 8) { divRes.innerHTML = htmlInfo + `<div class="alerta alerta-naranja">⛔ <strong>${n1C}</strong> es 100% Hembra. Imposible que pase el movimiento a OTRA especie (solo crían más ${n1C}).</div>`; return; }
-                if (spec2.gender_rate === 0) { divRes.innerHTML = htmlInfo + `<div class="alerta alerta-naranja">⛔ <strong>${n2C}</strong> es 100% Macho. No hay hembras para recibir el movimiento y fijar la especie final.</div>`; return; }
-                if (grp1.includes('no-eggs') || grp2.includes('no-eggs')) { divRes.innerHTML = htmlInfo + `<div class="alerta alerta-roja">Uno de los Pokémon es legendario o bebé (No puede criar).</div>`; return; }
+                if (spec1.gender_rate === -1 || spec2.gender_rate === -1) { divRes.innerHTML = htmlInfo + `<div class="alerta alerta-roja">⛔ Sin género.</div>`; return; }
+                if (spec1.gender_rate === 8) { divRes.innerHTML = htmlInfo + `<div class="alerta alerta-naranja">⛔ <strong>${n1C}</strong> es 100% Hembra.</div>`; return; }
+                if (spec2.gender_rate === 0) { divRes.innerHTML = htmlInfo + `<div class="alerta alerta-naranja">⛔ <strong>${n2C}</strong> es 100% Macho.</div>`; return; }
+                if (grp1.includes('no-eggs') || grp2.includes('no-eggs')) { divRes.innerHTML = htmlInfo + `<div class="alerta alerta-roja">No pueden criar.</div>`; return; }
 
-                // 2. VALIDACIÓN DEL DESTINO (El gran filtro que discutimos)
                 let destinoPuedeHeredar = false;
                 poke2Data.moves.forEach(m => {
                     if (m.move.name === movName) {
@@ -899,26 +844,23 @@
                 });
 
                 if (!destinoPuedeHeredar) {
-                    divRes.innerHTML = htmlInfo + `<div class="alerta alerta-roja">❌ <strong>Genéticamente Imposible:</strong> ${n2C} no tiene compatibilidad para heredar ${movText} en la Sexta Generación (ni como Mov. Huevo, MT o Nivel).</div>`;
+                    divRes.innerHTML = htmlInfo + `<div class="alerta alerta-roja">❌ <strong>Genéticamente Imposible:</strong> ${n2C} no tiene compatibilidad para heredar ${movText} en la Sexta Generación.</div>`;
                     return;
                 }
 
                 if (grp1.some(g => grp2.includes(g))) { 
-                    divRes.innerHTML = htmlInfo + `<div class="alerta alerta-verde"><strong>¡Compatibles Directos!</strong> Comparten grupo huevo. Cruza directamente a un ${n1C} (que sepa el ataque) con una ${n2C} Hembra.</div>`; 
+                    divRes.innerHTML = htmlInfo + `<div class="alerta alerta-verde"><strong>¡Compatibles Directos!</strong> Comparten grupo huevo. Cruza a un ${n1C} con el ataque + una ${n2C} Hembra.</div>`; 
                     return; 
                 }
 
-                // 3. EL ATAJO MAESTRO DE LA API (Buscar quién sabe el ataque)
                 const moveDataRes = await fetch(`https://pokeapi.co/api/v2/move/${movName}`);
                 const moveData = await moveDataRes.json();
                 const pokemonsQueSabenAtaque = moveData.learned_by_pokemon.map(p => p.name);
 
-                // 4. CRUCE DE CONJUNTOS (Teoría de Grafos)
                 let candidatosBrutos = [];
                 for (let g of grp1) {
                     if (!especiesPorGrupo[g]) continue;
                     especiesPorGrupo[g].forEach(n => {
-                        // El candidato debe: 1. Saber el ataque. 2. Compartir grupo con Poke1. 3. Compartir grupo con Poke2.
                         if (n !== p1 && n !== p2 && n !== 'ditto' && n !== 'smeargle') {
                             if (pokemonsQueSabenAtaque.includes(n) && gruposDeEspecie[n].some(gx => grp2.includes(gx))) {
                                 candidatosBrutos.push(n);
@@ -928,7 +870,6 @@
                 }
                 candidatosBrutos = [...new Set(candidatosBrutos)];
 
-                // 5. VERIFICACIÓN ESTRICTA GEN 6 Y GÉNERO
                 const promesasCandidatos = candidatosBrutos.map(nombre => Promise.all([
                     fetch(`https://pokeapi.co/api/v2/pokemon-species/${nombre}`).then(r => r.json()),
                     fetch(`https://pokeapi.co/api/v2/pokemon/${nombre}`).then(r => r.json())
@@ -937,9 +878,7 @@
 
                 let nexosValidos = [];
                 datosCandidatosPairs.forEach(([dataSpec, dataPoke]) => {
-                    // Verificamos género de puente capaz
                     if (dataSpec.gender_rate >= 1 && dataSpec.gender_rate <= 7) {
-                        // Verificamos que realmente aprenda el movimiento en Gen 6
                         let loAprendeGen6 = false;
                         dataPoke.moves.forEach(m => {
                             if (m.move.name === movName) {
@@ -960,18 +899,16 @@
                 });
 
                 if (nexosValidos.length === 0) {
-                     let mensaje = htmlInfo + `<div class="alerta alerta-roja">No existe un Nexo de 1 Salto que aprenda el movimiento y conecte ambos grupos en Gen 6.`;
-                     // Añadir el "Factor Smeargle" como última esperanza
-                     if (grp1.includes('ground') || grp2.includes('ground')) { // 'ground' es el grupo Campo en la API
-                         mensaje += `<br><br>💡 <em>Alerta Smeargle:</em> Como uno de los Pokémon pertenece al grupo Campo, podrías usar a Smeargle con 'Esquema' para copiar el ataque y pasarlo.`;
+                     let mensaje = htmlInfo + `<div class="alerta alerta-roja">No hay Nexos en Gen 6.`;
+                     if (grp1.includes('ground') || grp2.includes('ground')) { 
+                         mensaje += `<br><br>💡 <em>Alerta Smeargle:</em> Uno de los Pokémon es grupo Campo, puedes usar a Smeargle con 'Esquema'.`;
                      }
                      mensaje += `</div>`;
                      divRes.innerHTML = mensaje;
                      return;
                 }
 
-                // 6. DIBUJAR INTERFAZ (Igual que IVs, usando mostrarFormula)
-                let espacioFormula = `<div id="contenedorFormula"><div style="background: var(--bg-input); padding: 15px; border-radius: 12px; text-align: center; color: var(--text-main); margin: 20px 0;">👆 <em>Clic en un puente para generar la cadena de movimientos.</em></div></div>`;
+                let espacioFormula = `<div id="contenedorFormula"><div style="background: var(--bg-input); padding: 15px; border-radius: 12px; text-align: center; color: var(--text-main); margin: 20px 0;">👆 <em>Clic en un puente para generar la cadena.</em></div></div>`;
                 let htmlListas = `<div style="font-weight:700; color:#0284c7; margin-top:10px;">🟢 Puentes de Movimiento (Gen 6):</div>`;
                 
                 const obtenerReg = (id) => {
@@ -990,7 +927,6 @@
                     if (nexosAgrupados[reg]) {
                         nexosAgrupados[reg].sort((a,b) => a.n.localeCompare(b.n)); 
                         let botones = nexosAgrupados[reg].map(nx => {
-                            // Reutilizamos mostrarFormula de los IVs porque la lógica de cruce de géneros es idéntica
                             return `<span class="nexo-tag" style="border-color:#bae6fd;" onclick="mostrarFormula('${n1C}', '${g1}', '${foto1}', '${n2C}', '${g2}', '${foto2}', '${nx.n}', '${nx.f}')">${nx.n}</span>`;
                         }).join(' ');
                         htmlListas += `<div class="gen-box" style="border-left: 4px solid #38bdf8;"><div class="gen-titulo">${reg}</div><div>${botones}</div></div>`;
@@ -1000,7 +936,7 @@
                 divRes.innerHTML = htmlInfo + espacioFormula + htmlListas;
 
             } catch (error) {
-                divRes.innerHTML = `<div class="alerta alerta-roja">Error en el cruce genético: ${error.message}</div>`;
+                divRes.innerHTML = `<div class="alerta alerta-roja">Error: ${error.message}</div>`;
             }
         }
     </script>
