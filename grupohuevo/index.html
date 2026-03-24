@@ -81,12 +81,9 @@
     </div>
 
     <script>
-        /* --- LÓGICA JAVASCRIPT --- */
-
-        // Función principal que se ejecuta al hacer clic en el botón
+       // Función principal que se ejecuta al hacer clic en el botón
         async function buscarGrupoHuevo() {
             
-            // 1. Obtenemos el texto de ambos inputs
             const nombrePoke1 = document.getElementById('pokeInput1').value.toLowerCase().trim();
             const nombrePoke2 = document.getElementById('pokeInput2').value.toLowerCase().trim();
             const divResultado = document.getElementById('resultado');
@@ -97,39 +94,95 @@
                 return; 
             }
 
-            divResultado.innerHTML = "Buscando...";
+            divResultado.innerHTML = "Calculando cadena de crianza...";
 
             try {
-                // 2. Creamos una función pequeñita (helper) solo para buscar un Pokémon a la vez
-                const buscarUnPokemon = async (nombre) => {
+                // 1. Función para obtener los datos básicos de un Pokémon
+                const buscarDatosPoke = async (nombre) => {
                     const respuesta = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${nombre}`);
-                    if (!respuesta.ok) {
-                        throw new Error(`No se encontró a ${nombre}`);
-                    }
-                    const datos = await respuesta.json();
-                    // Extraemos los grupos huevo y los unimos con coma
-                    return datos.egg_groups.map(grupo => grupo.name).join(', ');
+                    if (!respuesta.ok) throw new Error(`No se encontró a ${nombre}`);
+                    return await respuesta.json();
                 };
 
-                // 3. Ejecutamos la búsqueda para ambos Pokémon al mismo tiempo (es más rápido así)
-                const [gruposHuevo1, gruposHuevo2] = await Promise.all([
-                    buscarUnPokemon(nombrePoke1),
-                    buscarUnPokemon(nombrePoke2)
+                // Obtenemos los datos de ambos al mismo tiempo
+                const [datosPoke1, datosPoke2] = await Promise.all([
+                    buscarDatosPoke(nombrePoke1),
+                    buscarDatosPoke(nombrePoke2)
                 ]);
 
-                // 4. Ponemos la primera letra en mayúscula para que se vea presentable
+                // Extraemos los nombres de sus grupos huevo
+                const grupos1 = datosPoke1.egg_groups.map(g => g.name);
+                const grupos2 = datosPoke2.egg_groups.map(g => g.name);
+
                 const nombre1Cap = nombrePoke1.charAt(0).toUpperCase() + nombrePoke1.slice(1);
                 const nombre2Cap = nombrePoke2.charAt(0).toUpperCase() + nombrePoke2.slice(1);
 
-                // 5. Mostramos el resultado de los dos Pokémon en pantalla
-                divResultado.innerHTML = `
-                    <p>Grupo huevo de <strong>${nombre1Cap}</strong>:<br> <strong><span style="color:#e3350d;">${gruposHuevo1}</span></strong></p>
+                // Preparamos la parte de arriba del resultado (los grupos de cada uno)
+                let htmlResultado = `
+                    <p><strong>${nombre1Cap}</strong> (Grupos: ${grupos1.join(', ')})</p>
+                    <p><strong>${nombre2Cap}</strong> (Grupos: ${grupos2.join(', ')})</p>
                     <hr style="border: 0; border-top: 1px solid #ccc; margin: 15px 0;">
-                    <p>Grupo huevo de <strong>${nombre2Cap}</strong>:<br> <strong><span style="color:#e3350d;">${gruposHuevo2}</span></strong></p>
+                `;
+
+                // Validamos si alguno es de la categoría "no-eggs" (bebés o legendarios que no crían)
+                if (grupos1.includes('no-eggs') || grupos2.includes('no-eggs')) {
+                    divResultado.innerHTML = htmlResultado + `<p style="color:red;">Uno de estos Pokémon no puede criar.</p>`;
+                    return;
+                }
+
+                // Validamos si YA comparten un grupo huevo (pueden criar directo sin nexo)
+                const compartenGrupo = grupos1.some(g => grupos2.includes(g));
+                if (compartenGrupo) {
+                    divResultado.innerHTML = htmlResultado + `<p style="color:green;">¡<strong>${nombre1Cap}</strong> y <strong>${nombre2Cap}</strong> comparten grupo huevo! Pueden criar directamente.</p>`;
+                    return;
+                }
+
+                // 2. Si no comparten grupo, buscamos los nexos
+                divResultado.innerHTML = htmlResultado + "<em>Buscando Pokémon puente (nexo)...</em>";
+
+                // Función que busca TODOS los Pokémon que pertenecen a una lista de grupos huevo
+                const obtenerEspeciesDeGrupos = async (grupos) => {
+                    let especies = new Set();
+                    for (let grupo of grupos) {
+                        if (grupo === 'ditto') continue; // Ignoramos a ditto como nexo normal
+                        const res = await fetch(`https://pokeapi.co/api/v2/egg-group/${grupo}`);
+                        const data = await res.json();
+                        // Guardamos cada Pokémon de ese grupo
+                        data.pokemon_species.forEach(p => especies.add(p.name));
+                    }
+                    return especies;
+                };
+
+                // Buscamos a todos los "vecinos" de grupo huevo de ambos Pokémon
+                const [especiesLado1, especiesLado2] = await Promise.all([
+                    obtenerEspeciesDeGrupos(grupos1),
+                    obtenerEspeciesDeGrupos(grupos2)
+                ]);
+
+                // 3. Cruzamos los datos: buscamos cuáles Pokémon están en AMBOS lados
+                let nexos = [...especiesLado1].filter(pokemon => especiesLado2.has(pokemon));
+                
+                // Por limpieza, quitamos a los Pokémon originales por si se colaron en la lista
+                nexos = nexos.filter(p => p !== nombrePoke1 && p !== nombrePoke2);
+
+                // Si no hay ninguna coincidencia
+                if (nexos.length === 0) {
+                     divResultado.innerHTML = htmlResultado + `<p style="color:red;">No existe un solo Pokémon que conecte a estas dos especies.</p>`;
+                     return;
+                }
+
+                // 4. Tomamos máximo 5 opciones y las ponemos bonitas
+                const nexosMostrados = nexos.slice(0, 5).map(n => n.charAt(0).toUpperCase() + n.slice(1));
+
+                // Mostramos el resultado final
+                divResultado.innerHTML = htmlResultado + `
+                    <p>Para conectar las crías, puedes usar como <strong>nexo</strong> a:</p>
+                    <ul style="list-style:none; padding:0; color:#e3350d; font-weight:bold; font-size: 1.1em;">
+                        <li>${nexosMostrados.join('</li><li style="margin-top:5px;">')}</li>
+                    </ul>
                 `;
 
             } catch (error) {
-                // Si uno de los dos nombres falla, mostramos el error
                 divResultado.innerHTML = `<span style="color:red;">Error: ${error.message}. Verifica la ortografía.</span>`;
             }
         }
