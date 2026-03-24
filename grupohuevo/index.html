@@ -7,167 +7,200 @@
     <title>Buscador de Grupos Huevo Pokémon</title>
     
     <style>
-        /* --- ESTILOS CSS SENCILLOS --- */
-        
-        /* Estilos generales para centrar el contenido y darle una fuente bonita */
+      @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap');
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f0f2f5;
+            font-family: 'Nunito', system-ui, sans-serif;
+            background-color: #f8fafc;
+            background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+            background-size: 24px 24px;
+            color: #334155;
             display: flex;
             justify-content: center;
-            align-items: center;
-            height: 100vh;
+            align-items: flex-start;
+            min-height: 100vh;
             margin: 0;
+            padding: 40px 20px;
+            box-sizing: border-box;
         }
 
-        /* Contenedor principal que parece una tarjeta */
         .contenedor {
-            background-color: white;
-            padding: 30px;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            background-color: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 40px;
+            border-radius: 24px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0,0,0,0.05);
+            border: 1px solid #f1f5f9;
             text-align: center;
-            max-width: 400px;
+            max-width: 500px;
             width: 100%;
         }
 
-        /* Estilo para el campo de texto (input) */
-        input {
-            padding: 10px;
-            width: 70%;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            margin-bottom: 15px;
-            font-size: 16px;
+        h2 { margin-top: 0; color: #1e293b; font-weight: 700; letter-spacing: -0.5px; }
+
+        .fila-input { display: flex; gap: 12px; margin-bottom: 16px; }
+
+        input, select {
+            padding: 12px 16px;
+            background-color: #f1f5f9;
+            border: 1px solid transparent;
+            border-radius: 12px;
+            font-size: 15px;
+            color: #475569;
+            font-family: 'Nunito', sans-serif;
+            transition: all 0.2s ease;
+            outline: none;
         }
 
-        /* Estilo para el botón de buscar */
+        input:focus, select:focus {
+            background-color: #ffffff;
+            border-color: #ef4444;
+            box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1);
+        }
+
+        input { width: 60%; }
+        select { width: 40%; cursor: pointer; }
+        select:disabled { opacity: 0.6; cursor: not-allowed; }
+
         button {
-            padding: 10px 20px;
-            background-color: #e3350d; /* Rojo estilo Pokémon */
+            width: 100%;
+            padding: 14px 20px;
+            background-color: #ef4444;
             color: white;
             border: none;
-            border-radius: 5px;
-            cursor: pointer;
+            border-radius: 12px;
+            font-weight: 700;
             font-size: 16px;
-            transition: background-color 0.3s;
+            cursor: pointer;
+            transition: transform 0.1s, background-color 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
+            margin-top: 10px;
         }
 
-        /* Efecto al pasar el mouse sobre el botón */
         button:hover {
-            background-color: #b32a0a;
+            background-color: #dc2626;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(239, 68, 68, 0.3);
         }
 
-        /* Espacio donde aparecerá el resultado o los errores */
-        #resultado {
-            margin-top: 20px;
-            font-size: 18px;
-            color: #333;
-            min-height: 50px; /* Evita que la tarjeta salte mucho al mostrar texto */
+        #resultado { margin-top: 30px; font-size: 15px; line-height: 1.6; text-align: left; }
+        hr { border: 0; height: 1px; background: #e2e8f0; margin: 20px 0; }
+
+        /* Estilos de la fórmula estética */
+        .formula-box {
+            background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px;
+            padding: 20px; margin: 24px 0; box-shadow: 0 4px 6px rgba(0,0,0,0.02);
         }
+        .formula-titulo { font-weight: 700; color: #334155; margin: 0 0 16px 0; font-size: 1.1em; display: flex; align-items: center; gap: 8px; }
+        
+        .paso-fila {
+            display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 12px;
+            padding: 12px; background: #f8fafc; border-radius: 12px; border-left: 4px solid #cbd5e1;
+        }
+        .paso-1 { border-left-color: #94a3b8; }
+        .paso-2 { border-left-color: #c084fc; }
+        .paso-3 { border-left-color: #fbbf24; }
+
+        /* Píldoras para los Pokémon */
+        .badge {
+            padding: 4px 10px; border-radius: 20px; font-size: 0.9em; font-weight: 700;
+            display: inline-flex; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.03); white-space: nowrap;
+        }
+        .badge-macho { background: #e0f2fe; color: #0284c7; }
+        .badge-hembra { background: #fce7f3; color: #db2777; }
+        .badge-nexo { background: #f3e8ff; color: #9333ea; border: 1px dashed #d8b4fe; }
+        .badge-meta { background: #fef3c7; color: #d97706; }
+        
+        .operador { color: #94a3b8; font-weight: 900; font-size: 0.9em; }
+        .nota-sutil { font-size: 0.85em; color: #64748b; margin: 8px 0 0 16px; font-style: italic; }
+
+        /* Cajas de Generaciones */
+        .gen-box {
+            background: #ffffff; border: 1px solid #f1f5f9; border-radius: 12px;
+            padding: 16px; margin-top: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.02); transition: all 0.2s;
+        }
+        .gen-box:hover { border-color: #e2e8f0; box-shadow: 0 4px 12px rgba(0,0,0,0.05); transform: translateY(-1px); }
+        .gen-titulo { margin: 0 0 8px 0; color: #64748b; font-size: 0.85em; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
+        .gen-nombres { margin: 0; color: #ef4444; font-weight: 600; }
+
+        /* Alertas */
+        .alerta { padding: 16px; border-radius: 12px; margin-top: 16px; font-size: 0.95em; }
+        .alerta-roja { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+        .alerta-naranja { background: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
+        .alerta-verde { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
     </style>
 </head>
 <body>
 
 <div class="contenedor">
-        <h2>Grupos Huevo Pokémon</h2>
+        <h2>🧬 Genética Pokémon</h2>
         
-       <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-            <input type="text" id="pokeInput1" list="listaPokemon" placeholder="1er Pokémon (Ej. tauros)" style="width: 60%; margin-bottom: 0;" onchange="verificarGenero('pokeInput1', 'genero1')">
-            <select id="genero1" style="width: 40%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px;">
-                <option value="macho">Macho ♂️</option>
-                <option value="hembra">Hembra ♀️</option>
+        <div class="fila-input">
+            <input type="text" id="pokeInput1" list="listaPokemon" placeholder="Donante origen (Ej. tauros)" onchange="verificarGenero('pokeInput1', 'genero1')">
+            <select id="genero1">
+                <option value="macho">Macho ♂</option>
+                <option value="hembra">Hembra ♀</option>
                 <option value="sin_genero" hidden>Sin Género ❌</option>
             </select>
         </div>
         
-        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-            <input type="text" id="pokeInput2" list="listaPokemon" placeholder="Pokémon final (Ej. chansey)" style="width: 60%; margin-bottom: 0;" onchange="verificarGenero('pokeInput2', 'genero2')">
-            <select id="genero2" style="width: 40%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px;">
-                <option value="hembra">Hembra ♀️</option>
-                <option value="macho">Macho ♂️</option>
+        <div class="fila-input">
+            <input type="text" id="pokeInput2" list="listaPokemon" placeholder="Receptor final (Ej. chansey)" onchange="verificarGenero('pokeInput2', 'genero2')">
+            <select id="genero2">
+                <option value="hembra">Hembra ♀</option>
+                <option value="macho">Macho ♂</option>
                 <option value="sin_genero" hidden>Sin Género ❌</option>
             </select>
         </div>
         
         <datalist id="listaPokemon"></datalist>
-        
-        <button onclick="buscarGrupoHuevo()">Buscar</button>
-        
+        <button onclick="buscarGrupoHuevo()">Calcular Ruta de Crianza</button>
         <div id="resultado"></div>
     </div>
     <script>
 
-        // --- NUEVA FUNCIÓN: Verificar y bloquear género automáticamente ---
+        // 1. Cargar autocompletado al iniciar
+        async function cargarListaNombres() {
+            try {
+                const respuesta = await fetch('https://pokeapi.co/api/v2/pokemon-species?limit=10000');
+                const datos = await respuesta.json();
+                const datalist = document.getElementById('listaPokemon');
+                datos.results.forEach(poke => {
+                    const opcion = document.createElement('option');
+                    opcion.value = poke.name;
+                    datalist.appendChild(opcion);
+                });
+            } catch (error) { console.error("Error al cargar autocompletado."); }
+        }
+        window.onload = cargarListaNombres;
+
+        // 2. Bloquear géneros imposibles al escribir
         async function verificarGenero(inputId, selectId) {
             const nombre = document.getElementById(inputId).value.toLowerCase().trim();
             const selectElement = document.getElementById(selectId);
 
-            // Si el usuario borra el texto, desbloqueamos el selector para que pueda elegir
             if (!nombre) {
                 selectElement.disabled = false;
                 if (selectElement.value === 'sin_genero') selectElement.value = 'macho';
                 return;
             }
-
             try {
-                // Hacemos una consulta rápida a la API solo para ver el género de ese Pokémon
                 const respuesta = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${nombre}`);
-                if (!respuesta.ok) return; // Si escribió mal el nombre a medias, no hacemos nada
+                if (!respuesta.ok) return; 
+                const rate = (await respuesta.json()).gender_rate;
 
-                const datos = await respuesta.json();
-                const rate = datos.gender_rate;
-
-                // Modificamos el selector según las reglas de la PokeAPI
-                if (rate === -1) { 
-                    // Sin género (Ej. Magnemite)
-                    selectElement.value = 'sin_genero';
-                    selectElement.disabled = true;
-                } else if (rate === 0) { 
-                    // 100% Macho (Ej. Tauros)
-                    selectElement.value = 'macho';
-                    selectElement.disabled = true;
-                } else if (rate === 8) { 
-                    // 100% Hembra (Ej. Chansey)
-                    selectElement.value = 'hembra';
-                    selectElement.disabled = true;
-                } else { 
-                    // Ambos géneros (1 al 7) (Ej. Pikachu, Bulbasaur)
-                    selectElement.disabled = false; // Desbloqueamos
-                    if (selectElement.value === 'sin_genero') selectElement.value = 'macho'; // Quitamos el "Sin género"
+                if (rate === -1) { selectElement.value = 'sin_genero'; selectElement.disabled = true; } 
+                else if (rate === 0) { selectElement.value = 'macho'; selectElement.disabled = true; } 
+                else if (rate === 8) { selectElement.value = 'hembra'; selectElement.disabled = true; } 
+                else { 
+                    selectElement.disabled = false; 
+                    if (selectElement.value === 'sin_genero') selectElement.value = 'macho'; 
                 }
-            } catch (error) {
-                console.error("No se pudo verificar el género al vuelo.", error);
-            }
+            } catch (error) {}
         }
 
-        // --- NUEVA FUNCIÓN: Cargar la lista de autocompletado ---
-        async function cargarListaNombres() {
-            try {
-                // Le pedimos a la API que nos traiga hasta 10,000 especies (suficiente para cubrir todos los Pokémon existentes)
-                const respuesta = await fetch('https://pokeapi.co/api/v2/pokemon-species?limit=10000');
-                const datos = await respuesta.json();
-                const datalist = document.getElementById('listaPokemon');
-                
-                // Por cada Pokémon que la API nos devuelva, creamos una opción en el datalist
-                datos.results.forEach(poke => {
-                    const opcion = document.createElement('option');
-                    opcion.value = poke.name; // La API devuelve los nombres en minúsculas (ej. bulbasaur, ivysaur)
-                    datalist.appendChild(opcion);
-                });
-            } catch (error) {
-                console.error("No se pudo cargar la lista de nombres para autocompletar.", error);
-            }
-        }
-
-        // Ejecutamos esta función automáticamente en cuanto la página se abre
-        window.onload = cargarListaNombres;
-
-        // --- A PARTIR DE AQUÍ DEJA TU FUNCIÓN ACTUAL ---
-        // async function buscarGrupoHuevo() { ... }
-        
-     async function buscarGrupoHuevo() {
-            
+        // 3. Lógica Principal de Crianza de IVs
+        async function buscarGrupoHuevo() {
             const nombrePoke1 = document.getElementById('pokeInput1').value.toLowerCase().trim();
             const genero1 = document.getElementById('genero1').value;
             const nombrePoke2 = document.getElementById('pokeInput2').value.toLowerCase().trim();
@@ -175,11 +208,11 @@
             const divResultado = document.getElementById('resultado');
 
             if (!nombrePoke1 || !nombrePoke2) {
-                divResultado.innerHTML = "Por favor, escribe el nombre de ambos Pokémon.";
+                divResultado.innerHTML = `<div class="alerta alerta-roja">Por favor, escribe ambos Pokémon.</div>`;
                 return; 
             }
 
-            divResultado.innerHTML = "Calculando ruta de herencia de IVs...";
+            divResultado.innerHTML = "<div style='text-align:center; color:#94a3b8; font-weight:600;'>Analizando ADN...</div>";
 
             try {
                 const buscarDatosPoke = async (nombre) => {
@@ -188,10 +221,7 @@
                     return await respuesta.json();
                 };
 
-                const [datosPoke1, datosPoke2] = await Promise.all([
-                    buscarDatosPoke(nombrePoke1),
-                    buscarDatosPoke(nombrePoke2)
-                ]);
+                const [datosPoke1, datosPoke2] = await Promise.all([buscarDatosPoke(nombrePoke1), buscarDatosPoke(nombrePoke2)]);
 
                 const grupos1 = datosPoke1.egg_groups.map(g => g.name);
                 const grupos2 = datosPoke2.egg_groups.map(g => g.name);
@@ -200,33 +230,32 @@
                 const nombre1Cap = nombrePoke1.charAt(0).toUpperCase() + nombrePoke1.slice(1);
                 const nombre2Cap = nombrePoke2.charAt(0).toUpperCase() + nombrePoke2.slice(1);
 
-                let htmlResultado = `
-                    <p><strong>${nombre1Cap}</strong> (${genero1 === 'macho' ? '♂️' : '♀️'}) - Grupos: ${grupos1.join(', ')}</p>
-                    <p><strong>${nombre2Cap}</strong> (${genero2 === 'macho' ? '♂️' : '♀️'}) - Grupos: ${grupos2.join(', ')}</p>
-                    <hr style="border: 0; border-top: 1px solid #ccc; margin: 15px 0;">
+                let htmlInfo = `
+                    <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+                        <div><strong>${nombre1Cap}</strong> ${genero1 === 'macho' ? '♂' : '♀'}</div>
+                        <div style="color:#64748b; font-size:0.9em;">[${grupos1.join(', ')}]</div>
+                    </div>
+                    <div style="display:flex; justify-content:space-between;">
+                        <div><strong>${nombre2Cap}</strong> ${genero2 === 'macho' ? '♂' : '♀'}</div>
+                        <div style="color:#64748b; font-size:0.9em;">[${grupos2.join(', ')}]</div>
+                    </div>
+                    <hr>
                 `;
 
-                // Reglas biológicas absolutas que NO se pueden saltar ni con pasos extra
                 if (rate1 === -1 || rate2 === -1) {
-                    divResultado.innerHTML = htmlResultado + `<p style="color:red;"><strong>⛔ Nodos Aislados:</strong> Uno de estos Pokémon no tiene género y solo puede heredar IVs mediante un Ditto.</p>`;
-                    return;
+                    divResultado.innerHTML = htmlInfo + `<div class="alerta alerta-roja"><strong>⛔ Nodos Aislados:</strong> Uno de estos Pokémon no tiene género y solo puede heredar IVs mediante un Ditto.</div>`; return;
                 }
                 if (rate1 === 8) {
-                    divResultado.innerHTML = htmlResultado + `<p style="color:#d97706;"><strong>⛔ Bloqueo Genético:</strong> <strong>${nombre1Cap}</strong> es 100% Hembra. Como nunca puede haber un macho de su especie, es imposible pasar sus IVs a otra especie diferente.</p>`;
-                    return;
+                    divResultado.innerHTML = htmlInfo + `<div class="alerta alerta-naranja"><strong>⛔ Bloqueo Genético:</strong> <strong>${nombre1Cap}</strong> es 100% Hembra. Imposible pasar IVs a otra especie diferente.</div>`; return;
                 }
                 if (rate2 === 0) {
-                    divResultado.innerHTML = htmlResultado + `<p style="color:#d97706;"><strong>⛔ Bloqueo Genético:</strong> <strong>${nombre2Cap}</strong> es 100% Macho. Como no existen hembras para actuar de madre receptora, no puede recibir IVs de otra especie.</p>`;
-                    return;
+                    divResultado.innerHTML = htmlInfo + `<div class="alerta alerta-naranja"><strong>⛔ Bloqueo Genético:</strong> <strong>${nombre2Cap}</strong> es 100% Macho. No hay madres receptoras.</div>`; return;
                 }
-
                 if (grupos1.includes('no-eggs') || grupos2.includes('no-eggs')) {
-                    divResultado.innerHTML = htmlResultado + `<p style="color:red;">Uno de estos Pokémon no puede criar.</p>`;
-                    return;
+                    divResultado.innerHTML = htmlInfo + `<div class="alerta alerta-roja">Uno de estos Pokémon no puede criar.</div>`; return;
                 }
                 if (grupos1.some(g => grupos2.includes(g))) {
-                    divResultado.innerHTML = htmlResultado + `<p style="color:green;">¡Comparten grupo huevo! Puedes cruzar un Macho de <strong>${nombre1Cap}</strong> con una Hembra de <strong>${nombre2Cap}</strong> directamente.</p>`;
-                    return;
+                    divResultado.innerHTML = htmlInfo + `<div class="alerta alerta-verde"><strong>¡Compatibles!</strong> Puedes cruzar un Macho de ${nombre1Cap} con una Hembra de ${nombre2Cap} directamente.</div>`; return;
                 }
 
                 const obtenerEspeciesDeGrupos = async (grupos) => {
@@ -240,130 +269,117 @@
                     return especies;
                 };
 
-                const [especiesLado1, especiesLado2] = await Promise.all([
-                    obtenerEspeciesDeGrupos(grupos1),
-                    obtenerEspeciesDeGrupos(grupos2)
-                ]);
+                const [especiesLado1, especiesLado2] = await Promise.all([obtenerEspeciesDeGrupos(grupos1), obtenerEspeciesDeGrupos(grupos2)]);
 
                 let nexosBasicos = [];
                 for (let nombre of especiesLado1.keys()) {
-                    if (especiesLado2.has(nombre) && nombre !== nombrePoke1 && nombre !== nombrePoke2) {
-                        nexosBasicos.push(nombre);
-                    }
+                    if (especiesLado2.has(nombre) && nombre !== nombrePoke1 && nombre !== nombrePoke2) nexosBasicos.push(nombre);
                 }
 
-                const promesasNexos = nexosBasicos.map(nombre => 
-                    fetch(`https://pokeapi.co/api/v2/pokemon-species/${nombre}`).then(res => res.json())
-                );
+                const promesasNexos = nexosBasicos.map(nombre => fetch(`https://pokeapi.co/api/v2/pokemon-species/${nombre}`).then(res => res.json()));
                 const datosNexos = await Promise.all(promesasNexos);
 
                 let nexosFiltrados = [];
                 datosNexos.forEach(data => {
-                    const rate = data.gender_rate;
-                    if (rate >= 1 && rate <= 7) {
-                        nexosFiltrados.push({ nombre: data.name, id: data.id });
-                    }
+                    if (data.gender_rate >= 1 && data.gender_rate <= 7) nexosFiltrados.push({ nombre: data.name, id: data.id });
                 });
 
                 if (nexosFiltrados.length === 0) {
-                     divResultado.innerHTML = htmlResultado + `<p style="color:red;">No existe un Pokémon puente válido para esta cadena genética.</p>`;
-                     return;
+                     divResultado.innerHTML = htmlInfo + `<div class="alerta alerta-roja">No existe un Pokémon puente válido para esta cadena.</div>`; return;
                 }
 
-                // --- ESQUEMA DINÁMICO DE HERENCIA DE IVs ---
+                // Generador Visual de la Fórmula
                 let pasosHtml = "";
-                let stepCounter = 1;
 
-                // Si el poke inicial es Hembra, se añade un paso previo para sacar un Macho
                 if (genero1 === 'hembra') {
                     pasosHtml += `
-                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; white-space: nowrap;">
-                            <strong>Paso ${stepCounter++} (Preparación):</strong> 
-                            <span style="background: #e2e3e5; padding: 4px 8px; border-radius: 4px;">${nombre1Cap} ♀️</span> ➕ 
-                            <span style="background: #e2e3e5; padding: 4px 8px; border-radius: 4px;">Cualquier ♂️ comp.</span> 🟰 
-                            <span style="background: #d1e7dd; padding: 4px 8px; border-radius: 4px;">Cría ${nombre1Cap} ♂️</span>
+                        <div class="paso-fila paso-1">
+                            <div class="badge badge-hembra">${nombre1Cap} ♀</div>
+                            <span class="operador">➕</span>
+                            <div class="badge badge-macho">Cualquier ♂</div>
+                            <span class="operador">➔</span>
+                            <div class="badge badge-macho">Cría ${nombre1Cap} ♂</div>
                         </div>
-                        <p style="margin: 0 0 15px 20px; font-size: 0.85em; color: #666;"><em>* Para saltar de especie, debes heredar los IVs primero a un macho.</em></p>
+                        <p class="nota-sutil">* Transfiere los IVs a un macho de la misma especie.</p>
                     `;
                 }
 
-                let donante = genero1 === 'hembra' ? `Cría ${nombre1Cap} ♂️` : `${nombre1Cap} ♂️`;
+                let donanteTxt = genero1 === 'hembra' ? `Cría ${nombre1Cap} ♂` : `${nombre1Cap} ♂`;
                 
-                // Paso del cruce con el Nexo
                 pasosHtml += `
-                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; white-space: nowrap;">
-                        <strong>Paso ${stepCounter++} (Puente):</strong> 
-                        <span style="background: #e2e3e5; padding: 4px 8px; border-radius: 4px;">${donante}</span> ➕ 
-                        <span style="background: #ffe6e6; padding: 4px 8px; border-radius: 4px; color: #e3350d; font-weight: bold;">[Nexo] ♀️</span> 🟰 
-                        <span style="background: #d1e7dd; padding: 4px 8px; border-radius: 4px;">Cría [Nexo] ♂️</span>
+                    <div class="paso-fila paso-2">
+                        <div class="badge badge-macho">${donanteTxt}</div>
+                        <span class="operador">➕</span>
+                        <div class="badge badge-nexo">[NEXO] ♀</div>
+                        <span class="operador">➔</span>
+                        <div class="badge badge-macho">Cría [NEXO] ♂</div>
                     </div>
                 `;
 
-                // Paso Final
-                let metaEspecie = `Cría ${nombre2Cap} ${genero2 === 'macho' ? '♂️' : '♀️'}`;
+                let metaEspecie = `Cría ${nombre2Cap} ${genero2 === 'macho' ? '♂' : '♀'}`;
                 pasosHtml += `
-                    <div style="display: flex; align-items: center; gap: 8px; white-space: nowrap;">
-                        <strong>Paso ${stepCounter++} (Destino):</strong> 
-                        <span style="background: #d1e7dd; padding: 4px 8px; border-radius: 4px;">Cría [Nexo] ♂️</span> ➕ 
-                        <span style="background: #e2e3e5; padding: 4px 8px; border-radius: 4px;">Madre ${nombre2Cap} ♀️</span> 🟰 
-                        <span style="background: #ffecb5; padding: 4px 8px; border-radius: 4px; font-weight: bold;">${metaEspecie} ✨</span>
+                    <div class="paso-fila paso-3">
+                        <div class="badge badge-macho">Cría [NEXO] ♂</div>
+                        <span class="operador">➕</span>
+                        <div class="badge badge-hembra">Madre ${nombre2Cap} ♀</div>
+                        <span class="operador">➔</span>
+                        <div class="badge badge-meta">${metaEspecie} ✨</div>
                     </div>
                 `;
                 
-                // Nota si querían un final Macho
                 if (genero2 === 'macho') {
-                     pasosHtml += `<p style="margin: 5px 0 0 20px; font-size: 0.85em; color: #666;"><em>* Ocupas una madre ${nombre2Cap} para fijar la especie. Solo incuba hasta que la cría salga macho.</em></p>`;
+                     pasosHtml += `<p class="nota-sutil">* Incuba huevos de la especie final hasta que nazca un macho.</p>`;
                 }
 
-                let esquemaCrianza = `
-                    <div style="background-color: #f8f9fa; border-left: 5px solid #0d6efd; padding: 15px; margin: 20px 0; font-size: 0.95em; text-align: left; overflow-x: auto;">
-                        <h4 style="margin: 0 0 15px 0; color: #333;">🧬 Fórmula de Crianza (Traspaso de IVs):</h4>
+                let esquemaHtml = `
+                    <div class="formula-box">
+                        <div class="formula-titulo">📍 Ruta de Crianza</div>
                         ${pasosHtml}
-                        <p style="margin: 15px 0 0 0; font-size: 0.85em; color: #666;"><em>* Sustituye <strong>[Nexo]</strong> con cualquier Pokémon de la lista. <br>* Usa el <strong>Lazo Destino</strong> para asegurar los IVs.</em></p>
+                        <p style="margin:16px 0 0 0; font-size:0.85em; color:#94a3b8; text-align:center;">
+                           Equipa el <strong>Lazo Destino</strong> para heredar los IVs.
+                        </p>
                     </div>
                 `;
 
+                // Agrupar por región
                 const obtenerGeneracion = (id) => {
-                    if (id <= 151) return "Primera Generación";
-                    if (id <= 251) return "Segunda Generación";
-                    if (id <= 386) return "Tercera Generación";
-                    if (id <= 493) return "Cuarta Generación";
-                    if (id <= 649) return "Quinta Generación";
-                    if (id <= 721) return "Sexta Generación";
-                    if (id <= 809) return "Séptima Generación";
-                    if (id <= 905) return "Octava Generación";
-                    return "Novena Generación";
+                    if (id <= 151) return "Kanto (Gen 1)";
+                    if (id <= 251) return "Johto (Gen 2)";
+                    if (id <= 386) return "Hoenn (Gen 3)";
+                    if (id <= 493) return "Sinnoh (Gen 4)";
+                    if (id <= 649) return "Unova (Gen 5)";
+                    if (id <= 721) return "Kalos (Gen 6)";
+                    if (id <= 809) return "Alola (Gen 7)";
+                    if (id <= 905) return "Galar (Gen 8)";
+                    return "Paldea (Gen 9)";
                 };
 
                 const nexosAgrupados = {};
                 nexosFiltrados.forEach(nexo => {
                     const gen = obtenerGeneracion(nexo.id);
                     if (!nexosAgrupados[gen]) nexosAgrupados[gen] = []; 
-                    const nombreCap = nexo.nombre.charAt(0).toUpperCase() + nexo.nombre.slice(1);
-                    nexosAgrupados[gen].push(nombreCap);
+                    nexosAgrupados[gen].push(nexo.nombre.charAt(0).toUpperCase() + nexo.nombre.slice(1));
                 });
 
-                let htmlNexos = `<p>Elige tu <strong>[Nexo]</strong> de las siguientes opciones:</p>`;
-                const ordenGeneraciones = ["Primera Generación", "Segunda Generación", "Tercera Generación", "Cuarta Generación", "Quinta Generación", "Sexta Generación", "Séptima Generación", "Octava Generación", "Novena Generación"];
+                let htmlNexos = `<div style="font-weight:700; color:#334155; margin-top:10px;">Elige a tu [NEXO]:</div>`;
+                const ordenGen = ["Kanto (Gen 1)", "Johto (Gen 2)", "Hoenn (Gen 3)", "Sinnoh (Gen 4)", "Unova (Gen 5)", "Kalos (Gen 6)", "Alola (Gen 7)", "Galar (Gen 8)", "Paldea (Gen 9)"];
 
-                ordenGeneraciones.forEach(gen => {
-                    if (nexosAgrupados[gen] && nexosAgrupados[gen].length > 0) {
+                ordenGen.forEach(gen => {
+                    if (nexosAgrupados[gen]) {
                         nexosAgrupados[gen].sort(); 
                         htmlNexos += `
-                            <div style="text-align: left; margin-top: 15px; background: #f9f9f9; padding: 10px; border-radius: 5px;">
-                                <h4 style="margin: 0 0 10px 0; color: #333;">${gen}</h4>
-                                <p style="margin: 0; color: #e3350d; font-size: 0.95em;">
-                                    ${nexosAgrupados[gen].join(', ')}
-                                </p>
+                            <div class="gen-box">
+                                <div class="gen-titulo">${gen}</div>
+                                <div class="gen-nombres">${nexosAgrupados[gen].join(', ')}</div>
                             </div>
                         `;
                     }
                 });
 
-                divResultado.innerHTML = htmlResultado + esquemaCrianza + htmlNexos;
+                divResultado.innerHTML = htmlInfo + esquemaHtml + htmlNexos;
 
             } catch (error) {
-                divResultado.innerHTML = `<span style="color:red;">Error: Verifica la ortografía. ${error.message}</span>`;
+                divResultado.innerHTML = `<div class="alerta alerta-roja">Error: Verifica la conexión o la ortografía.</div>`;
             }
         }
     </script>
