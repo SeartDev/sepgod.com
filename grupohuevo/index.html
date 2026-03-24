@@ -128,6 +128,39 @@
         .alerta-roja { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
         .alerta-naranja { background: #fffbeb; color: #b45309; border: 1px solid #fde68a; }
         .alerta-verde { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+
+        /* --- ESTILOS PARA LOS BOTONES DE NEXOS Y ANIMACIÓN --- */
+        .nexo-tag {
+            display: inline-block;
+            background: #f1f5f9;
+            color: #475569;
+            padding: 6px 14px;
+            border-radius: 8px;
+            margin: 4px;
+            font-size: 0.95em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .nexo-tag:hover {
+            background: #e0f2fe; /* Azul clarito al pasar el mouse */
+            color: #0369a1;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.05);
+            border-color: #bae6fd;
+        }
+
+        @keyframes aparecerSuave {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .animar-entrada {
+            animation: aparecerSuave 0.4s ease-out forwards;
+        }
+        
     </style>
 </head>
 <body>
@@ -159,7 +192,7 @@
     </div>
     <script>
 
-        // 1. Cargar autocompletado al iniciar
+      // 1. Cargar autocompletado al iniciar
         async function cargarListaNombres() {
             try {
                 const respuesta = await fetch('https://pokeapi.co/api/v2/pokemon-species?limit=10000');
@@ -199,7 +232,67 @@
             } catch (error) {}
         }
 
-        // 3. Lógica Principal de Crianza de IVs
+        // 3. NUEVA FUNCIÓN: Dibuja la fórmula al hacer clic en un nexo
+        function mostrarFormula(nombre1, genero1, nombre2, genero2, nexoNombre) {
+            let pasosHtml = "";
+
+            if (genero1 === 'hembra') {
+                pasosHtml += `
+                    <div class="paso-fila paso-1">
+                        <div class="badge badge-hembra">${nombre1} ♀</div>
+                        <span class="operador">➕</span>
+                        <div class="badge badge-macho">Cualquier ♂</div>
+                        <span class="operador">➔</span>
+                        <div class="badge badge-macho">Cría ${nombre1} ♂</div>
+                    </div>
+                    <p class="nota-sutil">* Transfiere los IVs a un macho de la misma especie.</p>
+                `;
+            }
+
+            let donanteTxt = genero1 === 'hembra' ? `Cría ${nombre1} ♂` : `${nombre1} ♂`;
+            
+            pasosHtml += `
+                <div class="paso-fila paso-2">
+                    <div class="badge badge-macho">${donanteTxt}</div>
+                    <span class="operador">➕</span>
+                    <div class="badge badge-nexo">${nexoNombre} ♀</div>
+                    <span class="operador">➔</span>
+                    <div class="badge badge-macho">Cría ${nexoNombre} ♂</div>
+                </div>
+            `;
+
+            let metaEspecie = `Cría ${nombre2} ${genero2 === 'macho' ? '♂' : '♀'}`;
+            pasosHtml += `
+                <div class="paso-fila paso-3">
+                    <div class="badge badge-macho">Cría ${nexoNombre} ♂</div>
+                    <span class="operador">➕</span>
+                    <div class="badge badge-hembra">Madre ${nombre2} ♀</div>
+                    <span class="operador">➔</span>
+                    <div class="badge badge-meta">${metaEspecie} ✨</div>
+                </div>
+            `;
+            
+            if (genero2 === 'macho') {
+                 pasosHtml += `<p class="nota-sutil">* Incuba huevos de la especie final hasta que nazca un macho.</p>`;
+            }
+
+            let esquemaHtml = `
+                <div class="formula-box animar-entrada">
+                    <div class="formula-titulo">📍 Ruta usando a ${nexoNombre}</div>
+                    ${pasosHtml}
+                    <p style="margin:16px 0 0 0; font-size:0.85em; color:#94a3b8; text-align:center;">
+                       Equipa el <strong>Lazo Destino</strong> para heredar los IVs.
+                    </p>
+                </div>
+            `;
+
+            const contenedor = document.getElementById('contenedorFormula');
+            contenedor.innerHTML = esquemaHtml;
+            // Hace que la pantalla haga scroll suavemente hasta la fórmula
+            contenedor.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        // 4. Lógica Principal de Búsqueda
         async function buscarGrupoHuevo() {
             const nombrePoke1 = document.getElementById('pokeInput1').value.toLowerCase().trim();
             const genero1 = document.getElementById('genero1').value;
@@ -288,60 +381,15 @@
                      divResultado.innerHTML = htmlInfo + `<div class="alerta alerta-roja">No existe un Pokémon puente válido para esta cadena.</div>`; return;
                 }
 
-                // Generador Visual de la Fórmula
-                let pasosHtml = "";
-
-                if (genero1 === 'hembra') {
-                    pasosHtml += `
-                        <div class="paso-fila paso-1">
-                            <div class="badge badge-hembra">${nombre1Cap} ♀</div>
-                            <span class="operador">➕</span>
-                            <div class="badge badge-macho">Cualquier ♂</div>
-                            <span class="operador">➔</span>
-                            <div class="badge badge-macho">Cría ${nombre1Cap} ♂</div>
+                // Aquí creamos el espacio vacío donde se inyectará la fórmula
+                let espacioFormula = `
+                    <div id="contenedorFormula">
+                        <div style="background: #f1f5f9; padding: 15px; border-radius: 12px; text-align: center; color: #64748b; margin: 20px 0; font-size: 0.9em;">
+                            👆 <em>Haz clic en algún Pokémon de las listas de abajo para generar su ruta exacta.</em>
                         </div>
-                        <p class="nota-sutil">* Transfiere los IVs a un macho de la misma especie.</p>
-                    `;
-                }
-
-                let donanteTxt = genero1 === 'hembra' ? `Cría ${nombre1Cap} ♂` : `${nombre1Cap} ♂`;
-                
-                pasosHtml += `
-                    <div class="paso-fila paso-2">
-                        <div class="badge badge-macho">${donanteTxt}</div>
-                        <span class="operador">➕</span>
-                        <div class="badge badge-nexo">[NEXO] ♀</div>
-                        <span class="operador">➔</span>
-                        <div class="badge badge-macho">Cría [NEXO] ♂</div>
                     </div>
                 `;
 
-                let metaEspecie = `Cría ${nombre2Cap} ${genero2 === 'macho' ? '♂' : '♀'}`;
-                pasosHtml += `
-                    <div class="paso-fila paso-3">
-                        <div class="badge badge-macho">Cría [NEXO] ♂</div>
-                        <span class="operador">➕</span>
-                        <div class="badge badge-hembra">Madre ${nombre2Cap} ♀</div>
-                        <span class="operador">➔</span>
-                        <div class="badge badge-meta">${metaEspecie} ✨</div>
-                    </div>
-                `;
-                
-                if (genero2 === 'macho') {
-                     pasosHtml += `<p class="nota-sutil">* Incuba huevos de la especie final hasta que nazca un macho.</p>`;
-                }
-
-                let esquemaHtml = `
-                    <div class="formula-box">
-                        <div class="formula-titulo">📍 Ruta de Crianza</div>
-                        ${pasosHtml}
-                        <p style="margin:16px 0 0 0; font-size:0.85em; color:#94a3b8; text-align:center;">
-                           Equipa el <strong>Lazo Destino</strong> para heredar los IVs.
-                        </p>
-                    </div>
-                `;
-
-                // Agrupar por región
                 const obtenerGeneracion = (id) => {
                     if (id <= 151) return "Kanto (Gen 1)";
                     if (id <= 251) return "Johto (Gen 2)";
@@ -361,22 +409,28 @@
                     nexosAgrupados[gen].push(nexo.nombre.charAt(0).toUpperCase() + nexo.nombre.slice(1));
                 });
 
-                let htmlNexos = `<div style="font-weight:700; color:#334155; margin-top:10px;">Elige a tu [NEXO]:</div>`;
+                let htmlNexos = `<div style="font-weight:700; color:#334155; margin-top:10px;">Posibles Nexos:</div>`;
                 const ordenGen = ["Kanto (Gen 1)", "Johto (Gen 2)", "Hoenn (Gen 3)", "Sinnoh (Gen 4)", "Unova (Gen 5)", "Kalos (Gen 6)", "Alola (Gen 7)", "Galar (Gen 8)", "Paldea (Gen 9)"];
 
                 ordenGen.forEach(gen => {
                     if (nexosAgrupados[gen]) {
                         nexosAgrupados[gen].sort(); 
+                        
+                        // En lugar de unir los nombres con comas, ahora creamos "Botones" con la función onclick
+                        let botonesHtml = nexosAgrupados[gen].map(nexoNombre => {
+                            return `<span class="nexo-tag" onclick="mostrarFormula('${nombre1Cap}', '${genero1}', '${nombre2Cap}', '${genero2}', '${nexoNombre}')">${nexoNombre}</span>`;
+                        }).join(' ');
+
                         htmlNexos += `
                             <div class="gen-box">
                                 <div class="gen-titulo">${gen}</div>
-                                <div class="gen-nombres">${nexosAgrupados[gen].join(', ')}</div>
+                                <div>${botonesHtml}</div>
                             </div>
                         `;
                     }
                 });
 
-                divResultado.innerHTML = htmlInfo + esquemaHtml + htmlNexos;
+                divResultado.innerHTML = htmlInfo + espacioFormula + htmlNexos;
 
             } catch (error) {
                 divResultado.innerHTML = `<div class="alerta alerta-roja">Error: Verifica la conexión o la ortografía.</div>`;
