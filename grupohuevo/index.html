@@ -738,11 +738,36 @@
                     );
 
                     if (detallesGen6.length > 0) {
-                        // Extraemos todos los métodos por los que aprende este movimiento en Gen 6
-                        const metodos = detallesGen6.map(d => d.move_learn_method.name);
-                        const nombreLimpio = moveData.move.name.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                        // Buscamos si lo aprende por nivel y a qué nivel
+                        let nivel = 0;
+                        const metodos = detallesGen6.map(d => {
+                            if (d.move_learn_method.name === 'level-up' && d.level_learned_at > 0) {
+                                nivel = d.level_learned_at;
+                            }
+                            return d.move_learn_method.name;
+                        });
+
+                        let nombreLimpio = moveData.move.name.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
                         
+                        // Si es por nivel, le agregamos el texto (Nv. X)
+                        if (nivel > 0) {
+                            nombreLimpio += ` (Nv. ${nivel})`;
+                        }
+
                         const objMov = { val: moveData.move.name, text: nombreLimpio };
+
+                        // 3. Clasificamos con jerarquía
+                        if (metodos.includes('level-up')) {
+                            movsNivel.push(objMov);
+                        } else if (metodos.includes('machine')) {
+                            movsMT.push(objMov);
+                        } else if (metodos.includes('egg')) {
+                            movsHuevo.push(objMov);
+                        } else {
+                            movsTutor.push(objMov);
+                        }
+                    }
+                });
 
                         // 3. Clasificamos con jerarquía (Nivel > MT > Huevo > Tutor)
                         if (metodos.includes('level-up')) {
