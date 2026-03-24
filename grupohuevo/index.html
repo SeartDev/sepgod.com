@@ -161,6 +161,10 @@
     </style>
 </head>
 <body>
+    <button id="btnTema" class="btn-tema" onclick="alternarTema()">
+        <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/94.gif" alt="Gengar">
+        Modo Oscuro
+    </button>
 
 <div class="contenedor">
         
@@ -219,6 +223,27 @@
 
     </div>
     <script>
+        // --- MODO OSCURO (GENGAR / PONYTA) ---
+        let esModoOscuro = false;
+        function alternarTema() {
+            esModoOscuro = !esModoOscuro;
+            document.body.classList.toggle('dark-mode', esModoOscuro);
+            
+            const btnTema = document.getElementById('btnTema');
+            if (esModoOscuro) {
+                // Al estar oscuro, mostramos a Ponyta invitando a volver al Modo Luz
+                btnTema.innerHTML = `
+                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/77.gif" alt="Ponyta">
+                    Modo Luz
+                `;
+            } else {
+                // Al estar en luz, mostramos a Gengar invitando al Modo Oscuro
+                btnTema.innerHTML = `
+                    <img src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/versions/generation-v/black-white/animated/94.gif" alt="Gengar">
+                    Modo Oscuro
+                `;
+            }
+        }
        // --- NAVEGACIÓN Y UTILIDADES ---
         function abrirHerramienta(tipo) {
             if (tipo === 'ivs') {
