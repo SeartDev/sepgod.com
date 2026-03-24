@@ -106,10 +106,9 @@
                 return; 
             }
 
-            divResultado.innerHTML = "Calculando cadena y verificando compatibilidad de género...";
+            divResultado.innerHTML = "Calculando árbol genealógico y aislando nodos...";
 
             try {
-                // 1. Obtenemos datos básicos
                 const buscarDatosPoke = async (nombre) => {
                     const respuesta = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${nombre}`);
                     if (!respuesta.ok) throw new Error(`No se encontró a ${nombre}`);
@@ -123,32 +122,54 @@
 
                 const grupos1 = datosPoke1.egg_groups.map(g => g.name);
                 const grupos2 = datosPoke2.egg_groups.map(g => g.name);
+                const rate1 = datosPoke1.gender_rate;
+                const rate2 = datosPoke2.gender_rate;
                 const nombre1Cap = nombrePoke1.charAt(0).toUpperCase() + nombrePoke1.slice(1);
                 const nombre2Cap = nombrePoke2.charAt(0).toUpperCase() + nombrePoke2.slice(1);
 
-                let advertencia = "";
-                if (genero1 === 'hembra') {
-                    advertencia = `<p style="color:#d97706; font-size:0.9em;">⚠️ Nota: Si el 1er Pokémon es hembra, la cría será de su especie. Para pasar movimientos a la especie final, el 1er Pokémon suele ser Macho.</p>`;
-                }
-
                 let htmlResultado = `
-                    <p><strong>${nombre1Cap}</strong> (${genero1 === 'macho' ? '♂️' : '♀️'}) - Grupos: ${grupos1.join(', ')}</p>
-                    <p><strong>${nombre2Cap}</strong> (${genero2 === 'macho' ? '♂️' : '♀️'}) - Grupos: ${grupos2.join(', ')}</p>
-                    ${advertencia}
+                    <p><strong>${nombre1Cap}</strong> - Grupos: ${grupos1.join(', ')}</p>
+                    <p><strong>${nombre2Cap}</strong> - Grupos: ${grupos2.join(', ')}</p>
                     <hr style="border: 0; border-top: 1px solid #ccc; margin: 15px 0;">
                 `;
 
+                // --- REGLAS ESTRICTAS DE CRIANZA (TEORÍA DE GRAFOS) ---
+
+                // 1. Pokémon Sin Género (Nodos Aislados)
+                if (rate1 === -1 || rate2 === -1) {
+                    divResultado.innerHTML = htmlResultado + `<p style="color:red;"><strong>⛔ Nodos Aislados:</strong> Uno de estos Pokémon no tiene género. Son callejones sin salida genéticos y solo pueden criar con Ditto. No se pueden calcular puentes.</p>`;
+                    return;
+                }
+
+                // 2. Pokémon 100% Hembra como inicio (Receptor Final / Sumidero)
+                if (rate1 === 8) {
+                    divResultado.innerHTML = htmlResultado + `<p style="color:#d97706;"><strong>⛔ Receptor Final:</strong> <strong>${nombre1Cap}</strong> es 100% Hembra. Es un sumidero genético, la cría siempre será de su especie. No puede tener "flechas de salida" hacia otra especie.</p>`;
+                    return;
+                }
+
+                // 3. Pokémon 100% Macho como final (Donante Exclusivo)
+                if (rate2 === 0) {
+                    divResultado.innerHTML = htmlResultado + `<p style="color:#d97706;"><strong>⛔ Donante Exclusivo:</strong> <strong>${nombre2Cap}</strong> es 100% Macho. Al no existir hembras de su especie, nunca podrá recibir "flechas de entrada" desde otra especie.</p>`;
+                    return;
+                }
+
+                // Validación de lógica del usuario (Macho -> Nexo -> Hembra)
+                if (genero1 === 'hembra' || genero2 === 'macho') {
+                    divResultado.innerHTML = htmlResultado + `<p style="color:#d97706;"><strong>⚠️ Error de flujo:</strong> Para hacer una cadena hacia otra especie, el 1er Pokémon debe ser <strong>Macho</strong> (donante) y el Pokémon final debe ser <strong>Hembra</strong> (receptora). Por favor, ajusta los selectores.</p>`;
+                    return;
+                }
+
                 if (grupos1.includes('no-eggs') || grupos2.includes('no-eggs')) {
-                    divResultado.innerHTML = htmlResultado + `<p style="color:red;">Uno de estos Pokémon no puede criar.</p>`;
+                    divResultado.innerHTML = htmlResultado + `<p style="color:red;">Uno de estos Pokémon pertenece al grupo Desconocido (no puede criar).</p>`;
                     return;
                 }
 
                 if (grupos1.some(g => grupos2.includes(g))) {
-                    divResultado.innerHTML = htmlResultado + `<p style="color:green;">¡Comparten grupo huevo! Pueden criar directamente.</p>`;
+                    divResultado.innerHTML = htmlResultado + `<p style="color:green;">¡Comparten grupo huevo! Pueden criar directamente sin nexos.</p>`;
                     return;
                 }
 
-                divResultado.innerHTML = htmlResultado + "<em>Buscando nexos compatibles con los géneros...</em>";
+                divResultado.innerHTML = htmlResultado + "<em>Buscando nexos puente...</em>";
 
                 const obtenerEspeciesDeGrupos = async (grupos) => {
                     let especies = new Map(); 
@@ -183,28 +204,16 @@
                 datosNexos.forEach(data => {
                     const rate = data.gender_rate;
                     
-                    let puedeSerMacho = (rate >= 0 && rate <= 7);
-                    let puedeSerHembra = (rate >= 1 && rate <= 8);
-                    let esSinGenero = (rate === -1);
-
-                    if (esSinGenero) return; 
-
-                    let nexoValido = true;
-
-                    if (genero1 === 'macho' && !puedeSerHembra) nexoValido = false;
-                    if (genero2 === 'hembra' && !puedeSerMacho) nexoValido = false;
-                    
-                    if (genero1 === 'hembra' && !puedeSerMacho) nexoValido = false;
-                    if (genero2 === 'macho' && !puedeSerHembra) nexoValido = false;
-
-                    if (nexoValido) {
-                        // ¡AQUÍ ESTÁ LA CORRECCIÓN! Usamos data.id directamente.
+                    // REGLA DEL NEXO: Debe poder funcionar como "Madre" (Paso 1) y "Padre" (Paso 2)
+                    // Por lo tanto, rate DEBE estar entre 1 y 7. 
+                    // Excluimos 0 (100% Macho), 8 (100% Hembra) y -1 (Sin género).
+                    if (rate >= 1 && rate <= 7) {
                         nexosFiltrados.push({ nombre: data.name, id: data.id });
                     }
                 });
 
                 if (nexosFiltrados.length === 0) {
-                     divResultado.innerHTML = htmlResultado + `<p style="color:red;">No existe un Pokémon puente que cumpla con los requisitos de género para esta cadena.</p>`;
+                     divResultado.innerHTML = htmlResultado + `<p style="color:red;">No existe un Pokémon puente válido para esta cadena genética.</p>`;
                      return;
                 }
 
@@ -228,7 +237,7 @@
                     nexosAgrupados[gen].push(nombreCap);
                 });
 
-                let htmlNexos = `<p>Nexos compatibles con los géneros seleccionados:</p>`;
+                let htmlNexos = `<p>Nexos válidos (capaces de ser macho y hembra):</p>`;
                 const ordenGeneraciones = ["Primera Generación", "Segunda Generación", "Tercera Generación", "Cuarta Generación", "Quinta Generación", "Sexta Generación", "Séptima Generación", "Octava Generación", "Novena Generación"];
 
                 ordenGeneraciones.forEach(gen => {
