@@ -69,23 +69,36 @@
 </head>
 <body>
 
-    <div class="contenedor">
+  <div class="contenedor">
         <h2>Grupos Huevo Pokémon</h2>
         
-        <input type="text" id="pokeInput1" placeholder="1er Pokémon (Ej. pichu)">
-        <input type="text" id="pokeInput2" placeholder="Evolución final (Ej. raichu)">
+        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+            <input type="text" id="pokeInput1" placeholder="1er Pokémon (Ej. pikachu)" style="width: 60%; margin-bottom: 0;">
+            <select id="genero1" style="width: 40%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px;">
+                <option value="macho">Macho ♂️</option>
+                <option value="hembra">Hembra ♀️</option>
+            </select>
+        </div>
+        
+        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+            <input type="text" id="pokeInput2" placeholder="Pokémon final (Ej. squirtle)" style="width: 60%; margin-bottom: 0;">
+            <select id="genero2" style="width: 40%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px;">
+                <option value="hembra">Hembra ♀️</option>
+                <option value="macho">Macho ♂️</option>
+            </select>
+        </div>
         
         <button onclick="buscarGrupoHuevo()">Buscar</button>
         
         <div id="resultado"></div>
     </div>
-
     <script>
-       // Función principal que se ejecuta al hacer clic en el botón
-        async function buscarGrupoHuevo() {
+      async function buscarGrupoHuevo() {
             
             const nombrePoke1 = document.getElementById('pokeInput1').value.toLowerCase().trim();
+            const genero1 = document.getElementById('genero1').value;
             const nombrePoke2 = document.getElementById('pokeInput2').value.toLowerCase().trim();
+            const genero2 = document.getElementById('genero2').value;
             const divResultado = document.getElementById('resultado');
 
             if (!nombrePoke1 || !nombrePoke2) {
@@ -93,7 +106,7 @@
                 return; 
             }
 
-            divResultado.innerHTML = "Calculando todas las cadenas de crianza...";
+            divResultado.innerHTML = "Calculando cadena y verificando compatibilidad de género...";
 
             try {
                 // 1. Obtenemos datos básicos
@@ -110,13 +123,19 @@
 
                 const grupos1 = datosPoke1.egg_groups.map(g => g.name);
                 const grupos2 = datosPoke2.egg_groups.map(g => g.name);
-
                 const nombre1Cap = nombrePoke1.charAt(0).toUpperCase() + nombrePoke1.slice(1);
                 const nombre2Cap = nombrePoke2.charAt(0).toUpperCase() + nombrePoke2.slice(1);
 
+                // Advertencia técnica de crianza (Opcional pero útil)
+                let advertencia = "";
+                if (genero1 === 'hembra') {
+                    advertencia = `<p style="color:#d97706; font-size:0.9em;">⚠️ Nota: Si el 1er Pokémon es hembra, la cría será de su especie. Para saltar a la especie final, el 1er Pokémon suele ser Macho.</p>`;
+                }
+
                 let htmlResultado = `
-                    <p><strong>${nombre1Cap}</strong> (Grupos: ${grupos1.join(', ')})</p>
-                    <p><strong>${nombre2Cap}</strong> (Grupos: ${grupos2.join(', ')})</p>
+                    <p><strong>${nombre1Cap}</strong> (${genero1 === 'macho' ? '♂️' : '♀️'}) - Grupos: ${grupos1.join(', ')}</p>
+                    <p><strong>${nombre2Cap}</strong> (${genero2 === 'macho' ? '♂️' : '♀️'}) - Grupos: ${grupos2.join(', ')}</p>
+                    ${advertencia}
                     <hr style="border: 0; border-top: 1px solid #ccc; margin: 15px 0;">
                 `;
 
@@ -126,26 +145,20 @@
                 }
 
                 if (grupos1.some(g => grupos2.includes(g))) {
-                    divResultado.innerHTML = htmlResultado + `<p style="color:green;">¡<strong>${nombre1Cap}</strong> y <strong>${nombre2Cap}</strong> comparten grupo huevo! Pueden criar directamente.</p>`;
+                    divResultado.innerHTML = htmlResultado + `<p style="color:green;">¡Comparten grupo huevo! Pueden criar directamente.</p>`;
                     return;
                 }
 
-                divResultado.innerHTML = htmlResultado + "<em>Buscando Pokémon puente (nexo)...</em>";
+                divResultado.innerHTML = htmlResultado + "<em>Buscando nexos compatibles con los géneros...</em>";
 
-                // 2. Función mejorada: Ahora guardamos el ID del Pokémon para saber su generación
+                // 2. Buscamos TODOS los posibles nexos por grupo huevo
                 const obtenerEspeciesDeGrupos = async (grupos) => {
-                    let especies = new Map(); // Usamos un "Diccionario" para guardar Nombre -> ID
+                    let especies = new Map(); 
                     for (let grupo of grupos) {
                         if (grupo === 'ditto') continue; 
                         const res = await fetch(`https://pokeapi.co/api/v2/egg-group/${grupo}`);
                         const data = await res.json();
-                        
-                        data.pokemon_species.forEach(p => {
-                            // Truco: Extraemos el ID numérico directo de la URL de la API
-                            const urlParts = p.url.split('/');
-                            const id = parseInt(urlParts[urlParts.length - 2]);
-                            especies.set(p.name, id);
-                        });
+                        data.pokemon_species.forEach(p => especies.set(p.name, p.name));
                     }
                     return especies;
                 };
@@ -155,20 +168,58 @@
                     obtenerEspeciesDeGrupos(grupos2)
                 ]);
 
-                // 3. Cruzamos los datos y guardamos el nombre y el ID
-                let nexos = [];
-                for (let [nombre, id] of especiesLado1.entries()) {
+                // 3. Cruzamos los datos para encontrar coincidencias iniciales
+                let nexosBasicos = [];
+                for (let nombre of especiesLado1.keys()) {
                     if (especiesLado2.has(nombre) && nombre !== nombrePoke1 && nombre !== nombrePoke2) {
-                        nexos.push({ nombre: nombre, id: id });
+                        nexosBasicos.push(nombre);
                     }
                 }
 
-                if (nexos.length === 0) {
-                     divResultado.innerHTML = htmlResultado + `<p style="color:red;">No existe un solo Pokémon que conecte a estas dos especies.</p>`;
+                // 4. NUEVO: Verificamos el género de los nexos encontrados
+                // Hacemos una petición por cada nexo para ver su "gender_rate"
+                const promesasNexos = nexosBasicos.map(nombre => 
+                    fetch(`https://pokeapi.co/api/v2/pokemon-species/${nombre}`).then(res => res.json())
+                );
+                const datosNexos = await Promise.all(promesasNexos);
+
+                let nexosFiltrados = [];
+
+                datosNexos.forEach(data => {
+                    const rate = data.gender_rate;
+                    
+                    // En la PokeAPI, gender_rate va de 0 a 8. 
+                    // -1 es sin género, 0 es 100% macho, 8 es 100% hembra.
+                    let puedeSerMacho = (rate >= 0 && rate <= 7);
+                    let puedeSerHembra = (rate >= 1 && rate <= 8);
+                    let esSinGenero = (rate === -1);
+
+                    if (esSinGenero) return; // Descartamos los sin género (como Beldum)
+
+                    let nexoValido = true;
+
+                    // Si el Poke 1 es Macho, necesitamos que el Nexo pueda ser Hembra para cruzarlos
+                    if (genero1 === 'macho' && !puedeSerHembra) nexoValido = false;
+                    // Si el Poke 2 es Hembra, necesitamos que la cría del Nexo pueda ser Macho para cruzarla con el Poke 2
+                    if (genero2 === 'hembra' && !puedeSerMacho) nexoValido = false;
+                    
+                    // Validaciones inversas por si el usuario hace cadenas raras
+                    if (genero1 === 'hembra' && !puedeSerMacho) nexoValido = false;
+                    if (genero2 === 'macho' && !puedeSerHembra) nexoValido = false;
+
+                    if (nexoValido) {
+                        const urlParts = data.url.split('/');
+                        const id = parseInt(urlParts[urlParts.length - 2]);
+                        nexosFiltrados.push({ nombre: data.name, id: id });
+                    }
+                });
+
+                if (nexosFiltrados.length === 0) {
+                     divResultado.innerHTML = htmlResultado + `<p style="color:red;">No existe un Pokémon puente que cumpla con los requisitos de género para esta cadena.</p>`;
                      return;
                 }
 
-                // 4. Función para saber la generación según el número de Pokédex Nacional
+                // 5. Agrupamos y mostramos (Código igual al anterior)
                 const obtenerGeneracion = (id) => {
                     if (id <= 151) return "Primera Generación";
                     if (id <= 251) return "Segunda Generación";
@@ -181,26 +232,20 @@
                     return "Novena Generación";
                 };
 
-                // 5. Agrupamos los nexos por su generación
                 const nexosAgrupados = {};
-                nexos.forEach(nexo => {
+                nexosFiltrados.forEach(nexo => {
                     const gen = obtenerGeneracion(nexo.id);
-                    if (!nexosAgrupados[gen]) nexosAgrupados[gen] = []; // Creamos la lista si no existe
+                    if (!nexosAgrupados[gen]) nexosAgrupados[gen] = []; 
                     const nombreCap = nexo.nombre.charAt(0).toUpperCase() + nexo.nombre.slice(1);
                     nexosAgrupados[gen].push(nombreCap);
                 });
 
-                // 6. Construimos el HTML final leyendo nuestros grupos ordenados
-                let htmlNexos = `<p>Puedes usar como <strong>nexo</strong> a cualquiera de estos Pokémon:</p>`;
-                
-                // Ordenamos las generaciones para que aparezcan de la 1 a la 9
+                let htmlNexos = `<p>Nexos compatibles con los géneros seleccionados:</p>`;
                 const ordenGeneraciones = ["Primera Generación", "Segunda Generación", "Tercera Generación", "Cuarta Generación", "Quinta Generación", "Sexta Generación", "Séptima Generación", "Octava Generación", "Novena Generación"];
 
                 ordenGeneraciones.forEach(gen => {
                     if (nexosAgrupados[gen] && nexosAgrupados[gen].length > 0) {
-                        // Ordenamos los nombres alfabéticamente dentro de cada generación
                         nexosAgrupados[gen].sort(); 
-                        
                         htmlNexos += `
                             <div style="text-align: left; margin-top: 15px; background: #f9f9f9; padding: 10px; border-radius: 5px;">
                                 <h4 style="margin: 0 0 10px 0; color: #333;">${gen}</h4>
@@ -215,7 +260,7 @@
                 divResultado.innerHTML = htmlResultado + htmlNexos;
 
             } catch (error) {
-                divResultado.innerHTML = `<span style="color:red;">Error: ${error.message}. Verifica la ortografía.</span>`;
+                divResultado.innerHTML = `<span style="color:red;">Error: Verifica la ortografía. ${error.message}</span>`;
             }
         }
     </script>
