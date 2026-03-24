@@ -7,58 +7,91 @@
     <title>Buscador de Grupos Huevo Pokémon 1.0</title>
     
     <style>
-      @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap');
+
+        /* --- VARIABLES DE COLOR (MODO LUZ Y OSCURO) --- */
+        :root {
+            --bg-body: #f8fafc;
+            --bg-pattern: #cbd5e1;
+            --text-main: #475569;
+            --text-heading: #1e293b;
+            --bg-container: rgba(255, 255, 255, 0.95);
+            --border-main: #e2e8f0;
+            --bg-input: #f1f5f9;
+            --text-input: #334155;
+            --bg-box: #ffffff;
+            --bg-step: #f8fafc;
+            --shadow-color: rgba(0, 0, 0, 0.05);
+            --tag-bg: #f1f5f9;
+            --tag-hover: #e0f2fe;
+        }
+
+        body.dark-mode {
+            --bg-body: #0f172a; /* Gris muy oscuro, casi azul marino */
+            --bg-pattern: #1e293b;
+            --text-main: #94a3b8;
+            --text-heading: #f8fafc;
+            --bg-container: rgba(30, 41, 59, 0.95);
+            --border-main: #334155;
+            --bg-input: #1e293b;
+            --text-input: #f8fafc;
+            --bg-box: #0f172a;
+            --bg-step: #1e293b;
+            --shadow-color: rgba(0, 0, 0, 0.4);
+            --tag-bg: #334155;
+            --tag-hover: #0284c7;
+        }
 
         body {
             font-family: 'Nunito', system-ui, sans-serif;
-            background-color: #f8fafc;
-            background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
+            background-color: var(--bg-body);
+            background-image: radial-gradient(var(--bg-pattern) 1px, transparent 1px);
             background-size: 24px 24px;
-            color: #334155;
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-            min-height: 100vh;
-            margin: 0;
-            padding: 40px 20px;
+            color: var(--text-main);
+            display: flex; justify-content: center; align-items: flex-start;
+            min-height: 100vh; margin: 0; padding: 60px 20px 40px 20px; /* Padding top extra para no tapar el botón */
             box-sizing: border-box;
+            transition: background-color 0.4s, color 0.4s;
         }
 
+        /* --- ESTILO DEL BOTÓN GENGAR/PONYTA --- */
+        .btn-tema {
+            position: fixed; top: 20px; right: 20px;
+            background: var(--bg-container); border: 1px solid var(--border-main);
+            border-radius: 30px; padding: 6px 16px; display: flex; align-items: center; gap: 10px;
+            cursor: pointer; color: var(--text-heading); font-weight: 700; font-family: 'Nunito', sans-serif;
+            box-shadow: 0 4px 6px var(--shadow-color); transition: all 0.3s ease; z-index: 1000;
+        }
+        .btn-tema img { height: 35px; width: auto; }
+        .btn-tema:hover { transform: translateY(-2px); box-shadow: 0 6px 12px var(--shadow-color); }
+
+        /* --- RESTO DE LOS ESTILOS ADAPTADOS --- */
         .contenedor {
-            background-color: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 40px;
-            border-radius: 24px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0,0,0,0.05);
-            border: 1px solid #f1f5f9;
-            text-align: center;
-            max-width: 550px; /* Un poco más ancho para las fotos */
-            width: 100%;
+            background-color: var(--bg-container); backdrop-filter: blur(10px);
+            padding: 40px; border-radius: 24px; border: 1px solid var(--border-main);
+            box-shadow: 0 20px 40px var(--shadow-color); text-align: center; max-width: 550px; width: 100%;
+            transition: background-color 0.4s, border-color 0.4s;
         }
 
-        h2 { margin-top: 0; color: #1e293b; font-weight: 700; letter-spacing: -0.5px; }
+        h2 { margin-top: 0; color: var(--text-heading); font-weight: 700; letter-spacing: -0.5px; }
 
-        /* Estilos de inputs, selects y botones (con ligeros ajustes para alinear fotos) */
         .fila-input { display: flex; gap: 12px; margin-bottom: 16px; align-items: center; }
 
-        /* Contenedor cuadrado para la foto al lado del input */
         .slot-foto {
-            width: 60px; height: 60px;
-            background: #f1f5f9;
-            border-radius: 12px;
+            width: 60px; height: 60px; background: var(--bg-input); border-radius: 12px;
             display: flex; align-items: center; justify-content: center;
-            border: 1px solid #e2e8f0;
-            overflow: hidden; /* Corta si el gif es muy grande */
+            border: 1px solid var(--border-main); overflow: hidden;
+            transition: background-color 0.4s, border-color 0.4s;
         }
         .slot-foto img { max-width: 90%; max-height: 90%; object-fit: contain; }
 
         input, select {
-            padding: 12px 16px; background-color: #f1f5f9; border: 1px solid transparent;
-            border-radius: 12px; font-size: 15px; color: #475569; outline: none; flex-grow: 1;
+            padding: 12px 16px; background-color: var(--bg-input); border: 1px solid transparent;
+            border-radius: 12px; font-size: 15px; color: var(--text-input); outline: none; flex-grow: 1;
+            transition: background-color 0.4s, color 0.4s;
         }
-        input { width: 40%; } /* Ajuste de ancho */
-        select { width: 30%; cursor: pointer; }
-        input:focus, select:focus { border-color: #ef4444; background-color: #ffffff;}
+        input { width: 40%; } select { width: 30%; cursor: pointer; }
+        input:focus, select:focus { border-color: #ef4444; background-color: var(--bg-box);}
         select:disabled { opacity: 0.6; cursor: not-allowed; }
 
         button {
@@ -69,29 +102,22 @@
         button:hover { background-color: #dc2626; transform: translateY(-2px); }
 
         #resultado { margin-top: 30px; font-size: 15px; line-height: 1.6; text-align: left; }
-        hr { border: 0; height: 1px; background: #e2e8f0; margin: 20px 0; }
+        hr { border: 0; height: 1px; background: var(--border-main); margin: 20px 0; }
 
-        /* --- ESTILOS DE LA FÓRMULA Y BADGES CON FOTOS --- */
-        .formula-box {
-            background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px;
-            padding: 20px; margin: 24px 0; box-shadow: 0 4px 6px rgba(0,0,0,0.02);
-        }
-        .formula-titulo { font-weight: 700; color: #334155; margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px; }
+        .formula-box { background: var(--bg-box); border: 1px solid var(--border-main); border-radius: 16px; padding: 20px; margin: 24px 0; transition: background-color 0.4s; }
+        .formula-titulo { font-weight: 700; color: var(--text-heading); margin: 0 0 16px 0; display: flex; align-items: center; gap: 8px; }
         
         .paso-fila {
             display: flex; align-items: center; flex-wrap: wrap; gap: 6px; margin-bottom: 10px;
-            padding: 10px; background: #f8fafc; border-radius: 12px; border-left: 4px solid #cbd5e1;
+            padding: 10px; background: var(--bg-step); border-radius: 12px; border-left: 4px solid var(--border-main);
+            transition: background-color 0.4s;
         }
-        .paso-1 { border-left-color: #94a3b8; }
-        .paso-2 { border-left-color: #c084fc; }
-        .paso-3 { border-left-color: #fbbf24; }
+        .paso-1 { border-left-color: #94a3b8; } .paso-2 { border-left-color: #c084fc; } .paso-3 { border-left-color: #fbbf24; }
 
         .badge {
             padding: 4px 10px; border-radius: 20px; font-size: 0.9em; font-weight: 700;
-            display: inline-flex; align-items: center; gap: 5px; /* Espacio foto-texto */
-            box-shadow: 0 2px 4px rgba(0,0,0,0.03); white-space: nowrap;
+            display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;
         }
-        /* Imagen pequeña dentro del badge de la formula */
         .badge img { height: 25px; width: auto; object-fit: contain; margin-left: -4px; }
 
         .badge-macho { background: #e0f2fe; color: #0284c7; }
@@ -100,30 +126,38 @@
         .badge-meta { background: #fef3c7; color: #d97706; }
         
         .operador { color: #94a3b8; font-weight: 900; font-size: 0.9em; }
-        .nota-sutil { font-size: 0.85em; color: #64748b; margin: 5px 0 0 10px; font-style: italic; }
+        .nota-sutil { font-size: 0.85em; color: var(--text-main); margin: 5px 0 0 10px; font-style: italic; }
 
-        /* Nexos y Menú */
-        .gen-box { background: #ffffff; border: 1px solid #f1f5f9; border-radius: 12px; padding: 16px; margin-top: 12px; }
-        .gen-titulo { margin: 0 0 8px 0; color: #64748b; font-size: 0.85em; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
+        .gen-box { background: var(--bg-box); border: 1px solid var(--border-main); border-radius: 12px; padding: 16px; margin-top: 12px; transition: background-color 0.4s;}
+        .gen-titulo { margin: 0 0 8px 0; color: var(--text-main); font-size: 0.85em; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
         
         .nexo-tag {
-            display: inline-block; background: #f1f5f9; color: #475569; padding: 6px 14px;
-            border-radius: 8px; margin: 4px; font-size: 0.95em; font-weight: 600; cursor: pointer; border: 1px solid #e2e8f0;
+            display: inline-block; background: var(--tag-bg); color: var(--text-input); padding: 6px 14px;
+            border-radius: 8px; margin: 4px; font-size: 0.95em; font-weight: 600; cursor: pointer; border: 1px solid var(--border-main);
+            transition: all 0.2s;
         }
-        .nexo-tag:hover { background: #e0f2fe; color: #0369a1; transform: translateY(-2px); }
+        .nexo-tag:hover { background: var(--tag-hover); color: var(--text-heading); transform: translateY(-2px); border-color: transparent;}
 
-        /* Estilos Menú Principal */
         .btn-menu {
-            background-color: #ffffff; color: #334155; border: 2px solid #e2e8f0; padding: 20px;
+            background-color: var(--bg-box); color: var(--text-heading); border: 2px solid var(--border-main); padding: 20px;
             font-size: 1em; display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; border-radius: 12px; width: 100%; font-family: 'Nunito', sans-serif;
+            transition: all 0.3s;
         }
-        .btn-ivs:hover { border-color: #3b82f6; color: #1d4ed8; background-color: #eff6ff;}
-        .btn-movimientos:hover { border-color: #f59e0b; color: #b45309; background-color: #fffbeb;}
-        .btn-volver { width: auto; padding: 8px 16px; background-color: #f1f5f9; color: #475569; margin: 0; font-size: 0.85em; box-shadow: none;}
-        .btn-volver:hover { background-color: #e2e8f0; transform: none;}
+        .btn-ivs:hover { border-color: #3b82f6; background-color: var(--bg-step);}
+        .btn-movimientos:hover { border-color: #f59e0b; background-color: var(--bg-step);}
+        
+        .btn-volver { width: auto; padding: 8px 16px; background-color: var(--bg-input); color: var(--text-input); margin: 0; font-size: 0.85em; box-shadow: none;}
+        .btn-volver:hover { background-color: var(--border-main); color: var(--text-heading); transform: none;}
 
         .animar-entrada { animation: aparecerSuave 0.4s ease-out forwards; }
         @keyframes aparecerSuave { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        /* Alertas transparentes para que luzcan bien en cualquier fondo */
+        .alerta { padding: 16px; border-radius: 12px; margin-top: 16px; font-size: 0.95em; color: var(--text-heading);}
+        .alerta-roja { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); }
+        .alerta-naranja { background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); }
+        .alerta-verde { background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); }
+        
     </style>
 </head>
 <body>
