@@ -160,35 +160,83 @@
         .animar-entrada {
             animation: aparecerSuave 0.4s ease-out forwards;
         }
+       /* --- ESTILOS DEL MENÚ PRINCIPAL --- */
+        .btn-menu {
+            background-color: #ffffff;
+            color: #334155;
+            border: 2px solid #e2e8f0;
+            padding: 24px;
+            font-size: 1.1em;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-menu:hover {
+            background-color: #f8fafc;
+            transform: translateY(-2px);
+        }
+        .btn-ivs:hover { border-color: #3b82f6; color: #1d4ed8; background-color: #eff6ff;}
+        .btn-movimientos:hover { border-color: #f59e0b; color: #b45309; background-color: #fffbeb;}
         
+        .btn-volver {
+            width: auto; padding: 8px 16px; background-color: #f1f5f9; color: #475569; box-shadow: none; margin-top: 0; font-size: 0.9em;
+        }
+        .btn-volver:hover { background-color: #e2e8f0; color: #1e293b; box-shadow: none; transform: none; } 
     </style>
 </head>
 <body>
 
 <div class="contenedor">
-        <h2>🧬 Genética Pokémon</h2>
         
-        <div class="fila-input">
-            <input type="text" id="pokeInput1" list="listaPokemon" placeholder="Donante origen (Ej. tauros)" onchange="verificarGenero('pokeInput1', 'genero1')">
-            <select id="genero1">
-                <option value="macho">Macho ♂</option>
-                <option value="hembra">Hembra ♀</option>
-                <option value="sin_genero" hidden>Sin Género ❌</option>
-            </select>
+        <div id="menuSeleccion">
+            <h2>🧬 Genética Pokémon</h2>
+            <p style="color: #64748b; margin-bottom: 24px;">Selecciona la herramienta que necesitas hoy:</p>
+            
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+                <button class="btn-menu btn-ivs" onclick="abrirHerramienta('ivs')">
+                    <span style="font-size: 2em;">💯</span>
+                    Heredar IVs (Estadísticas)
+                </button>
+                
+                <button class="btn-menu btn-movimientos" onclick="abrirHerramienta('movimientos')">
+                    <span style="font-size: 2em;">⚔️</span>
+                    Heredar Movimientos Huevo
+                </button>
+            </div>
         </div>
-        
-        <div class="fila-input">
-            <input type="text" id="pokeInput2" list="listaPokemon" placeholder="Receptor final (Ej. chansey)" onchange="verificarGenero('pokeInput2', 'genero2')">
-            <select id="genero2">
-                <option value="hembra">Hembra ♀</option>
-                <option value="macho">Macho ♂</option>
-                <option value="sin_genero" hidden>Sin Género ❌</option>
-            </select>
+
+        <div id="herramientaIVs" style="display: none;">
+            
+            <div style="display: flex; align-items: center; gap: 15px; margin-bottom: 25px; text-align: left;">
+                <button class="btn-volver" onclick="volverMenu()">⬅ Volver</button>
+                <h2 style="margin: 0; font-size: 1.4em;">💯 Heredar IVs</h2>
+            </div>
+            
+            <div class="fila-input">
+                <input type="text" id="pokeInput1" list="listaPokemon" placeholder="Donante origen (Ej. tauros)" onchange="verificarGenero('pokeInput1', 'genero1')">
+                <select id="genero1">
+                    <option value="macho">Macho ♂</option>
+                    <option value="hembra">Hembra ♀</option>
+                    <option value="sin_genero" hidden>Sin Género ❌</option>
+                </select>
+            </div>
+            
+            <div class="fila-input">
+                <input type="text" id="pokeInput2" list="listaPokemon" placeholder="Receptor final (Ej. chansey)" onchange="verificarGenero('pokeInput2', 'genero2')">
+                <select id="genero2">
+                    <option value="hembra">Hembra ♀</option>
+                    <option value="macho">Macho ♂</option>
+                    <option value="sin_genero" hidden>Sin Género ❌</option>
+                </select>
+            </div>
+            
+            <datalist id="listaPokemon"></datalist>
+            <button onclick="buscarGrupoHuevo()">Calcular Ruta de Crianza</button>
+            <div id="resultado"></div>
         </div>
-        
-        <datalist id="listaPokemon"></datalist>
-        <button onclick="buscarGrupoHuevo()">Calcular Ruta de Crianza</button>
-        <div id="resultado"></div>
+
     </div>
     <script>
 
