@@ -778,24 +778,27 @@
             }
         }
 
-       // --- CALCULADORA 2: MOVIMIENTOS ---
+      // --- CALCULADORA 2: MOVIMIENTOS ---
         
-        // Sub-función: Radar de alternativas en el mismo grupo huevo
-        async function generarAlternativasHtml(gruposDestino, pokeDestinoOriginal, movName, pokemonsConAtaque) {
+        // Sub-función CORREGIDA: Radar de alternativas (Ahora verifica compatibilidad con el Donante)
+        async function generarAlternativasHtml(gruposOrigen, gruposDestino, pokeDestinoOriginal, movName, pokemonsConAtaque) {
             let candidatosAlt = [];
             for (let g of gruposDestino) {
                 if (!especiesPorGrupo[g]) continue;
                 especiesPorGrupo[g].forEach(n => {
-                    // Si no es el destino original y SÍ sabe el ataque
+                    // Si SÍ sabe el ataque y NO es el destino original
                     if (n !== pokeDestinoOriginal && pokemonsConAtaque.includes(n)) {
-                        candidatosAlt.push(n);
+                        // LA REGLA DE ORO: ¿Comparte grupo huevo con el Donante original?
+                        const comparteConOrigen = gruposDeEspecie[n].some(gx => gruposOrigen.includes(gx));
+                        if (comparteConOrigen) {
+                            candidatosAlt.push(n);
+                        }
                     }
                 });
             }
             candidatosAlt = [...new Set(candidatosAlt)];
             if (candidatosAlt.length === 0) return "";
 
-            // Pedimos los datos de las alternativas para verificar Gen 6 y sacar la foto
             const promesasAlt = candidatosAlt.map(nombre => fetch(`https://pokeapi.co/api/v2/pokemon/${nombre}`).then(r => r.json()).catch(()=>null));
             const datosAlt = await Promise.all(promesasAlt);
 
@@ -824,10 +827,10 @@
             validos.sort((a,b) => a.nombre.localeCompare(b.nombre));
 
             let html = `<div style="margin-top: 20px; background: var(--bg-step); border: 1px solid var(--border-main); border-radius: 12px; padding: 15px; text-align: left; animation: aparecerSuave 0.5s;">`;
-            html += `<div style="font-weight:700; color: #d97706; margin-bottom: 15px; font-size: 1.05em;">💡 Alternativas válidas en el grupo [${gruposDestino.join(', ')}]:</div>`;
+            html += `<div style="font-weight:700; color: #d97706; margin-bottom: 15px; font-size: 1.05em;">💡 Alternativas compatibles con el Donante en el grupo [${gruposDestino.join(', ')}]:</div>`;
             html += `<div style="display:flex; flex-wrap:wrap; gap:10px; justify-content: center;">`;
             validos.forEach(v => {
-                html += `<div class="badge badge-meta" style="background: var(--bg-box); border: 1px solid #fde68a; padding: 6px 12px;"><img src="${v.foto}" style="height:35px; margin-right:8px;">${v.nombre}</div>`;
+                html += `<div class="badge badge-meta" style="background: var(--bg-box); border: 1px solid #fde68a; padding: 6px 12px; color: #d97706;"><img src="${v.foto}" style="height:35px; margin-right:8px;">${v.nombre}</div>`;
             });
             html += `</div></div>`;
             return html;
@@ -898,18 +901,22 @@
                     }
                 });
 
-                // Cargamos la lista maestra de movimientos porque la usaremos si hay error o si buscamos nexos
                 const moveDataRes = await fetch(`https://pokeapi.co/api/v2/move/${movName}`);
                 const moveData = await moveDataRes.json();
                 const pokemonsQueSabenAtaque = moveData.learned_by_pokemon.map(p => p.name);
 
-                // --- ESCENARIO DE ERROR 1: El destino no aprende el ataque ---
+                // --- ERROR 1: Destino no hereda ---
                 if (!destinoPuedeHeredar) {
                     let errorHtml = htmlInfo + `<div class="alerta alerta-roja">❌ <strong>Genéticamente Imposible:</strong> ${n2C} no tiene compatibilidad para heredar ${movText} en la Sexta Generación.</div>`;
-                    divRes.innerHTML = errorHtml + "<div style='text-align:center; color:#0284c7; margin-top:15px;'>Escaneando alternativas...</div>";
+                    divRes.innerHTML = errorHtml + "<div style='text-align:center; color:#0284c7; margin-top:15px;'>Escaneando alternativas directas...</div>";
                     
-                    const alternativasHtml = await generarAlternativasHtml(grp2, p2, movName, pokemonsQueSabenAtaque);
-                    divRes.innerHTML = errorHtml + alternativasHtml;
+                    // AHORA PASAMOS EL GRUPO DEL DONANTE (grp1) AL RADAR
+                    const alternativasHtml = await generarAlternativasHtml(grp1, grp2, p2, movName, pokemonsQueSabenAtaque);
+                    if(alternativasHtml === "") {
+                        divRes.innerHTML = errorHtml + `<div class="alerta alerta-naranja" style="margin-top: 15px;">Ningún otro Pokémon en el grupo destino puede aprender el movimiento y cruzar con el donante simultáneamente.</div>`;
+                    } else {
+                        divRes.innerHTML = errorHtml + alternativasHtml;
+                    }
                     return;
                 }
 
@@ -918,6 +925,7 @@
                     return; 
                 }
 
+                // --- BUSCAR NEXOS SENCILLOS (1 Salto) ---
                 let candidatosBrutos = [];
                 for (let g of grp1) {
                     if (!especiesPorGrupo[g]) continue;
@@ -959,44 +967,122 @@
                     }
                 });
 
-                // --- ESCENARIO DE ERROR 2: No hay puentes ---
+                // --- NUEVO: BUSCAR NEXOS MÚLTIPLES (2 Saltos) SI NO HAY SENCILLOS ---
+                let multiplesValidos = [];
                 if (nexosValidos.length === 0) {
-                     let mensaje = htmlInfo + `<div class="alerta alerta-roja">No hay Nexos que conecten los grupos en Gen 6.`;
+                    let multiplesValidosBrutos = [];
+                    let combinacionesVistasMov = new Set();
+                    
+                    for (let g1 of grp1) {
+                        for (let g2 of grp2) {
+                            if (multiplesValidosBrutos.length >= 5) break;
+                            if (!especiesPorGrupo[g1] || !especiesPorGrupo[g2]) continue;
+                            
+                            for (let nx1N of especiesPorGrupo[g1]) {
+                                if (multiplesValidosBrutos.length >= 5) break;
+                                if (nx1N === p1 || nx1N === p2 || nx1N === 'ditto' || nx1N === 'smeargle') continue;
+                                if (!pokemonsQueSabenAtaque.includes(nx1N)) continue; // Nexo 1 debe saberlo
+                                
+                                for (let nx2N of especiesPorGrupo[g2]) {
+                                    if (multiplesValidosBrutos.length >= 5) break;
+                                    if (nx2N === p1 || nx2N === p2 || nx2N === 'ditto' || nx2N === 'smeargle' || nx1N === nx2N) continue;
+                                    if (!pokemonsQueSabenAtaque.includes(nx2N)) continue; // Nexo 2 debe saberlo
+                                    
+                                    if (gruposDeEspecie[nx1N].some(gx => gruposDeEspecie[nx2N].includes(gx))) {
+                                        let hash = nx1N + "|" + nx2N;
+                                        if (!combinacionesVistasMov.has(hash)) {
+                                            combinacionesVistasMov.add(hash);
+                                            multiplesValidosBrutos.push([nx1N, nx2N]);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Verificar Gen 6 y Género de los múltiples (Lógica Estricta)
+                    for (let par of multiplesValidosBrutos) {
+                        const [dSpec1, dPoke1, dSpec2, dPoke2] = await Promise.all([
+                            fetch(`https://pokeapi.co/api/v2/pokemon-species/${par[0]}`).then(r=>r.json()),
+                            fetch(`https://pokeapi.co/api/v2/pokemon/${par[0]}`).then(r=>r.json()),
+                            fetch(`https://pokeapi.co/api/v2/pokemon-species/${par[1]}`).then(r=>r.json()),
+                            fetch(`https://pokeapi.co/api/v2/pokemon/${par[1]}`).then(r=>r.json())
+                        ]);
+
+                        if (dSpec1.gender_rate >= 1 && dSpec1.gender_rate <= 7 && dSpec2.gender_rate >= 1 && dSpec2.gender_rate <= 7) {
+                            const verificaGen6 = (pokeData) => {
+                                return pokeData.moves.some(m => m.move.name === movName && m.version_group_details.some(d => 
+                                    (d.version_group.name === 'x-y' || d.version_group.name === 'omega-ruby-alpha-sapphire') &&
+                                    ['egg', 'machine', 'level-up'].includes(d.move_learn_method.name)
+                                ));
+                            };
+
+                            if (verificaGen6(dPoke1) && verificaGen6(dPoke2)) {
+                                let Cnx1 = par[0].charAt(0).toUpperCase() + par[0].slice(1);
+                                let Cnx2 = par[1].charAt(0).toUpperCase() + par[1].slice(1);
+                                multiplesValidos.push({ n1: Cnx1, f1: extraerMejorSprite(dPoke1), n2: Cnx2, f2: extraerMejorSprite(dPoke2) });
+                            }
+                        }
+                    }
+                }
+
+                // --- ERROR 2: No hay puentes ni de 1 ni de 2 saltos ---
+                if (nexosValidos.length === 0 && multiplesValidos.length === 0) {
+                     let mensaje = htmlInfo + `<div class="alerta alerta-roja">No hay cadenas biológicamente posibles en Gen 6 para este cruce.`;
                      if (grp1.includes('ground') || grp2.includes('ground')) { 
                          mensaje += `<br><br>💡 <em>Alerta Smeargle:</em> Uno de los Pokémon es grupo Campo, puedes usar a Smeargle con 'Esquema'.`;
                      }
                      mensaje += `</div>`;
                      
                      divRes.innerHTML = mensaje + "<div style='text-align:center; color:#0284c7; margin-top:15px;'>Escaneando alternativas en el destino...</div>";
-                     const alternativasHtml = await generarAlternativasHtml(grp2, p2, movName, pokemonsQueSabenAtaque);
-                     divRes.innerHTML = mensaje + alternativasHtml;
+                     const alternativasHtml = await generarAlternativasHtml(grp1, grp2, p2, movName, pokemonsQueSabenAtaque);
+                     
+                     if(alternativasHtml === "") {
+                         divRes.innerHTML = mensaje + `<div class="alerta alerta-naranja" style="margin-top: 15px;">Ningún otro Pokémon en el grupo destino puede aprender el movimiento y cruzar con el donante simultáneamente.</div>`;
+                     } else {
+                         divRes.innerHTML = mensaje + alternativasHtml;
+                     }
                      return;
                 }
 
+                // --- CONSTRUIR INTERFAZ ---
                 let espacioFormula = `<div id="contenedorFormula"><div style="background: var(--bg-input); padding: 15px; border-radius: 12px; text-align: center; color: var(--text-main); margin: 20px 0;">👆 <em>Clic en un puente para generar la cadena.</em></div></div>`;
-                let htmlListas = `<div style="font-weight:700; color:#0284c7; margin-top:10px;">🟢 Puentes de Movimiento (Gen 6):</div>`;
+                let htmlListas = "";
                 
                 const obtenerReg = (id) => {
                     if (id <= 151) return "Kanto"; if (id <= 251) return "Johto"; if (id <= 386) return "Hoenn";
                     if (id <= 493) return "Sinnoh"; if (id <= 649) return "Teselia"; return "Modernos (Kalos+)";
                 };
 
-                const nexosAgrupados = {};
-                nexosValidos.forEach(nx => {
-                    const reg = obtenerReg(nx.id);
-                    if (!nexosAgrupados[reg]) nexosAgrupados[reg] = []; 
-                    nexosAgrupados[reg].push({n: nx.nombre.charAt(0).toUpperCase() + nx.nombre.slice(1), f: nx.foto});
-                });
+                // Dibujar Sencillos
+                if (nexosValidos.length > 0) {
+                    htmlListas += `<div style="font-weight:700; color:#0284c7; margin-top:10px;">🟢 Puentes de Movimiento (1 Salto - Gen 6):</div>`;
+                    const nexosAgrupados = {};
+                    nexosValidos.forEach(nx => {
+                        const reg = obtenerReg(nx.id);
+                        if (!nexosAgrupados[reg]) nexosAgrupados[reg] = []; 
+                        nexosAgrupados[reg].push({n: nx.nombre, f: nx.foto});
+                    });
 
-                ["Kanto", "Johto", "Hoenn", "Sinnoh", "Teselia", "Modernos (Kalos+)"].forEach(reg => {
-                    if (nexosAgrupados[reg]) {
-                        nexosAgrupados[reg].sort((a,b) => a.n.localeCompare(b.n)); 
-                        let botones = nexosAgrupados[reg].map(nx => {
-                            return `<span class="nexo-tag" style="border-color:#bae6fd;" onclick="mostrarFormula('${n1C}', '${g1}', '${foto1}', '${n2C}', '${g2}', '${foto2}', '${nx.n}', '${nx.f}')">${nx.n}</span>`;
-                        }).join(' ');
-                        htmlListas += `<div class="gen-box" style="border-left: 4px solid #38bdf8;"><div class="gen-titulo">${reg}</div><div>${botones}</div></div>`;
-                    }
-                });
+                    ["Kanto", "Johto", "Hoenn", "Sinnoh", "Teselia", "Modernos (Kalos+)"].forEach(reg => {
+                        if (nexosAgrupados[reg]) {
+                            nexosAgrupados[reg].sort((a,b) => a.n.localeCompare(b.n)); 
+                            let botones = nexosAgrupados[reg].map(nx => {
+                                return `<span class="nexo-tag" style="border-color:#bae6fd;" onclick="mostrarFormula('${n1C}', '${g1}', '${foto1}', '${n2C}', '${g2}', '${foto2}', '${nx.n}', '${nx.f}')">${nx.n}</span>`;
+                            }).join(' ');
+                            htmlListas += `<div class="gen-box" style="border-left: 4px solid #38bdf8;"><div class="gen-titulo">${reg}</div><div>${botones}</div></div>`;
+                        }
+                    });
+                }
+
+                // Dibujar Múltiples (Con estilos Forzados para evitar CSS en blanco)
+                if (multiplesValidos.length > 0) {
+                    htmlListas += `<div style="font-weight:700; color:#9333ea; margin-top:20px;">🟣 Cadenas Larga de Movimientos (2 Saltos - Gen 6):</div><div class="gen-box" style="border-left: 4px solid #a855f7;">`;
+                    multiplesValidos.forEach((par) => {
+                        htmlListas += `<span class="nexo-tag" style="background:#6b21a8; color:#ffffff; border-color:#d8b4fe;" onclick="mostrarFormulaMultiple('${n1C}', '${g1}', '${foto1}', '${n2C}', '${g2}', '${foto2}', '${par.n1}', '${par.f1}', '${par.n2}', '${par.f2}')">${par.n1} ➔ ${par.n2}</span>`;
+                    });
+                    htmlListas += `</div>`;
+                }
 
                 divRes.innerHTML = htmlInfo + espacioFormula + htmlListas;
 
