@@ -10,6 +10,7 @@
         @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap');
 
         /* --- VARIABLES DE COLOR (MODO LUZ Y OSCURO) --- */
+      /* --- VARIABLES DE COLOR (MODO LUZ Y OSCURO) --- */
         :root {
             --bg-body: #f8fafc;
             --bg-pattern: #cbd5e1;
@@ -24,10 +25,14 @@
             --shadow-color: rgba(0, 0, 0, 0.05);
             --tag-bg: #f1f5f9;
             --tag-hover: #e0f2fe;
+            /* Nuevas variables para los nexos múltiples */
+            --tag-multi-bg: #faf5ff;
+            --tag-multi-border: #d8b4fe;
+            --tag-multi-text: #6b21a8;
         }
 
         body.dark-mode {
-            --bg-body: #0f172a; /* Gris muy oscuro, casi azul marino */
+            --bg-body: #0f172a; 
             --bg-pattern: #1e293b;
             --text-main: #94a3b8;
             --text-heading: #f8fafc;
@@ -40,6 +45,10 @@
             --shadow-color: rgba(0, 0, 0, 0.4);
             --tag-bg: #334155;
             --tag-hover: #0284c7;
+            /* Nuevas variables para los nexos múltiples en Oscuro */
+            --tag-multi-bg: #3b0764;
+            --tag-multi-border: #6b21a8;
+            --tag-multi-text: #e9d5ff;
         }
 
         body {
@@ -137,6 +146,16 @@
             transition: all 0.2s;
         }
         .nexo-tag:hover { background: var(--tag-hover); color: var(--text-heading); transform: translateY(-2px); border-color: transparent;}
+        /* Agrega esto justo debajo de .nexo-tag:hover {...} */
+        .nexo-tag-multi {
+            background: var(--tag-multi-bg);
+            border-color: var(--tag-multi-border);
+            color: var(--tag-multi-text);
+        }
+        .nexo-tag-multi:hover {
+            background: var(--tag-multi-border);
+            color: #ffffff;
+        }
 
         .btn-menu {
             background-color: var(--bg-box); color: var(--text-heading); border: 2px solid var(--border-main); padding: 20px;
@@ -170,7 +189,7 @@
         
         <div id="menuSeleccion">
             <h2>🧬 Genética Pokémon</h2>
-            <p style="color: #64748b; margin-bottom: 24px;">Selecciona la herramienta que necesitas hoy:</p>
+            <p style="color: #64748b; margin-bottom: 24px;">2.0 Selecciona la herramienta que necesitas hoy:</p>
             
             <div style="display: flex; flex-direction: column; gap: 16px;">
                 <button class="btn-menu btn-ivs" onclick="abrirHerramienta('ivs')">
@@ -604,8 +623,8 @@
                     multiplesValidos.forEach((par, index) => {
                         const fotoNx1 = urlsFotosMultiples[index][0];
                         const fotoNx2 = urlsFotosMultiples[index][1];
-                        htmlListas += `<span class="nexo-tag" style="border-color:#d8b4fe; background:#faf5ff;" onclick="mostrarFormulaMultiple('${n1C}', '${g1}', '${foto1}', '${n2C}', '${g2}', '${foto2}', '${par[0]}', '${fotoNx1}', '${par[1]}', '${fotoNx2}')">${par[0]} ➔ ${par[1]}</span>`;
-                    });
+                      // Reemplaza la línea generadora del botón múltiple por esta:
+htmlListas += `<span class="nexo-tag nexo-tag-multi" onclick="mostrarFormulaMultiple('${n1C}', '${g1}', '${foto1}', '${n2C}', '${g2}', '${foto2}', '${par[0]}', '${fotoNx1}', '${par[1]}', '${fotoNx2}')">${par[0]} ➔ ${par[1]}</span>`;
                     htmlListas += `</div>`;
                 }
 
