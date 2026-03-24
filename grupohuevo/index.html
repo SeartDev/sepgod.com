@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Buscador de Grupos Huevo Pokémon</title>
+    <title>Buscador de Grupos Huevo Pokémon 1.0</title>
     
     <style>
       @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap');
@@ -192,20 +192,29 @@
     </div>
     <script>
 
-      // 1. Cargar autocompletado al iniciar
-        async function cargarListaNombres() {
+      // 1. Cargar autocompletado y preparar el caché para que sea súper rápido
+        const cacheEspecies = {}; 
+        async function getEspecieInfo(nombre) {
+            if (cacheEspecies[nombre]) return cacheEspecies[nombre];
+            const res = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${nombre}`);
+            const data = await res.json();
+            const info = { rate: data.gender_rate, id: data.id };
+            cacheEspecies[nombre] = info;
+            return info;
+        }
+
+        window.onload = async function() {
             try {
-                const respuesta = await fetch('https://pokeapi.co/api/v2/pokemon-species?limit=10000');
-                const datos = await respuesta.json();
+                const res = await fetch('https://pokeapi.co/api/v2/pokemon-species?limit=10000');
+                const data = await res.json();
                 const datalist = document.getElementById('listaPokemon');
-                datos.results.forEach(poke => {
+                data.results.forEach(poke => {
                     const opcion = document.createElement('option');
                     opcion.value = poke.name;
                     datalist.appendChild(opcion);
                 });
-            } catch (error) { console.error("Error al cargar autocompletado."); }
-        }
-        window.onload = cargarListaNombres;
+            } catch (e) {}
+        };
 
         // 2. Bloquear géneros imposibles al escribir
         async function verificarGenero(inputId, selectId) {
@@ -218,13 +227,10 @@
                 return;
             }
             try {
-                const respuesta = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${nombre}`);
-                if (!respuesta.ok) return; 
-                const rate = (await respuesta.json()).gender_rate;
-
-                if (rate === -1) { selectElement.value = 'sin_genero'; selectElement.disabled = true; } 
-                else if (rate === 0) { selectElement.value = 'macho'; selectElement.disabled = true; } 
-                else if (rate === 8) { selectElement.value = 'hembra'; selectElement.disabled = true; } 
+                const info = await getEspecieInfo(nombre);
+                if (info.rate === -1) { selectElement.value = 'sin_genero'; selectElement.disabled = true; } 
+                else if (info.rate === 0) { selectElement.value = 'macho'; selectElement.disabled = true; } 
+                else if (info.rate === 8) { selectElement.value = 'hembra'; selectElement.disabled = true; } 
                 else { 
                     selectElement.disabled = false; 
                     if (selectElement.value === 'sin_genero') selectElement.value = 'macho'; 
@@ -232,208 +238,238 @@
             } catch (error) {}
         }
 
-        // 3. NUEVA FUNCIÓN: Dibuja la fórmula al hacer clic en un nexo
+        // 3. GENERAR FÓRMULA PARA NEXO SENCILLO (1 Salto)
         function mostrarFormula(nombre1, genero1, nombre2, genero2, nexoNombre) {
             let pasosHtml = "";
+            let donanteTxt = nombre1 + " ♂";
 
             if (genero1 === 'hembra') {
                 pasosHtml += `
                     <div class="paso-fila paso-1">
-                        <div class="badge badge-hembra">${nombre1} ♀</div>
-                        <span class="operador">➕</span>
-                        <div class="badge badge-macho">Cualquier ♂</div>
-                        <span class="operador">➔</span>
-                        <div class="badge badge-macho">Cría ${nombre1} ♂</div>
-                    </div>
-                    <p class="nota-sutil">* Transfiere los IVs a un macho de la misma especie.</p>
-                `;
+                        <div class="badge badge-hembra">${nombre1} ♀</div><span class="operador">➕</span><div class="badge badge-macho">Cualquier ♂</div><span class="operador">➔</span><div class="badge badge-macho">Cría ${nombre1} ♂</div>
+                    </div>`;
+                donanteTxt = `Cría ${nombre1} ♂`;
             }
 
-            let donanteTxt = genero1 === 'hembra' ? `Cría ${nombre1} ♂` : `${nombre1} ♂`;
-            
             pasosHtml += `
                 <div class="paso-fila paso-2">
-                    <div class="badge badge-macho">${donanteTxt}</div>
-                    <span class="operador">➕</span>
-                    <div class="badge badge-nexo">${nexoNombre} ♀</div>
-                    <span class="operador">➔</span>
-                    <div class="badge badge-macho">Cría ${nexoNombre} ♂</div>
-                </div>
-            `;
+                    <div class="badge badge-macho">${donanteTxt}</div><span class="operador">➕</span><div class="badge badge-nexo">${nexoNombre} ♀</div><span class="operador">➔</span><div class="badge badge-macho">Cría ${nexoNombre} ♂</div>
+                </div>`;
 
             let metaEspecie = `Cría ${nombre2} ${genero2 === 'macho' ? '♂' : '♀'}`;
             pasosHtml += `
                 <div class="paso-fila paso-3">
-                    <div class="badge badge-macho">Cría ${nexoNombre} ♂</div>
-                    <span class="operador">➕</span>
-                    <div class="badge badge-hembra">Madre ${nombre2} ♀</div>
-                    <span class="operador">➔</span>
-                    <div class="badge badge-meta">${metaEspecie} ✨</div>
-                </div>
-            `;
-            
-            if (genero2 === 'macho') {
-                 pasosHtml += `<p class="nota-sutil">* Incuba huevos de la especie final hasta que nazca un macho.</p>`;
-            }
+                    <div class="badge badge-macho">Cría ${nexoNombre} ♂</div><span class="operador">➕</span><div class="badge badge-hembra">Madre ${nombre2} ♀</div><span class="operador">➔</span><div class="badge badge-meta">${metaEspecie} ✨</div>
+                </div>`;
 
-            let esquemaHtml = `
-                <div class="formula-box animar-entrada">
-                    <div class="formula-titulo">📍 Ruta usando a ${nexoNombre}</div>
-                    ${pasosHtml}
-                    <p style="margin:16px 0 0 0; font-size:0.85em; color:#94a3b8; text-align:center;">
-                       Equipa el <strong>Lazo Destino</strong> para heredar los IVs.
-                    </p>
-                </div>
-            `;
-
-            const contenedor = document.getElementById('contenedorFormula');
-            contenedor.innerHTML = esquemaHtml;
-            // Hace que la pantalla haga scroll suavemente hasta la fórmula
-            contenedor.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            dibujarEsquema(`📍 Ruta Directa con ${nexoNombre}`, pasosHtml);
         }
 
-        // 4. Lógica Principal de Búsqueda
-        async function buscarGrupoHuevo() {
-            const nombrePoke1 = document.getElementById('pokeInput1').value.toLowerCase().trim();
-            const genero1 = document.getElementById('genero1').value;
-            const nombrePoke2 = document.getElementById('pokeInput2').value.toLowerCase().trim();
-            const genero2 = document.getElementById('genero2').value;
-            const divResultado = document.getElementById('resultado');
+        // 4. GENERAR FÓRMULA PARA NEXO MÚLTIPLE (2 Saltos)
+        function mostrarFormulaMultiple(nombre1, genero1, nombre2, genero2, nexo1, nexo2) {
+            let pasosHtml = "";
+            let donanteTxt = nombre1 + " ♂";
 
-            if (!nombrePoke1 || !nombrePoke2) {
-                divResultado.innerHTML = `<div class="alerta alerta-roja">Por favor, escribe ambos Pokémon.</div>`;
-                return; 
+            if (genero1 === 'hembra') {
+                pasosHtml += `
+                    <div class="paso-fila paso-1">
+                        <div class="badge badge-hembra">${nombre1} ♀</div><span class="operador">➕</span><div class="badge badge-macho">Cualquier ♂</div><span class="operador">➔</span><div class="badge badge-macho">Cría ${nombre1} ♂</div>
+                    </div>`;
+                donanteTxt = `Cría ${nombre1} ♂`;
             }
 
-            divResultado.innerHTML = "<div style='text-align:center; color:#94a3b8; font-weight:600;'>Analizando ADN...</div>";
+            pasosHtml += `
+                <div class="paso-fila paso-2">
+                    <div class="badge badge-macho">${donanteTxt}</div><span class="operador">➕</span><div class="badge badge-nexo">${nexo1} ♀</div><span class="operador">➔</span><div class="badge badge-macho">Cría ${nexo1} ♂</div>
+                </div>
+                <div class="paso-fila paso-2" style="border-left-color: #a855f7;">
+                    <div class="badge badge-macho">Cría ${nexo1} ♂</div><span class="operador">➕</span><div class="badge badge-nexo">${nexo2} ♀</div><span class="operador">➔</span><div class="badge badge-macho">Cría ${nexo2} ♂</div>
+                </div>`;
+
+            let metaEspecie = `Cría ${nombre2} ${genero2 === 'macho' ? '♂' : '♀'}`;
+            pasosHtml += `
+                <div class="paso-fila paso-3">
+                    <div class="badge badge-macho">Cría ${nexo2} ♂</div><span class="operador">➕</span><div class="badge badge-hembra">Madre ${nombre2} ♀</div><span class="operador">➔</span><div class="badge badge-meta">${metaEspecie} ✨</div>
+                </div>`;
+
+            dibujarEsquema(`📍 Ruta Larga usando ${nexo1} ➔ ${nexo2}`, pasosHtml);
+        }
+
+        // Función auxiliar para imprimir la fórmula visual en pantalla
+        function dibujarEsquema(titulo, pasosHtml) {
+            let esquemaHtml = `
+                <div class="formula-box animar-entrada">
+                    <div class="formula-titulo">${titulo}</div>
+                    ${pasosHtml}
+                    <p style="margin:16px 0 0 0; font-size:0.85em; color:#94a3b8; text-align:center;">Equipa el <strong>Lazo Destino</strong> para heredar los IVs.</p>
+                </div>`;
+            const cont = document.getElementById('contenedorFormula');
+            cont.innerHTML = esquemaHtml;
+            cont.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        // 5. CEREBRO MATEMÁTICO (GRAFOS)
+        let especiesPorGrupo = null;
+        let gruposDeEspecie = null;
+
+        async function cargarGruposGlobales() {
+            if (especiesPorGrupo) return;
+            especiesPorGrupo = {}; gruposDeEspecie = {};
+            const gruposComunes = ["monster", "water1", "bug", "flying", "ground", "fairy", "plant", "humanshape", "water3", "mineral", "indeterminate", "water2", "dragon"];
+            const promesas = gruposComunes.map(g => fetch(`https://pokeapi.co/api/v2/egg-group/${g}`).then(r => r.json()));
+            const resultados = await Promise.all(promesas);
+            
+            resultados.forEach(data => {
+                especiesPorGrupo[data.name] = data.pokemon_species.map(p => p.name);
+                data.pokemon_species.forEach(p => {
+                    if (!gruposDeEspecie[p.name]) gruposDeEspecie[p.name] = [];
+                    gruposDeEspecie[p.name].push(data.name);
+                });
+            });
+        }
+
+        async function buscarGrupoHuevo() {
+            const poke1 = document.getElementById('pokeInput1').value.toLowerCase().trim();
+            const genero1 = document.getElementById('genero1').value;
+            const poke2 = document.getElementById('pokeInput2').value.toLowerCase().trim();
+            const genero2 = document.getElementById('genero2').value;
+            const divRes = document.getElementById('resultado');
+
+            if (!poke1 || !poke2) {
+                divRes.innerHTML = `<div class="alerta alerta-roja">Escribe ambos Pokémon.</div>`; return; 
+            }
+
+            divRes.innerHTML = "<div style='text-align:center; color:#94a3b8; font-weight:600;'>Analizando Rutas de Grafos...</div>";
 
             try {
-                const buscarDatosPoke = async (nombre) => {
-                    const respuesta = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${nombre}`);
-                    if (!respuesta.ok) throw new Error(`No se encontró a ${nombre}`);
-                    return await respuesta.json();
-                };
+                await cargarGruposGlobales(); // Carga la red de grupos si no está en memoria
+                
+                const datos1 = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${poke1}`).then(r => r.json());
+                const datos2 = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${poke2}`).then(r => r.json());
 
-                const [datosPoke1, datosPoke2] = await Promise.all([buscarDatosPoke(nombrePoke1), buscarDatosPoke(nombrePoke2)]);
-
-                const grupos1 = datosPoke1.egg_groups.map(g => g.name);
-                const grupos2 = datosPoke2.egg_groups.map(g => g.name);
-                const rate1 = datosPoke1.gender_rate;
-                const rate2 = datosPoke2.gender_rate;
-                const nombre1Cap = nombrePoke1.charAt(0).toUpperCase() + nombrePoke1.slice(1);
-                const nombre2Cap = nombrePoke2.charAt(0).toUpperCase() + nombrePoke2.slice(1);
+                const grp1 = datos1.egg_groups.map(g => g.name);
+                const grp2 = datos2.egg_groups.map(g => g.name);
+                const n1Cap = poke1.charAt(0).toUpperCase() + poke1.slice(1);
+                const n2Cap = poke2.charAt(0).toUpperCase() + poke2.slice(1);
 
                 let htmlInfo = `
                     <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-                        <div><strong>${nombre1Cap}</strong> ${genero1 === 'macho' ? '♂' : '♀'}</div>
-                        <div style="color:#64748b; font-size:0.9em;">[${grupos1.join(', ')}]</div>
+                        <div><strong>${n1Cap}</strong> ${genero1 === 'macho' ? '♂' : '♀'}</div>
+                        <div style="color:#64748b; font-size:0.9em;">[${grp1.join(', ')}]</div>
                     </div>
                     <div style="display:flex; justify-content:space-between;">
-                        <div><strong>${nombre2Cap}</strong> ${genero2 === 'macho' ? '♂' : '♀'}</div>
-                        <div style="color:#64748b; font-size:0.9em;">[${grupos2.join(', ')}]</div>
-                    </div>
-                    <hr>
-                `;
+                        <div><strong>${n2Cap}</strong> ${genero2 === 'macho' ? '♂' : '♀'}</div>
+                        <div style="color:#64748b; font-size:0.9em;">[${grp2.join(', ')}]</div>
+                    </div><hr>`;
 
-                if (rate1 === -1 || rate2 === -1) {
-                    divResultado.innerHTML = htmlInfo + `<div class="alerta alerta-roja"><strong>⛔ Nodos Aislados:</strong> Uno de estos Pokémon no tiene género y solo puede heredar IVs mediante un Ditto.</div>`; return;
-                }
-                if (rate1 === 8) {
-                    divResultado.innerHTML = htmlInfo + `<div class="alerta alerta-naranja"><strong>⛔ Bloqueo Genético:</strong> <strong>${nombre1Cap}</strong> es 100% Hembra. Imposible pasar IVs a otra especie diferente.</div>`; return;
-                }
-                if (rate2 === 0) {
-                    divResultado.innerHTML = htmlInfo + `<div class="alerta alerta-naranja"><strong>⛔ Bloqueo Genético:</strong> <strong>${nombre2Cap}</strong> es 100% Macho. No hay madres receptoras.</div>`; return;
-                }
-                if (grupos1.includes('no-eggs') || grupos2.includes('no-eggs')) {
-                    divResultado.innerHTML = htmlInfo + `<div class="alerta alerta-roja">Uno de estos Pokémon no puede criar.</div>`; return;
-                }
-                if (grupos1.some(g => grupos2.includes(g))) {
-                    divResultado.innerHTML = htmlInfo + `<div class="alerta alerta-verde"><strong>¡Compatibles!</strong> Puedes cruzar un Macho de ${nombre1Cap} con una Hembra de ${nombre2Cap} directamente.</div>`; return;
-                }
+                // Reglas biológicas de bloqueo
+                if (datos1.gender_rate === -1 || datos2.gender_rate === -1) { divRes.innerHTML = htmlInfo + `<div class="alerta alerta-roja">⛔ Uno de estos Pokémon no tiene género.</div>`; return; }
+                if (datos1.gender_rate === 8) { divRes.innerHTML = htmlInfo + `<div class="alerta alerta-naranja">⛔ <strong>${n1Cap}</strong> es 100% Hembra.</div>`; return; }
+                if (datos2.gender_rate === 0) { divRes.innerHTML = htmlInfo + `<div class="alerta alerta-naranja">⛔ <strong>${n2Cap}</strong> es 100% Macho.</div>`; return; }
+                if (grp1.includes('no-eggs') || grp2.includes('no-eggs')) { divRes.innerHTML = htmlInfo + `<div class="alerta alerta-roja">No pueden criar.</div>`; return; }
+                if (grp1.some(g => grp2.includes(g))) { divRes.innerHTML = htmlInfo + `<div class="alerta alerta-verde"><strong>¡Compatibles Directos!</strong> Crían entre sí sin nexos.</div>`; return; }
 
-                const obtenerEspeciesDeGrupos = async (grupos) => {
-                    let especies = new Map(); 
-                    for (let grupo of grupos) {
-                        if (grupo === 'ditto') continue; 
-                        const res = await fetch(`https://pokeapi.co/api/v2/egg-group/${grupo}`);
-                        const data = await res.json();
-                        data.pokemon_species.forEach(p => especies.set(p.name, p.name));
-                    }
-                    return especies;
-                };
-
-                const [especiesLado1, especiesLado2] = await Promise.all([obtenerEspeciesDeGrupos(grupos1), obtenerEspeciesDeGrupos(grupos2)]);
-
-                let nexosBasicos = [];
-                for (let nombre of especiesLado1.keys()) {
-                    if (especiesLado2.has(nombre) && nombre !== nombrePoke1 && nombre !== nombrePoke2) nexosBasicos.push(nombre);
+                // --- FASE 1: Buscar Nexos Sencillos (Intersección Directa) ---
+                let sencillos = [];
+                for (let g of grp1) {
+                    if (!especiesPorGrupo[g]) continue;
+                    especiesPorGrupo[g].forEach(n => {
+                        if (n !== poke1 && n !== poke2 && n !== 'ditto' && gruposDeEspecie[n] && gruposDeEspecie[n].some(gx => grp2.includes(gx))) {
+                            sencillos.push(n);
+                        }
+                    });
+                }
+                sencillos = [...new Set(sencillos)];
+                
+                let sencillosValidos = [];
+                for (let n of sencillos) {
+                    let info = await getEspecieInfo(n);
+                    if (info.rate >= 1 && info.rate <= 7) sencillosValidos.push({ nombre: n, id: info.id });
                 }
 
-                const promesasNexos = nexosBasicos.map(nombre => fetch(`https://pokeapi.co/api/v2/pokemon-species/${nombre}`).then(res => res.json()));
-                const datosNexos = await Promise.all(promesasNexos);
-
-                let nexosFiltrados = [];
-                datosNexos.forEach(data => {
-                    if (data.gender_rate >= 1 && data.gender_rate <= 7) nexosFiltrados.push({ nombre: data.name, id: data.id });
-                });
-
-                if (nexosFiltrados.length === 0) {
-                     divResultado.innerHTML = htmlInfo + `<div class="alerta alerta-roja">No existe un Pokémon puente válido para esta cadena.</div>`; return;
-                }
-
-                // Aquí creamos el espacio vacío donde se inyectará la fórmula
-                let espacioFormula = `
-                    <div id="contenedorFormula">
-                        <div style="background: #f1f5f9; padding: 15px; border-radius: 12px; text-align: center; color: #64748b; margin: 20px 0; font-size: 0.9em;">
-                            👆 <em>Haz clic en algún Pokémon de las listas de abajo para generar su ruta exacta.</em>
-                        </div>
-                    </div>
-                `;
-
-                const obtenerGeneracion = (id) => {
-                    if (id <= 151) return "Kanto (Gen 1)";
-                    if (id <= 251) return "Johto (Gen 2)";
-                    if (id <= 386) return "Hoenn (Gen 3)";
-                    if (id <= 493) return "Sinnoh (Gen 4)";
-                    if (id <= 649) return "Unova (Gen 5)";
-                    if (id <= 721) return "Kalos (Gen 6)";
-                    if (id <= 809) return "Alola (Gen 7)";
-                    if (id <= 905) return "Galar (Gen 8)";
-                    return "Paldea (Gen 9)";
-                };
-
-                const nexosAgrupados = {};
-                nexosFiltrados.forEach(nexo => {
-                    const gen = obtenerGeneracion(nexo.id);
-                    if (!nexosAgrupados[gen]) nexosAgrupados[gen] = []; 
-                    nexosAgrupados[gen].push(nexo.nombre.charAt(0).toUpperCase() + nexo.nombre.slice(1));
-                });
-
-                let htmlNexos = `<div style="font-weight:700; color:#334155; margin-top:10px;">Posibles Nexos:</div>`;
-                const ordenGen = ["Kanto (Gen 1)", "Johto (Gen 2)", "Hoenn (Gen 3)", "Sinnoh (Gen 4)", "Unova (Gen 5)", "Kalos (Gen 6)", "Alola (Gen 7)", "Galar (Gen 8)", "Paldea (Gen 9)"];
-
-                ordenGen.forEach(gen => {
-                    if (nexosAgrupados[gen]) {
-                        nexosAgrupados[gen].sort(); 
+                // --- FASE 2: Buscar Nexos Múltiples (Si es necesario o para mostrar alternativas) ---
+                let multiplesValidos = [];
+                let combinacionesVistas = new Set();
+                
+                for (let g1 of grp1) {
+                    for (let g2 of grp2) {
+                        if (!especiesPorGrupo[g1] || !especiesPorGrupo[g2]) continue;
                         
-                        // En lugar de unir los nombres con comas, ahora creamos "Botones" con la función onclick
-                        let botonesHtml = nexosAgrupados[gen].map(nexoNombre => {
-                            return `<span class="nexo-tag" onclick="mostrarFormula('${nombre1Cap}', '${genero1}', '${nombre2Cap}', '${genero2}', '${nexoNombre}')">${nexoNombre}</span>`;
-                        }).join(' ');
-
-                        htmlNexos += `
-                            <div class="gen-box">
-                                <div class="gen-titulo">${gen}</div>
-                                <div>${botonesHtml}</div>
-                            </div>
-                        `;
+                        for (let nx1 of especiesPorGrupo[g1]) {
+                            if (multiplesValidos.length >= 5) break; // Límite de 5
+                            if (nx1 === poke1 || nx1 === poke2 || nx1 === 'ditto' || sencillos.includes(nx1)) continue;
+                            
+                            for (let nx2 of especiesPorGrupo[g2]) {
+                                if (multiplesValidos.length >= 5) break;
+                                if (nx2 === poke1 || nx2 === poke2 || nx2 === 'ditto' || nx1 === nx2 || sencillos.includes(nx2)) continue;
+                                
+                                // ¿Conectan el Nexo 1 y el Nexo 2?
+                                if (gruposDeEspecie[nx1].some(gx => gruposDeEspecie[nx2].includes(gx))) {
+                                    let hash = nx1 + "|" + nx2;
+                                    if (!combinacionesVistas.has(hash)) {
+                                        combinacionesVistas.add(hash);
+                                        // Verificar géneros de ambos puentes
+                                        let info1 = await getEspecieInfo(nx1);
+                                        let info2 = await getEspecieInfo(nx2);
+                                        if (info1.rate >= 1 && info1.rate <= 7 && info2.rate >= 1 && info2.rate <= 7) {
+                                            let Cnx1 = nx1.charAt(0).toUpperCase() + nx1.slice(1);
+                                            let Cnx2 = nx2.charAt(0).toUpperCase() + nx2.slice(1);
+                                            multiplesValidos.push([Cnx1, Cnx2]);
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
-                });
+                }
 
-                divResultado.innerHTML = htmlInfo + espacioFormula + htmlNexos;
+                if (sencillosValidos.length === 0 && multiplesValidos.length === 0) {
+                     divRes.innerHTML = htmlInfo + `<div class="alerta alerta-roja">Es biológicamente imposible conectar a estos dos Pokémon ni siquiera con cadenas largas.</div>`; return;
+                }
+
+                // --- CONSTRUCCIÓN DE LA INTERFAZ DE RESULTADOS ---
+                let espacioFormula = `<div id="contenedorFormula"><div style="background: #f1f5f9; padding: 15px; border-radius: 12px; text-align: center; color: #64748b; margin: 20px 0;">👆 <em>Haz clic en algún puente de abajo para generar su ruta exacta.</em></div></div>`;
+                let htmlListas = "";
+
+                // Dibujar bloque de Sencillos si existen
+                if (sencillosValidos.length > 0) {
+                    htmlListas += `<div style="font-weight:700; color:#15803d; margin-top:10px;">🟢 Nexos Sencillos (1 Salto):</div>`;
+                    
+                    const obtenerGeneracion = (id) => {
+                        if (id <= 151) return "Kanto"; if (id <= 251) return "Johto"; if (id <= 386) return "Hoenn";
+                        if (id <= 493) return "Sinnoh"; if (id <= 649) return "Unova"; if (id <= 721) return "Kalos";
+                        if (id <= 809) return "Alola"; if (id <= 905) return "Galar"; return "Paldea";
+                    };
+
+                    const nexosAgrupados = {};
+                    sencillosValidos.forEach(nx => {
+                        const gen = obtenerGeneracion(nx.id);
+                        if (!nexosAgrupados[gen]) nexosAgrupados[gen] = []; 
+                        nexosAgrupados[gen].push(nx.nombre.charAt(0).toUpperCase() + nx.nombre.slice(1));
+                    });
+
+                    ["Kanto", "Johto", "Hoenn", "Sinnoh", "Unova", "Kalos", "Alola", "Galar", "Paldea"].forEach(gen => {
+                        if (nexosAgrupados[gen]) {
+                            nexosAgrupados[gen].sort(); 
+                            let botones = nexosAgrupados[gen].map(n => `<span class="nexo-tag" onclick="mostrarFormula('${n1Cap}', '${genero1}', '${n2Cap}', '${genero2}', '${n}')">${n}</span>`).join(' ');
+                            htmlListas += `<div class="gen-box"><div class="gen-titulo">${gen}</div><div>${botones}</div></div>`;
+                        }
+                    });
+                }
+
+                // Dibujar bloque de Múltiples si existen
+                if (multiplesValidos.length > 0) {
+                    htmlListas += `<div style="font-weight:700; color:#9333ea; margin-top:20px;">🟣 Cadenas Múltiples (2 Saltos - Máx 5):</div><div class="gen-box">`;
+                    multiplesValidos.forEach(par => {
+                        htmlListas += `<span class="nexo-tag" style="border-color:#d8b4fe; background:#faf5ff;" onclick="mostrarFormulaMultiple('${n1Cap}', '${genero1}', '${n2Cap}', '${genero2}', '${par[0]}', '${par[1]}')">${par[0]} ➔ ${par[1]}</span>`;
+                    });
+                    htmlListas += `</div>`;
+                }
+
+                divRes.innerHTML = htmlInfo + espacioFormula + htmlListas;
 
             } catch (error) {
-                divResultado.innerHTML = `<div class="alerta alerta-roja">Error: Verifica la conexión o la ortografía.</div>`;
+                divRes.innerHTML = `<div class="alerta alerta-roja">Error técnico o de conexión. ${error.message}</div>`;
             }
         }
     </script>
