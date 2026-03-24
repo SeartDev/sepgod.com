@@ -188,7 +188,7 @@
 <div class="contenedor">
         
         <div id="menuSeleccion">
-            <h2> 2.0 🧬 Genética Pokémon</h2>
+            <h2> 3.0 🧬 Genética Pokémon</h2>
             <p style="color: #64748b; margin-bottom: 24px;">2.0 Selecciona la herramienta que necesitas hoy:</p>
             
             <div style="display: flex; flex-direction: column; gap: 16px;">
@@ -724,7 +724,11 @@
                 if (!res.ok) throw new Error("Pokémon no encontrado");
                 const data = await res.json();
 
-                let movimientosValidos = [];
+                // Arreglos para separar los movimientos por categoría
+                let movsNivel = [];
+                let movsMT = [];
+                let movsHuevo = [];
+                let movsTutor = []; 
 
                 // 2. Extraer y filtrar movimientos estrictamente para Gen 6
                 data.moves.forEach(moveData => {
@@ -733,33 +737,66 @@
                         details.version_group.name === 'omega-ruby-alpha-sapphire'
                     );
 
-                    // Si el Pokémon podía aprender este movimiento en Gen 6, lo guardamos
                     if (detallesGen6.length > 0) {
-                        movimientosValidos.push(moveData.move.name);
+                        // Extraemos todos los métodos por los que aprende este movimiento en Gen 6
+                        const metodos = detallesGen6.map(d => d.move_learn_method.name);
+                        const nombreLimpio = moveData.move.name.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                        
+                        const objMov = { val: moveData.move.name, text: nombreLimpio };
+
+                        // 3. Clasificamos con jerarquía (Nivel > MT > Huevo > Tutor)
+                        if (metodos.includes('level-up')) {
+                            movsNivel.push(objMov);
+                        } else if (metodos.includes('machine')) {
+                            movsMT.push(objMov);
+                        } else if (metodos.includes('egg')) {
+                            movsHuevo.push(objMov);
+                        } else {
+                            movsTutor.push(objMov);
+                        }
                     }
                 });
 
-                if (movimientosValidos.length === 0) {
+                if (movsNivel.length === 0 && movsMT.length === 0 && movsHuevo.length === 0 && movsTutor.length === 0) {
                     selectMov.innerHTML = '<option value="">No hay datos de movimientos para Gen 6</option>';
                     return;
                 }
 
-                // 3. Ordenar alfabéticamente para que el usuario encuentre fácil el ataque
-                movimientosValidos.sort();
+                // 4. Ordenar alfabéticamente cada grupo por separado
+                const ordenar = (arr) => arr.sort((a, b) => a.text.localeCompare(b.text));
+                ordenar(movsNivel); 
+                ordenar(movsMT); 
+                ordenar(movsHuevo); 
+                ordenar(movsTutor);
 
-                // 4. Llenar el desplegable
-                selectMov.innerHTML = '<option value="">-- Elige el movimiento a heredar --</option>';
-                movimientosValidos.forEach(movName => {
-                    const opcion = document.createElement('option');
-                    opcion.value = movName;
-                    
-                    // Limpiamos el nombre (Ej: "dragon-dance" -> "Dragon Dance")
-                    const nombreLimpio = movName.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-                    opcion.textContent = nombreLimpio;
-                    
-                    selectMov.appendChild(opcion);
-                });
+                // 5. Construir el HTML con Grupos Optativos (<optgroup>) y colores
+                let opcionesHtml = '<option value="">-- Elige el movimiento a heredar --</option>';
 
+                if (movsNivel.length > 0) {
+                    opcionesHtml += `<optgroup label="🟢 Por Nivel (Level-Up)" style="color: #15803d; background: #f0fdf4;">`;
+                    movsNivel.forEach(m => opcionesHtml += `<option value="${m.val}" style="color: #334155; background: #fff;">${m.text}</option>`);
+                    opcionesHtml += `</optgroup>`;
+                }
+                
+                if (movsMT.length > 0) {
+                    opcionesHtml += `<optgroup label="🟡 Por MT / MO (Machine)" style="color: #b45309; background: #fffbeb;">`;
+                    movsMT.forEach(m => opcionesHtml += `<option value="${m.val}" style="color: #334155; background: #fff;">${m.text}</option>`);
+                    opcionesHtml += `</optgroup>`;
+                }
+                
+                if (movsHuevo.length > 0) {
+                    opcionesHtml += `<optgroup label="🟣 Movimiento Huevo (Egg Move)" style="color: #7e22ce; background: #faf5ff;">`;
+                    movsHuevo.forEach(m => opcionesHtml += `<option value="${m.val}" style="color: #334155; background: #fff;">${m.text}</option>`);
+                    opcionesHtml += `</optgroup>`;
+                }
+                
+                if (movsTutor.length > 0) {
+                    opcionesHtml += `<optgroup label="🔵 Tutor / Evento" style="color: #0369a1; background: #f0f9ff;">`;
+                    movsTutor.forEach(m => opcionesHtml += `<option value="${m.val}" style="color: #334155; background: #fff;">${m.text}</option>`);
+                    opcionesHtml += `</optgroup>`;
+                }
+
+                selectMov.innerHTML = opcionesHtml;
                 selectMov.disabled = false;
 
             } catch (error) {
