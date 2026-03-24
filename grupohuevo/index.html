@@ -95,6 +95,32 @@
         <div id="resultado"></div>
     </div>
     <script>
+
+        // --- NUEVA FUNCIÓN: Cargar la lista de autocompletado ---
+        async function cargarListaNombres() {
+            try {
+                // Le pedimos a la API que nos traiga hasta 10,000 especies (suficiente para cubrir todos los Pokémon existentes)
+                const respuesta = await fetch('https://pokeapi.co/api/v2/pokemon-species?limit=10000');
+                const datos = await respuesta.json();
+                const datalist = document.getElementById('listaPokemon');
+                
+                // Por cada Pokémon que la API nos devuelva, creamos una opción en el datalist
+                datos.results.forEach(poke => {
+                    const opcion = document.createElement('option');
+                    opcion.value = poke.name; // La API devuelve los nombres en minúsculas (ej. bulbasaur, ivysaur)
+                    datalist.appendChild(opcion);
+                });
+            } catch (error) {
+                console.error("No se pudo cargar la lista de nombres para autocompletar.", error);
+            }
+        }
+
+        // Ejecutamos esta función automáticamente en cuanto la página se abre
+        window.onload = cargarListaNombres;
+
+        // --- A PARTIR DE AQUÍ DEJA TU FUNCIÓN ACTUAL ---
+        // async function buscarGrupoHuevo() { ... }
+        
      async function buscarGrupoHuevo() {
             
             const nombrePoke1 = document.getElementById('pokeInput1').value.toLowerCase().trim();
