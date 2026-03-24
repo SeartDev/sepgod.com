@@ -72,19 +72,21 @@
 <div class="contenedor">
         <h2>Grupos Huevo Pokémon</h2>
         
-        <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-            <input type="text" id="pokeInput1" list="listaPokemon" placeholder="1er Pokémon (Ej. pikachu)" style="width: 60%; margin-bottom: 0;">
+       <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+            <input type="text" id="pokeInput1" list="listaPokemon" placeholder="1er Pokémon (Ej. tauros)" style="width: 60%; margin-bottom: 0;" onchange="verificarGenero('pokeInput1', 'genero1')">
             <select id="genero1" style="width: 40%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px;">
                 <option value="macho">Macho ♂️</option>
                 <option value="hembra">Hembra ♀️</option>
+                <option value="sin_genero" hidden>Sin Género ❌</option>
             </select>
         </div>
         
         <div style="display: flex; gap: 10px; margin-bottom: 15px;">
-            <input type="text" id="pokeInput2" list="listaPokemon" placeholder="Pokémon final (Ej. squirtle)" style="width: 60%; margin-bottom: 0;">
+            <input type="text" id="pokeInput2" list="listaPokemon" placeholder="Pokémon final (Ej. chansey)" style="width: 60%; margin-bottom: 0;" onchange="verificarGenero('pokeInput2', 'genero2')">
             <select id="genero2" style="width: 40%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 16px;">
                 <option value="hembra">Hembra ♀️</option>
                 <option value="macho">Macho ♂️</option>
+                <option value="sin_genero" hidden>Sin Género ❌</option>
             </select>
         </div>
         
@@ -95,6 +97,49 @@
         <div id="resultado"></div>
     </div>
     <script>
+
+        // --- NUEVA FUNCIÓN: Verificar y bloquear género automáticamente ---
+        async function verificarGenero(inputId, selectId) {
+            const nombre = document.getElementById(inputId).value.toLowerCase().trim();
+            const selectElement = document.getElementById(selectId);
+
+            // Si el usuario borra el texto, desbloqueamos el selector para que pueda elegir
+            if (!nombre) {
+                selectElement.disabled = false;
+                if (selectElement.value === 'sin_genero') selectElement.value = 'macho';
+                return;
+            }
+
+            try {
+                // Hacemos una consulta rápida a la API solo para ver el género de ese Pokémon
+                const respuesta = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${nombre}`);
+                if (!respuesta.ok) return; // Si escribió mal el nombre a medias, no hacemos nada
+
+                const datos = await respuesta.json();
+                const rate = datos.gender_rate;
+
+                // Modificamos el selector según las reglas de la PokeAPI
+                if (rate === -1) { 
+                    // Sin género (Ej. Magnemite)
+                    selectElement.value = 'sin_genero';
+                    selectElement.disabled = true;
+                } else if (rate === 0) { 
+                    // 100% Macho (Ej. Tauros)
+                    selectElement.value = 'macho';
+                    selectElement.disabled = true;
+                } else if (rate === 8) { 
+                    // 100% Hembra (Ej. Chansey)
+                    selectElement.value = 'hembra';
+                    selectElement.disabled = true;
+                } else { 
+                    // Ambos géneros (1 al 7) (Ej. Pikachu, Bulbasaur)
+                    selectElement.disabled = false; // Desbloqueamos
+                    if (selectElement.value === 'sin_genero') selectElement.value = 'macho'; // Quitamos el "Sin género"
+                }
+            } catch (error) {
+                console.error("No se pudo verificar el género al vuelo.", error);
+            }
+        }
 
         // --- NUEVA FUNCIÓN: Cargar la lista de autocompletado ---
         async function cargarListaNombres() {
