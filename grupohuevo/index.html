@@ -239,6 +239,22 @@
 
     </div>
     <script>
+        // --- NAVEGACIÓN DEL MENÚ PRINCIPAL ---
+        function abrirHerramienta(tipo) {
+            if (tipo === 'ivs') {
+                document.getElementById('menuSeleccion').style.display = 'none'; // Oculta menú
+                document.getElementById('herramientaIVs').style.display = 'block'; // Muestra IVs
+            } else if (tipo === 'movimientos') {
+                // Alerta temporal para la herramienta en construcción
+                alert("🛠️ La calculadora de Movimientos Huevo está en construcción. ¡Próximamente!");
+            }
+        }
+
+        function volverMenu() {
+            document.getElementById('herramientaIVs').style.display = 'none'; // Oculta IVs
+            document.getElementById('menuSeleccion').style.display = 'block'; // Muestra menú
+        }
+        // -------------------------------------
 
       // 1. Cargar autocompletado y preparar el caché para que sea súper rápido
         const cacheEspecies = {}; 
