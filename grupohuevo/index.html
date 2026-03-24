@@ -1309,9 +1309,10 @@
                     let h = `<div style="font-weight:700; color:${color}; margin-top:15px;">${titulo}:</div>`;
                     h += `<div class="gen-box" style="border-left: 4px solid ${color};">`;
                     lista.sort((a,b)=>a.n.localeCompare(b.n)).forEach(p => {
-                        // Buscamos un "Abuelo" solo si el padre es por cadena (Egg Move)
-                        // Para simplificar, si es Egg Move, buscamos CUALQUIER pokemon que lo aprenda por nivel fuera de este grupo
-                        h += `<span class="nexo-tag" style="border-color:${color}aa;" onclick="prepararLinaje('${p.n}','${p.f}','${p.met}','${movName}','${nObjC}','${fotoObj}','${gObj}')">${p.n}</span> `;
+                        // Enviamos los grupos del padre (grpObj) para que el buscador encuentre un abuelo compatible
+                        // Convertimos el array de grupos a string para pasarlo por el onclick
+                        const gruposPadreTxt = gruposDeEspecie[p.n.toLowerCase()].join(',');
+                        h += `<span class="nexo-tag" style="border-color:${color}aa;" onclick="prepararLinaje('${p.n}','${p.f}','${p.met}','${movName}','${nObjC}','${fotoObj}','${gObj}','${gruposPadreTxt}')">${p.n}</span> `;
                     });
                     h += `<p style="font-size:0.75em; color:var(--text-main); margin-top:8px;">${sub}</p></div>`;
                     return h;
@@ -1325,28 +1326,49 @@
             } catch (e) { divRes.innerHTML = `<div class="alerta alerta-roja">Error: ${e.message}</div>`; }
         }
 
-        // Función puente para buscar al "Abuelo" (quién le enseña al padre)
-        async function prepararLinaje(nPadre, fPadre, metPadre, movName, nHijo, fHijo, gHijo) {
-            let nAbuelo = "Donante Externo";
+      // Función avanzada para buscar al "Abuelo" compatible
+        async function prepararLinaje(nPadre, fPadre, metPadre, movName, nHijo, fHijo, gHijo, gruposPadreTxt) {
+            let nAbuelo = "Donante Desconocido";
             let fAbuelo = "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/0.png";
+            const gruposPadre = gruposPadreTxt.split(',');
 
             if (metPadre !== 'level-up') {
                 const moveRes = await fetch(`https://pokeapi.co/api/v2/move/${movName}`).then(r=>r.json());
                 const aprendices = moveRes.learned_by_pokemon;
                 
-                // Buscamos al primer Pokémon de la lista que lo aprenda por nivel en Gen 6 para usarlo de ejemplo de origen
-                for (let p of aprendices.slice(0, 20)) { // Limitamos búsqueda para velocidad
-                    const pData = await fetch(p.url).then(r=>r.json());
-                    const loSabePorNivel = pData.moves.some(m => m.move.name === movName && m.version_group_details.some(d => 
-                        (d.version_group.name === 'x-y' || d.version_group.name === 'omega-ruby-alpha-sapphire') && d.move_learn_method.name === 'level-up'
-                    ));
-                    if (loSabePorNivel) {
-                        nAbuelo = pData.name.charAt(0).toUpperCase() + pData.name.slice(1);
-                        fAbuelo = extraerMejorSprite(pData);
-                        break;
+                // Buscamos un Pokémon que aprenda el movimiento por nivel Y sea compatible con el padre
+                let encontrado = false;
+                
+                // Prioridad 1: Buscar alguien en el MISMO grupo huevo que lo aprenda por nivel
+                for (let p de aprendices) {
+                    const nombreAprendiz = p.name;
+                    
+                    // ¿Este aprendiz está en alguno de los grupos del padre?
+                    if (gruposDeEspecie[nombreAprendiz]) {
+                        const esCompatible = gruposDeEspecie[nombreAprendiz].some(g => gruposPadre.includes(g));
+                        
+                        if (esCompatible) {
+                            const pData = await fetch(`https://pokeapi.co/api/v2/pokemon/${nombreAprendiz}`).then(r=>r.json());
+                            
+                            // Verificar si lo sabe por nivel en Gen 6
+                            const loSabePorNivel = pData.moves.some(m => m.move.name === movName && m.version_group_details.some(d => 
+                                (d.version_group.name === 'x-y' || d.version_group.name === 'omega-ruby-alpha-sapphire') && 
+                                d.move_learn_method.name === 'level-up'
+                            ));
+
+                            if (loSabePorNivel) {
+                                nAbuelo = pData.name.charAt(0).toUpperCase() + pData.name.slice(1);
+                                fAbuelo = extraerMejorSprite(pData);
+                                encontrado = true;
+                                break; 
+                            }
+                        }
                     }
                 }
+                
+                if (!encontrado) nAbuelo = "Abuelo No encontrado en este grupo";
             }
+            
             mostrarLinajeCompleto(nAbuelo, fAbuelo, nPadre, fPadre, nHijo, fHijo, metPadre, gHijo);
         }
     </script>
