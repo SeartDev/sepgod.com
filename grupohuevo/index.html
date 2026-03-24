@@ -106,7 +106,7 @@
                 return; 
             }
 
-            divResultado.innerHTML = "Calculando árbol genealógico...";
+            divResultado.innerHTML = "Calculando ruta de herencia de IVs...";
 
             try {
                 const buscarDatosPoke = async (nombre) => {
@@ -128,37 +128,33 @@
                 const nombre2Cap = nombrePoke2.charAt(0).toUpperCase() + nombrePoke2.slice(1);
 
                 let htmlResultado = `
-                    <p><strong>${nombre1Cap}</strong> - Grupos: ${grupos1.join(', ')}</p>
-                    <p><strong>${nombre2Cap}</strong> - Grupos: ${grupos2.join(', ')}</p>
+                    <p><strong>${nombre1Cap}</strong> (${genero1 === 'macho' ? '♂️' : '♀️'}) - Grupos: ${grupos1.join(', ')}</p>
+                    <p><strong>${nombre2Cap}</strong> (${genero2 === 'macho' ? '♂️' : '♀️'}) - Grupos: ${grupos2.join(', ')}</p>
                     <hr style="border: 0; border-top: 1px solid #ccc; margin: 15px 0;">
                 `;
 
+                // Reglas biológicas absolutas que NO se pueden saltar ni con pasos extra
                 if (rate1 === -1 || rate2 === -1) {
-                    divResultado.innerHTML = htmlResultado + `<p style="color:red;"><strong>⛔ Nodos Aislados:</strong> Uno de estos Pokémon no tiene género y solo puede criar con Ditto.</p>`;
+                    divResultado.innerHTML = htmlResultado + `<p style="color:red;"><strong>⛔ Nodos Aislados:</strong> Uno de estos Pokémon no tiene género y solo puede heredar IVs mediante un Ditto.</p>`;
                     return;
                 }
                 if (rate1 === 8) {
-                    divResultado.innerHTML = htmlResultado + `<p style="color:#d97706;"><strong>⛔ Receptor Final:</strong> <strong>${nombre1Cap}</strong> es 100% Hembra. La cría siempre será de su especie.</p>`;
+                    divResultado.innerHTML = htmlResultado + `<p style="color:#d97706;"><strong>⛔ Bloqueo Genético:</strong> <strong>${nombre1Cap}</strong> es 100% Hembra. Como nunca puede haber un macho de su especie, es imposible pasar sus IVs a otra especie diferente.</p>`;
                     return;
                 }
                 if (rate2 === 0) {
-                    divResultado.innerHTML = htmlResultado + `<p style="color:#d97706;"><strong>⛔ Donante Exclusivo:</strong> <strong>${nombre2Cap}</strong> es 100% Macho. No puede recibir genes de otra especie.</p>`;
+                    divResultado.innerHTML = htmlResultado + `<p style="color:#d97706;"><strong>⛔ Bloqueo Genético:</strong> <strong>${nombre2Cap}</strong> es 100% Macho. Como no existen hembras para actuar de madre receptora, no puede recibir IVs de otra especie.</p>`;
                     return;
                 }
-                if (genero1 === 'hembra' || genero2 === 'macho') {
-                    divResultado.innerHTML = htmlResultado + `<p style="color:#d97706;"><strong>⚠️ Error de flujo:</strong> Para pasar movimientos, el 1er Pokémon debe ser <strong>Macho</strong> (donante) y el Pokémon final debe ser <strong>Hembra</strong> (receptora).</p>`;
-                    return;
-                }
+
                 if (grupos1.includes('no-eggs') || grupos2.includes('no-eggs')) {
                     divResultado.innerHTML = htmlResultado + `<p style="color:red;">Uno de estos Pokémon no puede criar.</p>`;
                     return;
                 }
                 if (grupos1.some(g => grupos2.includes(g))) {
-                    divResultado.innerHTML = htmlResultado + `<p style="color:green;">¡Comparten grupo huevo! Pueden criar directamente sin nexos.</p>`;
+                    divResultado.innerHTML = htmlResultado + `<p style="color:green;">¡Comparten grupo huevo! Puedes cruzar un Macho de <strong>${nombre1Cap}</strong> con una Hembra de <strong>${nombre2Cap}</strong> directamente.</p>`;
                     return;
                 }
-
-                divResultado.innerHTML = htmlResultado + "<em>Buscando nexos puente...</em>";
 
                 const obtenerEspeciesDeGrupos = async (grupos) => {
                     let especies = new Map(); 
@@ -201,26 +197,56 @@
                      return;
                 }
 
-                // --- NUEVO BLOQUE: ESQUEMA VISUAL DE LA CADENA ---
+                // --- ESQUEMA DINÁMICO DE HERENCIA DE IVs ---
+                let pasosHtml = "";
+                let stepCounter = 1;
+
+                // Si el poke inicial es Hembra, se añade un paso previo para sacar un Macho
+                if (genero1 === 'hembra') {
+                    pasosHtml += `
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; white-space: nowrap;">
+                            <strong>Paso ${stepCounter++} (Preparación):</strong> 
+                            <span style="background: #e2e3e5; padding: 4px 8px; border-radius: 4px;">${nombre1Cap} ♀️</span> ➕ 
+                            <span style="background: #e2e3e5; padding: 4px 8px; border-radius: 4px;">Cualquier ♂️ comp.</span> 🟰 
+                            <span style="background: #d1e7dd; padding: 4px 8px; border-radius: 4px;">Cría ${nombre1Cap} ♂️</span>
+                        </div>
+                        <p style="margin: 0 0 15px 20px; font-size: 0.85em; color: #666;"><em>* Para saltar de especie, debes heredar los IVs primero a un macho.</em></p>
+                    `;
+                }
+
+                let donante = genero1 === 'hembra' ? `Cría ${nombre1Cap} ♂️` : `${nombre1Cap} ♂️`;
+                
+                // Paso del cruce con el Nexo
+                pasosHtml += `
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; white-space: nowrap;">
+                        <strong>Paso ${stepCounter++} (Puente):</strong> 
+                        <span style="background: #e2e3e5; padding: 4px 8px; border-radius: 4px;">${donante}</span> ➕ 
+                        <span style="background: #ffe6e6; padding: 4px 8px; border-radius: 4px; color: #e3350d; font-weight: bold;">[Nexo] ♀️</span> 🟰 
+                        <span style="background: #d1e7dd; padding: 4px 8px; border-radius: 4px;">Cría [Nexo] ♂️</span>
+                    </div>
+                `;
+
+                // Paso Final
+                let metaEspecie = `Cría ${nombre2Cap} ${genero2 === 'macho' ? '♂️' : '♀️'}`;
+                pasosHtml += `
+                    <div style="display: flex; align-items: center; gap: 8px; white-space: nowrap;">
+                        <strong>Paso ${stepCounter++} (Destino):</strong> 
+                        <span style="background: #d1e7dd; padding: 4px 8px; border-radius: 4px;">Cría [Nexo] ♂️</span> ➕ 
+                        <span style="background: #e2e3e5; padding: 4px 8px; border-radius: 4px;">Madre ${nombre2Cap} ♀️</span> 🟰 
+                        <span style="background: #ffecb5; padding: 4px 8px; border-radius: 4px; font-weight: bold;">${metaEspecie} ✨</span>
+                    </div>
+                `;
+                
+                // Nota si querían un final Macho
+                if (genero2 === 'macho') {
+                     pasosHtml += `<p style="margin: 5px 0 0 20px; font-size: 0.85em; color: #666;"><em>* Ocupas una madre ${nombre2Cap} para fijar la especie. Solo incuba hasta que la cría salga macho.</em></p>`;
+                }
+
                 let esquemaCrianza = `
                     <div style="background-color: #f8f9fa; border-left: 5px solid #0d6efd; padding: 15px; margin: 20px 0; font-size: 0.95em; text-align: left; overflow-x: auto;">
-                        <h4 style="margin: 0 0 15px 0; color: #333;">🧬 Cómo hacer el cruce:</h4>
-                        
-                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 10px; white-space: nowrap;">
-                            <strong>Paso 1:</strong> 
-                            <span style="background: #e2e3e5; padding: 4px 8px; border-radius: 4px;">${nombre1Cap} ♂️</span> ➕ 
-                            <span style="background: #ffe6e6; padding: 4px 8px; border-radius: 4px; color: #e3350d; font-weight: bold;">[Nexo] ♀️</span> 🟰 
-                            <span style="background: #d1e7dd; padding: 4px 8px; border-radius: 4px;">Cría [Nexo] ♂️</span>
-                        </div>
-                        
-                        <div style="display: flex; align-items: center; gap: 8px; white-space: nowrap;">
-                            <strong>Paso 2:</strong> 
-                            <span style="background: #d1e7dd; padding: 4px 8px; border-radius: 4px;">Cría [Nexo] ♂️</span> ➕ 
-                            <span style="background: #e2e3e5; padding: 4px 8px; border-radius: 4px;">${nombre2Cap} ♀️</span> 🟰 
-                            <span style="background: #ffecb5; padding: 4px 8px; border-radius: 4px; font-weight: bold;">Cría ${nombre2Cap} ✨</span>
-                        </div>
-                        
-                        <p style="margin: 15px 0 0 0; font-size: 0.85em; color: #666;"><em>* Sustituye <strong>[Nexo]</strong> con cualquier Pokémon de la lista de abajo.</em></p>
+                        <h4 style="margin: 0 0 15px 0; color: #333;">🧬 Fórmula de Crianza (Traspaso de IVs):</h4>
+                        ${pasosHtml}
+                        <p style="margin: 15px 0 0 0; font-size: 0.85em; color: #666;"><em>* Sustituye <strong>[Nexo]</strong> con cualquier Pokémon de la lista. <br>* Usa el <strong>Lazo Destino</strong> para asegurar los IVs.</em></p>
                     </div>
                 `;
 
@@ -261,7 +287,6 @@
                     }
                 });
 
-                // Aquí inyectamos el esquema justo antes de la lista de nexos
                 divResultado.innerHTML = htmlResultado + esquemaCrianza + htmlNexos;
 
             } catch (error) {
