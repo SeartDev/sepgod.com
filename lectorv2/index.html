@@ -335,68 +335,63 @@ function getCountryPolicies(saveText, tag) {
             out.innerText += "[Óptimo] Proporción sugerida actual: 4 Infantería / 1 Húsar / 4 Artillería / 1 Ingeniero.\n";
         }
 
-        // HERRAMIENTA 5: Índice de Libertad Económica
-        function runEconomicFreedomIndex() {
-            const out = document.getElementById('out-economy');
-            out.innerHTML = "<p class='loading'>Calculando el Índice de Libertad Económica. Evaluando políticas y reformas...</p>";
+      // HERRAMIENTA 5: Índice de Libertad Económica (VERSIÓN REAL)
+function runEconomicFreedomIndex() {
+    const out = document.getElementById('out-economy');
+    
+    // Verificamos si ya cargaste el archivo
+    if (!saveGameData) {
+        out.innerHTML = "<p style='color: #f44336;'>Error: Primero debes cargar un archivo .v2 arriba.</p>";
+        return;
+    }
+
+    out.innerHTML = "<p class='loading'>Analizando el archivo y extrayendo políticas reales...</p>";
+    
+    // Pequeño retraso para que el navegador pueda pintar el mensaje de "Analizando..."
+    setTimeout(() => {
+        // Lista de países que queremos analizar (puedes agregar los que quieras)
+        const tagsToAnalyze = ["ENG", "USA", "FRA", "PRU", "RUS", "MEX", "SPA", "JAP"];
+        let realResults = [];
+
+        // Hacemos que el parser trabaje por cada país de la lista
+        tagsToAnalyze.forEach(tag => {
+            let countryData = getCountryPolicies(saveGameData, tag);
             
-            // Aquí extraemos un "Top" simulado basándonos en cómo extraeríamos datos reales del archivo.
-            // Para el índice real, buscaríamos las políticas de cada TAG (país):
-            // 1. economic_policy (laissez_faire = +pts, planned_economy = -pts)
-            // 2. trade_policy (free_trade = +pts, protectionism = -pts)
-            // 3. wage_reform, work_hours (regulaciones bajan el puntaje de mercado libre pero suben estabilidad social)
-            // 4. tax_base (impuestos efectivos)
+            // Si el país existe, lo agregamos a nuestros resultados
+            if (!countryData.error) {
+                realResults.push(countryData);
+            }
+        });
 
-            setTimeout(() => {
-                // Simulación de resultados extraídos del texto
-                const mockResults = [
-                    { tag: "ENG", name: "Reino Unido", score: 85.4, policy: "Laissez Faire", trade: "Libre Comercio", tier: "Libre" },
-                    { tag: "USA", name: "Estados Unidos", score: 82.1, policy: "Intervencionismo", trade: "Proteccionismo", tier: "Mayormente Libre" },
-                    { tag: "FRA", name: "Francia", score: 68.5, policy: "Capitalismo de Estado", trade: "Proteccionismo", tier: "Moderadamente Libre" },
-                    { tag: "PRU", name: "Prusia", score: 55.2, policy: "Capitalismo de Estado", trade: "Proteccionismo", tier: "Poco Libre" },
-                    { tag: "RUS", name: "Rusia", score: 32.0, policy: "Economía Planificada", trade: "Proteccionismo", tier: "Reprimida" }
-                ];
+        // Construimos la tabla HTML con los datos REALES
+        let html = `
+            <p><strong>Datos extraídos directamente de tu archivo .v2:</strong></p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>País (TAG)</th>
+                        <th>Política Económica</th>
+                        <th>Política Comercial</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
 
-                let html = `
-                    <p><strong>Criterios de evaluación aplicados al motor Clausewitz:</strong></p>
-                    <ul>
-                        <li><strong>Mercados Abiertos:</strong> Políticas comerciales (Libre Comercio vs Proteccionismo).</li>
-                        <li><strong>Eficiencia Regulatoria:</strong> Políticas económicas (Laissez Faire otorga máxima libertad, Economía Planificada la mínima).</li>
-                        <li><strong>Tamaño del Estado:</strong> Nivel de impuestos a las clases bajas, medias y altas (tax_base).</li>
-                    </ul>
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Rango</th>
-                                <th>País (TAG)</th>
-                                <th>Puntaje (0-100)</th>
-                                <th>Política Económica</th>
-                                <th>Política Comercial</th>
-                                <th>Clasificación</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                `;
+        realResults.forEach((country) => {
+            html += `
+                <tr>
+                    <td><strong>${country.tag}</strong></td>
+                    <td style="color: #d4af37;">${country.economic_policy}</td>
+                    <td style="color: #4caf50;">${country.trade_policy}</td>
+                </tr>
+            `;
+        });
 
-                mockResults.forEach((country, index) => {
-                    let color = country.score > 80 ? '#4caf50' : country.score > 60 ? '#ffeb3b' : '#f44336';
-                    html += `
-                        <tr>
-                            <td>${index + 1}</td>
-                            <td><strong>${country.name} (${country.tag})</strong></td>
-                            <td style="color:${color}; font-weight:bold;">${country.score}</td>
-                            <td>${country.policy}</td>
-                            <td>${country.trade}</td>
-                            <td>${country.tier}</td>
-                        </tr>
-                    `;
-                });
+        html += `</tbody></table>`;
+        out.innerHTML = html;
 
-                html += `</tbody></table>`;
-                out.innerHTML = html;
-
-            }, 800); // Pequeño retraso para simular el procesamiento pesado
-        }
+    }, 100); 
+}
     </script>
 </body>
 </html>
