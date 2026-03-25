@@ -194,7 +194,55 @@
     <script>
         // Variable global para almacenar el contenido del save
         let saveGameData = ""; 
+// --- EL PARSER: MOTOR DE EXTRACCIÓN ---
 
+// Función 1: Recorta solo el bloque de texto de un país específico
+function extractCountryBlock(saveText, tag) {
+    // Buscamos dónde empieza el país (ej. "MEX=\n{")
+    let startIndex = saveText.indexOf('\n' + tag + '=');
+    if (startIndex === -1) {
+        startIndex = saveText.indexOf(tag + '='); // Por si está al mero principio
+        if (startIndex === -1) return null; // El país no existe en el save
+    }
+
+    // Buscamos la primera llave '{' que le pertenece a este país
+    let openBraceIndex = saveText.indexOf('{', startIndex);
+    if (openBraceIndex === -1) return null;
+
+    // EL TRUCO MAGISTRAL: Contar las llaves para saber dónde termina el país
+    let braceCount = 1;
+    let endIndex = openBraceIndex + 1;
+    
+    // Mientras haya llaves abiertas, seguimos avanzando letra por letra
+    while (braceCount > 0 && endIndex < saveText.length) {
+        if (saveText[endIndex] === '{') braceCount++; // Abrimos una "caja" interna
+        if (saveText[endIndex] === '}') braceCount--; // Cerramos una "caja"
+        endIndex++;
+    }
+    
+    // Devolvemos el "recorte" de texto que contiene solo a este país
+    return saveText.substring(openBraceIndex, endIndex);
+}
+
+// Función 2: Busca las políticas dentro del recorte del país
+function getCountryPolicies(saveText, tag) {
+    let countryBlock = extractCountryBlock(saveText, tag);
+    
+    if (!countryBlock) {
+        return { tag: tag, error: "País no encontrado" };
+    }
+
+    // Usamos Expresiones Regulares (Regex) para buscar el valor exacto
+    // Busca: economic_policy="algo" y atrapa ese "algo"
+    let ecoMatch = countryBlock.match(/economic_policy="?([a-zA-Z_]+)"?/);
+    let tradeMatch = countryBlock.match(/trade_policy="?([a-zA-Z_]+)"?/);
+
+    return {
+        tag: tag,
+        economic_policy: ecoMatch ? ecoMatch[1] : "No definida",
+        trade_policy: tradeMatch ? tradeMatch[1] : "No definida"
+    };
+}
         // Manejo del archivo
         document.getElementById('save-file').addEventListener('change', function(e) {
             const file = e.target.files[0];
