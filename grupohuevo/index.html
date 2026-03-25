@@ -176,13 +176,6 @@
         .alerta-roja { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); }
         .alerta-naranja { background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); }
         .alerta-verde { background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); }
-
-        /* --- NUEVOS ESTILOS PARA LA RESOLUCIÓN DE BEBÉS --- */
-.alerta-bebe { 
-    background: #f0fdf4; border: 1px dashed #22c55e; color: #15803d; 
-    padding: 8px 12px; border-radius: 8px; font-size: 0.85em; 
-    margin-bottom: 12px; display: inline-block;
-}
         
     </style>
 </head>
@@ -667,56 +660,6 @@
             });
         }
 
-        // --- NUEVO: MOTOR DE OPTIMIZACIÓN Y FRONTERAS ---
-
-// 1. Resuelve el agujero negro de los bebés (Grupo no-eggs)
-async function resolverBebe(nombrePoke) {
-    let spec = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${nombrePoke}`).then(r => r.json());
-    let grupos = spec.egg_groups.map(g => g.name);
-    let esBebe = false;
-    let nombreOriginal = nombrePoke;
-
-    if (grupos.includes('no-eggs')) {
-        esBebe = true;
-        // Buscamos su cadena evolutiva
-        const evoChain = await fetch(spec.evolution_chain.url).then(r => r.json());
-        let evoActual = evoChain.chain;
-        
-        // Navegamos hasta encontrar al bebé actual
-        while (evoActual && evoActual.species.name !== nombrePoke) {
-            evoActual = evoActual.evolves_to[0];
-        }
-        
-        // Tomamos su evolución directa
-        if (evoActual && evoActual.evolves_to.length > 0) {
-            const nombreEvo = evoActual.evolves_to[0].species.name;
-            spec = await fetch(`https://pokeapi.co/api/v2/pokemon-species/${nombreEvo}`).then(r => r.json());
-            grupos = spec.egg_groups.map(g => g.name);
-            nombrePoke = nombreEvo; // Actualizamos la variable para el resto del cálculo
-        }
-    }
-    
-    const pokeData = await fetch(`https://pokeapi.co/api/v2/pokemon/${nombrePoke}`).then(r => r.json());
-    return { 
-        nombre: nombrePoke, 
-        original: nombreOriginal,
-        esBebe: esBebe, 
-        spec: spec, 
-        pokeData: pokeData, 
-        grupos: grupos,
-        foto: extraerMejorSprite(pokeData)
-    };
-}
-
-// 2. Resuelve el sesgo Greedy priorizando ratios de género 50/50 (Rate 4)
-// El Rate en PokeAPI va de 0 (100% M) a 8 (100% H). 4 es perfecto (50/50).
-function calcularFacilidadCrianza(rate1, rate2 = 4) {
-    // Si es 1 (12.5% H) o 7 (87.5% H) el puntaje será alto (peor).
-    // Si es 4, el puntaje será 0 (excelente).
-    const penalizacion1 = rate1 === -1 ? 10 : Math.abs(4 - rate1);
-    const penalizacion2 = rate2 === -1 ? 10 : Math.abs(4 - rate2);
-    return penalizacion1 + penalizacion2; 
-}
         // --- CALCULADORA 1: IVS ---
         async function buscarGrupoHuevo() {
             const p1 = document.getElementById('pokeInput1').value.toLowerCase().trim();
@@ -732,27 +675,21 @@ function calcularFacilidadCrianza(rate1, rate2 = 4) {
             try {
                 await cargarGruposGlobales();
                 
-                // --- FRONTERA RESUELTA: Evaluamos y saltamos bebés si es necesario ---
-                const datosP1 = await resolverBebe(p1);
-                const datosP2 = await resolverBebe(p2);
+                const [spec1, spec2, poke1Data, poke2Data] = await Promise.all([
+                    fetch(`https://pokeapi.co/api/v2/pokemon-species/${p1}`).then(r => r.json()),
+                    fetch(`https://pokeapi.co/api/v2/pokemon-species/${p2}`).then(r => r.json()),
+                    fetch(`https://pokeapi.co/api/v2/pokemon/${p1}`).then(r => r.json()),
+                    fetch(`https://pokeapi.co/api/v2/pokemon/${p2}`).then(r => r.json())
+                ]);
 
-                const grp1 = datosP1.grupos;
-                const grp2 = datosP2.grupos;
-                const spec1 = datosP1.spec;
-                const spec2 = datosP2.spec;
-                const foto1 = datosP1.foto;
-                const foto2 = datosP2.foto;
+                const foto1 = extraerMejorSprite(poke1Data);
+                const foto2 = extraerMejorSprite(poke2Data);
+                const grp1 = spec1.egg_groups.map(g => g.name);
+                const grp2 = spec2.egg_groups.map(g => g.name);
+                const n1C = p1.charAt(0).toUpperCase() + p1.slice(1);
+                const n2C = p2.charAt(0).toUpperCase() + p2.slice(1);
 
-                // Nombres con mayúscula inicial
-                const n1C = datosP1.nombre.charAt(0).toUpperCase() + datosP1.nombre.slice(1);
-                const n2C = datosP2.nombre.charAt(0).toUpperCase() + datosP2.nombre.slice(1);
-
-                let htmlInfo = "";
-                // Notificar al usuario si se hizo el puente evolutivo matemáticamente
-                if (datosP1.esBebe) htmlInfo += `<div class="alerta-bebe">👶 <b>${datosP1.original}</b> no cría. Calculando ruta con su evolución: <b>${n1C}</b>.</div>`;
-                if (datosP2.esBebe) htmlInfo += `<div class="alerta-bebe">👶 <b>${datosP2.original}</b> no cría. Calculando ruta con su evolución: <b>${n2C}</b>.</div>`;
-
-                htmlInfo += `
+                let htmlInfo = `
                     <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
                         <div><strong>${n1C}</strong> ${g1 === 'macho' ? '♂' : '♀'}</div>
                         <div style="color:var(--text-main); font-size:0.9em;">[${grp1.join(', ')}]</div>
@@ -762,18 +699,17 @@ function calcularFacilidadCrianza(rate1, rate2 = 4) {
                         <div style="color:var(--text-main); font-size:0.9em;">[${grp2.join(', ')}]</div>
                     </div><hr>`;
 
-                if (spec1.gender_rate === -1 || spec2.gender_rate === -1) { divRes.innerHTML = htmlInfo + `<div class="alerta alerta-roja">⛔ Sin género (Ditto se calculará en la v2).</div>`; return; }
+                if (spec1.gender_rate === -1 || spec2.gender_rate === -1) { divRes.innerHTML = htmlInfo + `<div class="alerta alerta-roja">⛔ Sin género.</div>`; return; }
                 if (spec1.gender_rate === 8) { divRes.innerHTML = htmlInfo + `<div class="alerta alerta-naranja">⛔ <strong>${n1C}</strong> es sumidero Hembra.</div>`; return; }
                 if (spec2.gender_rate === 0) { divRes.innerHTML = htmlInfo + `<div class="alerta alerta-naranja">⛔ <strong>${n2C}</strong> es donante Macho.</div>`; return; }
-                if (grp1.includes('no-eggs') || grp2.includes('no-eggs')) { divRes.innerHTML = htmlInfo + `<div class="alerta alerta-roja">Error evolutivo: Aún no pueden criar.</div>`; return; }
+                if (grp1.includes('no-eggs') || grp2.includes('no-eggs')) { divRes.innerHTML = htmlInfo + `<div class="alerta alerta-roja">No pueden criar.</div>`; return; }
                 if (grp1.some(g => grp2.includes(g))) { divRes.innerHTML = htmlInfo + `<div class="alerta alerta-verde"><strong>¡Compatibles Directos!</strong></div>`; return; }
 
-                // --- BÚSQUEDA SENCILLA (Mismo código, pero adaptado para puntajes) ---
                 let sencillosBasicos = [];
                 for (let g of grp1) {
                     if (!especiesPorGrupo[g]) continue;
                     especiesPorGrupo[g].forEach(n => {
-                        if (n !== datosP1.nombre && n !== datosP2.nombre && n !== 'ditto' && gruposDeEspecie[n] && gruposDeEspecie[n].some(gx => grp2.includes(gx))) {
+                        if (n !== p1 && n !== p2 && n !== 'ditto' && gruposDeEspecie[n] && gruposDeEspecie[n].some(gx => grp2.includes(gx))) {
                             sencillosBasicos.push(n);
                         }
                     });
@@ -791,40 +727,33 @@ function calcularFacilidadCrianza(rate1, rate2 = 4) {
                     if (dataSpec.gender_rate >= 1 && dataSpec.gender_rate <= 7) {
                         const urlF = extraerMejorSprite(dataPoke);
                         cacheFotosNexos[dataSpec.name] = urlF;
-                        sencillosValidos.push({ 
-                            nombre: dataSpec.name, 
-                            id: dataSpec.id, 
-                            foto: urlF,
-                            puntaje: calcularFacilidadCrianza(dataSpec.gender_rate) // <-- Evaluamos qué tan bueno es criar esto
-                        });
+                        sencillosValidos.push({ nombre: dataSpec.name, id: dataSpec.id, foto: urlF });
                     }
                 });
 
-                // Ordenamos los sencillos para mostrar los más fáciles de criar primero
-                sencillosValidos.sort((a, b) => a.puntaje - b.puntaje);
-
-                // --- FRONTERA RESUELTA: Búsqueda Múltiple sin Greedy Bias ---
-                let multiplesBrutos = [];
+                let multiplesValidos = [];
                 let combinacionesVistas = new Set();
                 
-                for (let g1_egg of grp1) {
-                    for (let g2_egg of grp2) {
-                        if (!especiesPorGrupo[g1_egg] || !especiesPorGrupo[g2_egg]) continue;
+                for (let g1 of grp1) {
+                    for (let g2 of grp2) {
+                        if (multiplesValidos.length >= 5) break;
+                        if (!especiesPorGrupo[g1] || !especiesPorGrupo[g2]) continue;
                         
-                        for (let nx1N of especiesPorGrupo[g1_egg]) {
-                            if (nx1N === datosP1.nombre || nx1N === datosP2.nombre || nx1N === 'ditto' || sencillosBasicos.includes(nx1N)) continue;
+                        for (let nx1N of especiesPorGrupo[g1]) {
+                            if (multiplesValidos.length >= 5) break;
+                            if (nx1N === p1 || nx1N === p2 || nx1N === 'ditto' || sencillosBasicos.includes(nx1N)) continue;
                             
-                            for (let nx2N of especiesPorGrupo[g2_egg]) {
-                                if (nx2N === datosP1.nombre || nx2N === datosP2.nombre || nx2N === 'ditto' || nx1N === nx2N || sencillosBasicos.includes(nx2N)) continue;
+                            for (let nx2N of especiesPorGrupo[g2]) {
+                                if (multiplesValidos.length >= 5) break;
+                                if (nx2N === p1 || nx2N === p2 || nx2N === 'ditto' || nx1N === nx2N || sencillosBasicos.includes(nx2N)) continue;
                                 
                                 if (gruposDeEspecie[nx1N].some(gx => gruposDeEspecie[nx2N].includes(gx))) {
                                     let hash = nx1N + "|" + nx2N;
                                     if (!combinacionesVistas.has(hash)) {
                                         combinacionesVistas.add(hash);
-                                        // Recolectamos SIN límite aquí (dentro de lo sensato, ej. 50 para no trabar el navegador)
-                                        if(multiplesBrutos.length < 50) { 
-                                            multiplesBrutos.push({ nx1: nx1N, nx2: nx2N });
-                                        }
+                                        let Cnx1 = nx1N.charAt(0).toUpperCase() + nx1N.slice(1);
+                                        let Cnx2 = nx2N.charAt(0).toUpperCase() + nx2N.slice(1);
+                                        multiplesValidos.push([Cnx1, Cnx2]);
                                     }
                                 }
                             }
@@ -832,49 +761,15 @@ function calcularFacilidadCrianza(rate1, rate2 = 4) {
                     }
                 }
 
-                let multiplesValidos = [];
-                if (multiplesBrutos.length > 0) {
-                    // Descargar datos para calcular puntajes y sprites
-                    const promesasMultiples = multiplesBrutos.map(async (par) => {
-                        const [specNx1, specNx2, pokeNx1, pokeNx2] = await Promise.all([
-                            fetch(`https://pokeapi.co/api/v2/pokemon-species/${par.nx1}`).then(r => r.json()),
-                            fetch(`https://pokeapi.co/api/v2/pokemon-species/${par.nx2}`).then(r => r.json()),
-                            fetch(`https://pokeapi.co/api/v2/pokemon/${par.nx1}`).then(r => r.json()),
-                            fetch(`https://pokeapi.co/api/v2/pokemon/${par.nx2}`).then(r => r.json())
-                        ]);
-                        return {
-                            n1: par.nx1.charAt(0).toUpperCase() + par.nx1.slice(1),
-                            f1: extraerMejorSprite(pokeNx1),
-                            rate1: specNx1.gender_rate,
-                            n2: par.nx2.charAt(0).toUpperCase() + par.nx2.slice(1),
-                            f2: extraerMejorSprite(pokeNx2),
-                            rate2: specNx2.gender_rate,
-                            puntaje: calcularFacilidadCrianza(specNx1.gender_rate, specNx2.gender_rate) // <-- Matemáticas al rescate
-                        };
-                    });
-
-                    let resultadosMultiples = await Promise.all(promesasMultiples);
-                    
-                    // Filtramos los que tengan géneros bloqueados (100% o sin género)
-                    resultadosMultiples = resultadosMultiples.filter(r => r.rate1 >= 1 && r.rate1 <= 7 && r.rate2 >= 1 && r.rate2 <= 7);
-                    
-                    // AHORA ORDENAMOS POR OPTIMIZACIÓN (El mejor par estadístico primero)
-                    resultadosMultiples.sort((a, b) => a.puntaje - b.puntaje);
-                    
-                    // Finalmente, extraemos SOLO los 5 mejores pares matemáticos
-                    multiplesValidos = resultadosMultiples.slice(0, 5);
-                }
-
                 if (sencillosValidos.length === 0 && multiplesValidos.length === 0) {
                      divRes.innerHTML = htmlInfo + `<div class="alerta alerta-roja">Imposible conectar biológicamente.</div>`; return;
                 }
 
-                // ... (A partir de aquí es tu mismo código visual HTML) ...
-                let espacioFormula = `<div id="contenedorFormula"><div style="background: var(--bg-input); padding: 15px; border-radius: 12px; text-align: center; color: var(--text-main); margin: 20px 0;">👆 <em>Clic en un puente para ver la ruta óptima.</em></div></div>`;
+                let espacioFormula = `<div id="contenedorFormula"><div style="background: var(--bg-input); padding: 15px; border-radius: 12px; text-align: center; color: var(--text-main); margin: 20px 0;">👆 <em>Clic en un puente para ver la ruta.</em></div></div>`;
                 let htmlListas = "";
 
                 if (sencillosValidos.length > 0) {
-                    htmlListas += `<div style="font-weight:700; color:#15803d; margin-top:10px;">🟢 Nexos Sencillos (Ordenados por facilidad de género):</div>`;
+                    htmlListas += `<div style="font-weight:700; color:#15803d; margin-top:10px;">🟢 Nexos Sencillos (1 Salto):</div>`;
                     const obtenerReg = (id) => {
                         if (id <= 151) return "Kanto"; if (id <= 251) return "Johto"; if (id <= 386) return "Hoenn";
                         if (id <= 493) return "Sinnoh"; if (id <= 649) return "Teselia"; if (id <= 721) return "Kalos";
@@ -890,7 +785,7 @@ function calcularFacilidadCrianza(rate1, rate2 = 4) {
 
                     ["Kanto", "Johto", "Hoenn", "Sinnoh", "Teselia", "Kalos", "Alola", "Galar", "Paldea"].forEach(reg => {
                         if (nexosAgrupados[reg]) {
-                            // NOTA: Quité el sort alfabético aquí para que respete el orden de "facilidad matemática"
+                            nexosAgrupados[reg].sort((a,b) => a.n.localeCompare(b.n)); 
                             let botones = nexosAgrupados[reg].map(nx => {
                                 return `<span class="nexo-tag" onclick="mostrarFormula('${n1C}', '${g1}', '${foto1}', '${n2C}', '${g2}', '${foto2}', '${nx.n}', '${nx.f}')">${nx.n}</span>`;
                             }).join(' ');
@@ -900,9 +795,19 @@ function calcularFacilidadCrianza(rate1, rate2 = 4) {
                 }
 
                 if (multiplesValidos.length > 0) {
-                    htmlListas += `<div style="font-weight:700; color:#9333ea; margin-top:20px;">🟣 Mejores Cadenas Múltiples (Prioridad 50/50):</div><div class="gen-box">`;
-                    multiplesValidos.forEach((par) => {
-                        htmlListas += `<span class="nexo-tag nexo-tag-multi" onclick="mostrarFormulaMultiple('${n1C}', '${g1}', '${foto1}', '${n2C}', '${g2}', '${foto2}', '${par.n1}', '${par.f1}', '${par.n2}', '${par.f2}')">${par.n1} ➔ ${par.n2}</span>`;
+                    htmlListas += `<div style="font-weight:700; color:#9333ea; margin-top:20px;">🟣 Cadenas Múltiples (Máx 5):</div><div class="gen-box">`;
+                    const promesasFotosMultiples = multiplesValidos.map(async (par) => {
+                        const [dPoke1, dPoke2] = await Promise.all([
+                            fetch(`https://pokeapi.co/api/v2/pokemon/${par[0].toLowerCase()}`).then(r => r.json()),
+                            fetch(`https://pokeapi.co/api/v2/pokemon/${par[1].toLowerCase()}`).then(r => r.json())
+                        ]);
+                        return [extraerMejorSprite(dPoke1), extraerMejorSprite(dPoke2)];
+                    });
+                    
+                    const urlsFotosMultiples = await Promise.all(promesasFotosMultiples);
+
+                    multiplesValidos.forEach((par, index) => {
+                        htmlListas += `<span class="nexo-tag nexo-tag-multi" onclick="mostrarFormulaMultiple('${n1C}', '${g1}', '${foto1}', '${n2C}', '${g2}', '${foto2}', '${par[0]}', '${urlsFotosMultiples[index][0]}', '${par[1]}', '${urlsFotosMultiples[index][1]}')">${par[0]} ➔ ${par[1]}</span>`;
                     });
                     htmlListas += `</div>`;
                 }
@@ -910,8 +815,9 @@ function calcularFacilidadCrianza(rate1, rate2 = 4) {
                 divRes.innerHTML = htmlInfo + espacioFormula + htmlListas;
 
             } catch (error) {
-                divRes.innerHTML = `<div class="alerta alerta-roja">Error de red/lógica. ${error.message}</div>`;
+                divRes.innerHTML = `<div class="alerta alerta-roja">Error de red. ${error.message}</div>`;
             }
+        }
 
       // --- CALCULADORA 2: MOVIMIENTOS ---
         
