@@ -353,6 +353,7 @@
     var statsMessages = document.getElementById("chat-stats-messages");
     var statsUptime = document.getElementById("chat-stats-uptime");
     var statsDb = document.getElementById("chat-stats-db");
+    var cursorOverlay = document.getElementById("cursor-overlay");
     var chatRoom = chatRoot.dataset.chatRoom || "sepgod";
 
     // Estado
@@ -363,6 +364,14 @@
     var isConnecting = false;
     var pendingErrorTimeout = null;
     var suppressNextOpenResync = false;
+    var statsClient = null;
+
+    // Estado de cursores
+    var cursorClient = null;
+    var remoteCursors = new Map();
+    var latestMousePos = null;
+    var lastSentPos = null;
+    var CURSOR_SAMPLE_MS = 100;
 
     var playNotification = function () {
         if (notificationAudio) {
@@ -590,13 +599,18 @@
             function (msg) {
                 insertMessage(msg);
                 playNotification();
-                updateStats();
             },
             function () {},
             function () {},
             undefined,
             handleStatusChange
         );
+        if (cursorClient) {
+            cursorClient.disconnect();
+            cursorClient = null;
+        }
+        cursorClient = new CursorClient(chatRoom, WS_BASE_URL, user, handleCursorUpdate);
+        cursorClient.connect();
         chatClient.connect();
     };
 
@@ -693,7 +707,17 @@
         clearMessages();
         beginConnect();
 
+        // Pintado inicial por HTTP, luego push reactivo por el WebSocket de
+        // estadisticas. Las estadisticas son publicas e independientes de la
+        // disponibilidad del chat, asi que la suscripcion se conecta sin importar
+        // el flujo de chat/auth de abajo.
         updateStats();
+        if (statsClient) {
+            statsClient.disconnect();
+            statsClient = null;
+        }
+        statsClient = new StatsClient(chatRoom, WS_BASE_URL, renderStats);
+        statsClient.connect();
 
         // 1. Disponibilidad
         getChatState(chatRoom).then(function (chatState) {
@@ -726,6 +750,127 @@
         });
     };
 
+    // =========================================================================
+    // CURSORES REMOTOS
+    // =========================================================================
+    // Se parsea cursor.svg una vez y se clona por usuario remoto. Se obtiene por
+    // fetch (sin build/raw-import); mientras la carga esta pendiente los cursores
+    // se muestran sin flecha (solo etiqueta), tolerado por la guarda de abajo.
+    var cursorSvgNode = null;
+    fetch("./images/cursor.svg")
+        .then(function (response) {
+            return response.ok ? response.text() : null;
+        })
+        .then(function (raw) {
+            if (!raw) return;
+            var template = document.createElement("template");
+            template.innerHTML = raw.trim();
+            cursorSvgNode = template.content.querySelector("svg");
+        })
+        .catch(function () {});
+
+    var getOrCreateCursorDot = function (username) {
+        var entry = remoteCursors.get(username);
+        if (!entry) {
+            var el = document.createElement("div");
+            el.classList.add("remoteCursor");
+            var color = getUserColor(username);
+
+            var arrow = cursorSvgNode ? cursorSvgNode.cloneNode(true) : null;
+            if (arrow) {
+                arrow.classList.add("remoteCursorArrow");
+                // Se descarta el tamano intrinseco 800x800 del asset; el CSS lo
+                // dimensiona via viewBox.
+                arrow.removeAttribute("width");
+                arrow.removeAttribute("height");
+                var path = arrow.querySelector("path");
+                if (path) path.setAttribute("fill", color);
+            }
+
+            var label = document.createElement("span");
+            label.classList.add("remoteCursorLabel");
+            label.style.backgroundColor = color;
+            label.textContent = username;
+
+            if (arrow) el.appendChild(arrow);
+            el.appendChild(label);
+            if (cursorOverlay) cursorOverlay.appendChild(el);
+
+            entry = { target: { x: 0, y: 0 }, rendered: { x: 0, y: 0 }, el: el };
+            remoteCursors.set(username, entry);
+        }
+        return entry;
+    };
+
+    var removeCursorDot = function (username) {
+        var entry = remoteCursors.get(username);
+        if (!entry) return;
+        entry.el.remove();
+        remoteCursors.delete(username);
+    };
+
+    var handleCursorUpdate = function (update) {
+        if (update.left) {
+            removeCursorDot(update.username);
+            return;
+        }
+        var entry = getOrCreateCursorDot(update.username);
+        entry.target = { x: update.x, y: update.y };
+    };
+
+    // Se monta el overlay en <body> para que su position:fixed se ancle al
+    // viewport en lugar de a un ancestro que actue como bloque contenedor.
+    if (cursorOverlay) {
+        document.body.appendChild(cursorOverlay);
+    }
+
+    var renderCursors = function () {
+        // Anclado y escalado a la caja del chat (#chat-messages) para que un
+        // punto normalizado dado mapee a la misma ubicacion relativa a la caja
+        // en cada cliente, sin importar el tamano del viewport. Se recalcula por
+        // frame para que los cursores sigan la caja al hacer scroll.
+        var rect = messageContainer ? messageContainer.getBoundingClientRect() : null;
+        if (rect && rect.width > 0 && rect.height > 0) {
+            remoteCursors.forEach(function (entry) {
+                entry.rendered.x += (entry.target.x - entry.rendered.x) * 0.25;
+                entry.rendered.y += (entry.target.y - entry.rendered.y) * 0.25;
+                entry.el.style.left = (rect.left + entry.rendered.x * rect.width) + "px";
+                entry.el.style.top = (rect.top + entry.rendered.y * rect.height) + "px";
+            });
+        }
+        requestAnimationFrame(renderCursors);
+    };
+    requestAnimationFrame(renderCursors);
+
+    document.addEventListener("mousemove", function (e) {
+        latestMousePos = { x: e.clientX, y: e.clientY };
+    });
+
+    document.addEventListener("mouseleave", function () {
+        latestMousePos = null;
+        if (cursorClient) cursorClient.sendLeave();
+    });
+
+    setInterval(function () {
+        if (!latestMousePos || !cursorClient || !messageContainer) return;
+        var rect = messageContainer.getBoundingClientRect();
+        if (rect.width === 0 || rect.height === 0) return;
+        // Relativo a la caja del chat, sin recortar: valores fuera de [0,1]
+        // representan cursores mas alla de la caja y se permiten a proposito para
+        // que los pares los rendericen en cualquier parte de la pantalla.
+        var nx = (latestMousePos.x - rect.left) / rect.width;
+        var ny = (latestMousePos.y - rect.top) / rect.height;
+        if (
+            lastSentPos &&
+            Math.abs(lastSentPos.x - nx) < 0.002 &&
+            Math.abs(lastSentPos.y - ny) < 0.002
+        ) {
+            return;
+        }
+        lastSentPos = { x: nx, y: ny };
+        cursorClient.sendPosition(nx, ny);
+    }, CURSOR_SAMPLE_MS);
+
     // --- Eventos ---
     if (chatButton) {
         chatButton.addEventListener("click", handleSendMessage);
@@ -748,5 +893,4 @@
 
     // Arranque
     init();
-    setInterval(updateStats, 5000);
 })();

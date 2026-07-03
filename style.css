@@ -1074,3 +1074,38 @@ body.splash-active {
     overflow: hidden;
     height: 100%;
 }
+
+/* Cursores remotos: overlay a pantalla completa y flechas tintadas por usuario.
+   Portado desde landing-page-v2 (ChatComponent.astro). */
+#cursor-overlay {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 200;
+}
+
+.remoteCursor {
+    position: absolute;
+    /* Alinea la punta de la flecha (viewBox ~3.3,3.3 de cursor.svg, escalada a
+       20px) al punto rastreado. El suavizado lo maneja el lerp en rAF, no el CSS. */
+    transform: translate(-2.75px, -2.75px);
+    pointer-events: none;
+}
+
+.remoteCursorArrow {
+    display: block;
+    width: 20px;
+    height: 20px;
+}
+
+.remoteCursorLabel {
+    display: inline-block;
+    margin: -2px 0px 0px 12px;
+    padding: 1px 6px;
+    border-radius: 6px;
+    color: black;
+    font-size: 0.65rem;
+    font-weight: bolder;
+    white-space: nowrap;
+}
