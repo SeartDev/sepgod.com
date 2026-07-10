@@ -3,541 +3,240 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Terminal Financiera - Presupuesto e Interés Compuesto</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>Kana Database // Cyberpunk</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --neon-green: #39ff14;
-            --neon-pink: #ff007f;
+            --bg-color: #050510;
             --neon-cyan: #00f3ff;
-            --neon-yellow: #ffea00;
-            --bg-color: #050505;
-            --grid-color: rgba(0, 243, 255, 0.08);
+            --neon-magenta: #ff00ff;
+            --neon-yellow: #fcee0a;
+            --grid-line: rgba(0, 243, 255, 0.2);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
 
         body {
             background-color: var(--bg-color);
             color: var(--neon-cyan);
-            font-family: 'Courier New', Courier, monospace;
-            min-height: 100vh;
-            margin: 0;
-            background-image:
-                linear-gradient(var(--grid-color) 1px, transparent 1px),
-                linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
-            background-size: 25px 25px;
+            font-family: 'Orbitron', sans-serif;
             display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-            box-sizing: border-box;
             flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 2rem;
+            /* Efecto de líneas de escaneo CRT */
+            background-image: linear-gradient(var(--grid-line) 1px, transparent 1px),
+                              linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+            background-size: 30px 30px;
         }
 
-        .main-wrapper {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 30px;
-            justify-content: center;
-            align-items: flex-start;
-            max-width: 1200px;
-            width: 100%;
-        }
-
-        /* DISEÑO DE LOS CONTENEDORES */
-        .budget-container, .terminal-container, .table-container, .chart-container {
-            background: rgba(10, 10, 12, 0.95);
-            border-radius: 4px;
-            padding: 30px;
-        }
-
-        /* MÓDULO 1: PRESUPUESTO (CYAN) */
-        .budget-container {
-            border: 2px solid var(--neon-cyan);
-            box-shadow: 0 0 15px var(--neon-cyan), inset 0 0 10px var(--neon-cyan);
-            width: 380px;
+        .header {
             text-align: center;
-            flex-shrink: 0;
+            margin-bottom: 2rem;
         }
 
-        .budget-container h1 { color: var(--neon-cyan); text-shadow: 0 0 5px var(--neon-cyan), 0 0 10px var(--neon-cyan); }
-        .budget-container button { border-color: var(--neon-cyan); color: var(--neon-cyan); text-shadow: 0 0 5px var(--neon-cyan); box-shadow: 0 0 10px rgba(0, 243, 255, 0.3); }
-        .budget-container button:hover { background: var(--neon-cyan); color: var(--bg-color); box-shadow: 0 0 20px var(--neon-cyan); }
-
-        /* MÓDULO 2: SIMULADOR (ROSA) */
-        .terminal-container {
-            border: 2px solid var(--neon-pink);
-            box-shadow: 0 0 15px var(--neon-pink), inset 0 0 10px var(--neon-pink);
-            width: 380px;
-            text-align: center;
-            flex-shrink: 0;
-        }
-
-        /* MÓDULO 3: TABLA (ROSA) */
-        .table-container {
-            border: 2px solid var(--neon-pink);
-            box-shadow: 0 0 15px var(--neon-pink), inset 0 0 10px var(--neon-pink);
-            flex-grow: 1;
-            min-width: 300px;
-            max-width: 800px;
-            max-height: 850px;
-            overflow-y: auto;
-            overflow-x: auto;
-            display: none;
-        }
-
-        .chart-container {
-            border: 2px solid var(--neon-cyan);
-            box-shadow: 0 0 15px var(--neon-cyan), inset 0 0 10px var(--neon-cyan);
-            width: 100%;
-            max-width: 1200px;
-            margin-top: 30px;
-            display: none;
-            box-sizing: border-box;
-        }
-
-        .table-container::-webkit-scrollbar { width: 8px; }
-        .table-container::-webkit-scrollbar-track { background: var(--bg-color); border-left: 1px solid var(--neon-pink); }
-        .table-container::-webkit-scrollbar-thumb { background: var(--neon-pink); }
-
-        h1, h2 {
-            font-size: 1.4em;
-            color: var(--neon-green);
-            text-shadow: 0 0 5px var(--neon-green), 0 0 10px var(--neon-green);
-            margin-top: 0;
-            margin-bottom: 25px;
-            letter-spacing: 2px;
+        .glitch-title {
+            font-size: 3rem;
+            color: var(--neon-cyan);
+            text-shadow: 0 0 10px var(--neon-cyan), 2px 0 0 var(--neon-magenta), -2px 0 0 var(--neon-yellow);
+            letter-spacing: 5px;
             text-transform: uppercase;
+            margin-bottom: 1rem;
+        }
+
+        .controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .cyber-btn {
+            background: transparent;
+            color: var(--neon-cyan);
+            border: 2px solid var(--neon-cyan);
+            padding: 10px 20px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            position: relative;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 10px inset transparent, 0 0 10px transparent;
+        }
+
+        .cyber-btn:hover {
+            background: var(--neon-cyan);
+            color: var(--bg-color);
+            box-shadow: 0 0 15px inset var(--neon-cyan), 0 0 15px var(--neon-cyan);
+        }
+
+        .cyber-btn.active {
+            background: var(--neon-magenta);
+            color: white;
+            border-color: var(--neon-magenta);
+            box-shadow: 0 0 15px inset var(--neon-magenta), 0 0 15px var(--neon-magenta);
+            text-shadow: 0 0 5px white;
+        }
+
+        table {
+            border-collapse: collapse;
+            background: rgba(5, 5, 16, 0.8);
+            border: 2px solid var(--neon-cyan);
+            box-shadow: 0 0 20px var(--neon-cyan);
+        }
+
+        th, td {
+            width: 70px;
+            height: 70px;
             text-align: center;
+            vertical-align: middle;
+            border: 1px solid var(--grid-line);
         }
 
-        .input-group { margin-bottom: 15px; text-align: left; }
-        label { display: block; margin-bottom: 5px; font-size: 0.85em; color: var(--neon-cyan); text-shadow: 0 0 2px var(--neon-cyan); text-transform: uppercase; }
-        
-        input, select {
-            width: 100%; padding: 10px; background: black; border: 1px solid var(--neon-cyan);
-            color: var(--neon-green); font-family: 'Courier New', Courier, monospace;
-            box-sizing: border-box; outline: none; transition: 0.3s;
+        th {
+            color: var(--neon-yellow);
+            font-size: 1.2rem;
+            text-shadow: 0 0 5px var(--neon-yellow);
+            background: rgba(252, 238, 10, 0.1);
         }
 
-        input:focus, select:focus { box-shadow: 0 0 10px var(--neon-cyan); border-color: #fff; }
-        input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-
-        button {
-            width: 100%; padding: 12px; margin-top: 15px; background: transparent;
-            color: var(--neon-pink); border: 2px solid var(--neon-pink); font-family: 'Courier New', Courier, monospace;
-            font-size: 1.1em; font-weight: bold; cursor: pointer; text-transform: uppercase;
-            text-shadow: 0 0 5px var(--neon-pink); box-shadow: 0 0 10px rgba(255, 0, 127, 0.3); transition: all 0.2s ease-in-out;
+        td {
+            font-family: 'Noto Sans JP', sans-serif;
+            font-size: 2rem;
+            font-weight: 700;
+            color: white;
+            text-shadow: 0 0 8px var(--neon-cyan);
+            transition: all 0.2s;
+            cursor: crosshair;
         }
 
-        button:hover { background: var(--neon-pink); color: var(--bg-color); box-shadow: 0 0 20px var(--neon-pink); text-shadow: none; }
-
-        #result {
-            margin-top: 25px; font-size: 1em; color: var(--neon-green); text-shadow: 0 0 5px var(--neon-green);
-            min-height: 2em; word-wrap: break-word; text-align: left; background: rgba(0, 0, 0, 0.5);
-            padding: 15px; border: 1px dashed var(--neon-cyan);
+        td:hover {
+            background: var(--neon-magenta);
+            color: white;
+            text-shadow: 0 0 10px white;
+            box-shadow: 0 0 15px var(--neon-magenta);
+            transform: scale(1.1);
+            z-index: 10;
+            position: relative;
+            border-color: var(--neon-magenta);
         }
 
-        .sys-msg { font-size: 0.7em; color: rgba(255, 255, 255, 0.5); margin-top: 20px; text-align: right; }
+        td.empty {
+            background: repeating-linear-gradient(
+                45deg,
+                rgba(0, 243, 255, 0.05),
+                rgba(0, 243, 255, 0.05) 10px,
+                transparent 10px,
+                transparent 20px
+            );
+            cursor: default;
+        }
 
-        table { width: 100%; border-collapse: collapse; font-size: 0.9em; }
-        th, td { border: 1px solid rgba(0, 243, 255, 0.3); padding: 10px; text-align: right; }
-        th { background: black; color: var(--neon-pink); text-shadow: 0 0 3px var(--neon-pink); position: sticky; top: 0; text-align: center; }
-        td { color: #fff; }
-        td:first-child { text-align: center; color: var(--neon-green); font-weight: bold; }
-        .highlight { color: var(--neon-cyan); }
+        td.empty:hover {
+            transform: none;
+            background: repeating-linear-gradient(
+                45deg,
+                rgba(0, 243, 255, 0.05),
+                rgba(0, 243, 255, 0.05) 10px,
+                transparent 10px,
+                transparent 20px
+            );
+            box-shadow: none;
+            border-color: var(--grid-line);
+        }
     </style>
 </head>
 <body>
 
-    <div class="main-wrapper">
-        
-        <div class="budget-container">
-            <h1>SYS.PRESUPUESTO</h1>
-            
-            <div class="input-group">
-                <label for="b-income" style="color: var(--neon-green);">+ Ingresos Mensuales Libres</label>
-                <input type="number" id="b-income" placeholder="Ej. 15000" oninput="updateBudget()">
-            </div>
-
-            <div style="border-top: 1px dashed var(--neon-cyan); margin: 20px 0; padding-top: 15px;">
-                <label style="color: var(--neon-cyan); font-weight: bold; text-align: center; margin-bottom: 15px;">[ GASTOS FIJOS Y VARIABLES ]</label>
-                
-                <div class="input-group">
-                    <label for="b-rent">- Vivienda (Renta / Hipoteca / Servicios)</label>
-                    <input type="number" id="b-rent" placeholder="Ej. 4000" oninput="updateBudget()">
-                </div>
-                <div class="input-group">
-                    <label for="b-food">- Alimentación (Supermercado)</label>
-                    <input type="number" id="b-food" placeholder="Ej. 3000" oninput="updateBudget()">
-                </div>
-                <div class="input-group">
-                    <label for="b-transport">- Transporte (Gasolina / Uber / TP)</label>
-                    <input type="number" id="b-transport" placeholder="Ej. 1500" oninput="updateBudget()">
-                </div>
-                <div class="input-group">
-                    <label for="b-leisure">- Ocio (Salidas / Streaming / Gustos)</label>
-                    <input type="number" id="b-leisure" placeholder="Ej. 2000" oninput="updateBudget()">
-                </div>
-                <div class="input-group">
-                    <label for="b-debt">- Tarjetas de Crédito / MSI / Deudas</label>
-                    <input type="number" id="b-debt" placeholder="Ej. 1000" oninput="updateBudget()">
-                </div>
-            </div>
-
-            <div style="background: rgba(0,0,0,0.5); padding: 15px; border: 1px dashed var(--neon-cyan); margin-top: 20px;">
-                <span style="display: block; font-size: 0.8em; color: #fff; margin-bottom: 5px;">CAPACIDAD DE AHORRO MENSUAL:</span>
-                <span id="b-remainder" style="font-size: 1.5em; font-weight: bold; color: var(--neon-cyan);">$0.00</span>
-            </div>
-
-            <button onclick="transferToSimulator()">ENVIAR DATOS AL SIMULADOR >></button>
-        </div>
-
-        <div class="terminal-container">
-            <h1 style="color: var(--neon-pink); text-shadow: 0 0 5px var(--neon-pink);">SYS.SIMULADOR</h1>
-
-            <div class="input-group">
-                <label for="principal">Capital Inicial (P) - Dinero que ya tienes</label>
-                <input type="number" id="principal" placeholder="Ej. 5000" required>
-            </div>
-
-            <div class="input-group">
-                <label for="pmt" style="color: var(--neon-green);">Aportación Mensual (Ahorro)</label>
-                <input type="number" id="pmt" placeholder="Viene del Presupuesto..." value="0">
-            </div>
-            <div class="input-group">
-                <label for="step-up">Aumento Anual al Ahorro (%)</label>
-                <input type="number" id="step-up" placeholder="Ej. 4" value="0">
-            </div>
-
-            <div class="input-group">
-                <label for="rate">Tasa de Interés Anual (%)</label>
-                <input type="number" id="rate" placeholder="Ej. 10" step="0.01" required>
-            </div>
-
-            <div class="input-group">
-                <label for="frequency">Capitalización (n)</label>
-                <select id="frequency">
-                    <option value="12">Mensual (12 veces/año)</option>
-                    <option value="4">Trimestral (4 veces/año)</option>
-                    <option value="2">Semestral (2 veces/año)</option>
-                    <option value="1">Anual (1 vez/año)</option>
-                </select>
-            </div>
-
-            <div class="input-group">
-                <label for="time">Tiempo en Años (t)</label>
-                <input type="number" id="time" placeholder="Ej. 5" required>
-            </div>
-
-            <div style="border-top: 1px dashed var(--neon-pink); border-bottom: 1px dashed var(--neon-pink); margin: 20px 0; padding: 15px 0;">
-                <label style="color: var(--neon-pink); font-weight: bold;">[ SYS.DIVIDENDOS_BMV ]</label>
-                
-                <div class="input-group" style="margin-top: 15px;">
-                    <label for="dividend-yield">Rendimiento por Dividendos Inicial (%)</label>
-                    <input type="number" id="dividend-yield" placeholder="Ej. 8 (Para FIBRAs)" value="0" step="0.01">
-                </div>
-
-                <div class="input-group">
-                    <label for="dividend-growth">Expansión Anual del Yield (DGI)</label>
-                    <select id="dividend-growth">
-                        <option value="0">Estático / Sin expansión (Yield fijo)</option>
-                        <option value="0.01">Promedio BMV (+1% expansión anual)</option>
-                        <option value="0.03">Superior / Aristócrata (+3% expansión anual)</option>
-                    </select>
-                </div>
-                <div class="input-group" style="margin-bottom: 0;">
-                    <label style="display: flex; align-items: center; cursor: pointer; color: #fff; text-shadow: none; text-transform: none;">
-                        <input type="checkbox" id="reinvest-dividends" checked style="width: auto; margin-right: 10px; accent-color: var(--neon-pink);">
-                        Reinvertir dividendos automáticamente (DRIP)
-                    </label>
-                </div>
-            </div>
-
-            <button onclick="executeCalculation()">EJECUTAR SECUENCIA</button>
-
-            <div id="result">Esperando parámetros...</div>
-            <div class="sys-msg">STATUS: ONLINE | INFLACIÓN: 4%</div>
-        </div>
-
-        <div class="table-container" id="table-container">
-            <h2>PROYECCIÓN DE DATOS</h2>
-            
-            <button onclick="exportTableToCSV('SYS_PROYECCION.csv')" style="margin-bottom: 20px; border-color: var(--neon-cyan); color: var(--neon-cyan); box-shadow: 0 0 10px rgba(0, 243, 255, 0.2);">
-                [ DESCARGAR DATOS CSV ]
-            </button>
-
-            <table id="data-table">
-                <thead>
-                    <tr>
-                        <th>AÑO</th>
-                        <th>INVERTIDO</th>
-                        <th>INTERÉS</th>
-                        <th>NOMINAL</th>
-                        <th style="color: var(--neon-yellow); text-shadow: 0 0 3px var(--neon-yellow);">REAL (-4%)</th>
-                    </tr>
-                </thead>
-                <tbody id="table-body">
-                </tbody>
-            </table>
-        </div>
+    <div class="header">
+        <h1 class="glitch-title">SYS.KANA_DB</h1>
+        <p>ACCESO A MATRIZ DE CARACTERES JAPONESES</p>
     </div>
 
-    <div class="chart-container" id="chart-container">
-        <h2>GRÁFICO DE CRECIMIENTO</h2>
-        <canvas id="growthChart"></canvas>
+    <div class="controls">
+        <button id="btn-hiragana" class="cyber-btn active" onclick="loadTable('hiragana')">Hiragana</button>
+        <button id="btn-katakana" class="cyber-btn" onclick="loadTable('katakana')">Katakana</button>
     </div>
 
-<script>
-    let myChart = null;
-    
-    const moneyFormatter = new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
-        minimumFractionDigits: 2
-    });
+    <table id="kana-table">
+        </table>
 
-    function updateBudget() {
-        const income = parseFloat(document.getElementById('b-income').value) || 0;
-        const rent = parseFloat(document.getElementById('b-rent').value) || 0;
-        const food = parseFloat(document.getElementById('b-food').value) || 0;
-        const transport = parseFloat(document.getElementById('b-transport').value) || 0;
-        const leisure = parseFloat(document.getElementById('b-leisure').value) || 0;
-        const debt = parseFloat(document.getElementById('b-debt').value) || 0;
+    <script>
+        const vowels = ['A', 'I', 'U', 'E', 'O'];
+        const consonants = ['∅', 'K', 'S', 'T', 'N', 'H', 'M', 'Y', 'R', 'W', 'N'];
 
-        const totalExpenses = rent + food + transport + leisure + debt;
-        const remainder = income - totalExpenses;
+        const kanaData = {
+            hiragana: [
+                ['あ', 'い', 'う', 'え', 'お'],
+                ['か', 'き', 'く', 'け', 'こ'],
+                ['さ', 'し', 'す', 'せ', 'そ'],
+                ['た', 'ち', 'つ', 'て', 'と'],
+                ['な', 'に', 'ぬ', 'ね', 'の'],
+                ['は', 'ひ', 'ふ', 'へ', 'ほ'],
+                ['ま', 'み', 'む', 'め', 'も'],
+                ['や', '', 'ゆ', '', 'よ'],
+                ['ら', 'り', 'る', 'れ', 'ろ'],
+                ['わ', '', '', '', 'を'],
+                ['ん', '', '', '', '']
+            ],
+            katakana: [
+                ['ア', 'イ', 'ウ', 'エ', 'オ'],
+                ['カ', 'キ', 'ク', 'ケ', 'コ'],
+                ['サ', 'シ', 'ス', 'セ', 'ソ'],
+                ['タ', 'チ', 'ツ', 'テ', 'ト'],
+                ['ナ', 'ニ', 'ヌ', 'ネ', 'ノ'],
+                ['ハ', 'ヒ', 'フ', 'ヘ', 'ホ'],
+                ['マ', 'ミ', 'ム', 'メ', 'モ'],
+                ['ヤ', '', 'ユ', '', 'ヨ'],
+                ['ラ', 'リ', 'ル', 'レ', 'ロ'],
+                ['ワ', '', '', '', 'ヲ'],
+                ['ン', '', '', '', '']
+            ]
+        };
 
-        const remainderEl = document.getElementById('b-remainder');
-        remainderEl.innerText = moneyFormatter.format(remainder);
+        function loadTable(type) {
+            // Actualizar botones
+            document.getElementById('btn-hiragana').classList.toggle('active', type === 'hiragana');
+            document.getElementById('btn-katakana').classList.toggle('active', type === 'katakana');
 
-        if (remainder > 0) {
-            remainderEl.style.color = 'var(--neon-green)';
-            remainderEl.style.textShadow = '0 0 5px var(--neon-green)';
-        } else if (remainder === 0) {
-            remainderEl.style.color = 'var(--neon-cyan)';
-            remainderEl.style.textShadow = 'none';
-        } else {
-            remainderEl.style.color = 'var(--neon-pink)';
-            remainderEl.style.textShadow = '0 0 5px var(--neon-pink)';
-        }
-    }
-
-    function transferToSimulator() {
-        const income = parseFloat(document.getElementById('b-income').value) || 0;
-        const rent = parseFloat(document.getElementById('b-rent').value) || 0;
-        const food = parseFloat(document.getElementById('b-food').value) || 0;
-        const transport = parseFloat(document.getElementById('b-transport').value) || 0;
-        const leisure = parseFloat(document.getElementById('b-leisure').value) || 0;
-        const debt = parseFloat(document.getElementById('b-debt').value) || 0;
-
-        const remainder = income - (rent + food + transport + leisure + debt);
-
-        if (remainder > 0) {
-            const pmtInput = document.getElementById('pmt');
-            pmtInput.value = remainder.toFixed(2);
+            const table = document.getElementById('kana-table');
+            const data = kanaData[type];
             
-            pmtInput.style.backgroundColor = 'rgba(0, 243, 255, 0.3)';
-            pmtInput.style.color = '#fff';
-            setTimeout(() => {
-                pmtInput.style.backgroundColor = 'black';
-                pmtInput.style.color = 'var(--neon-green)';
-            }, 600);
-        } else {
-            alert("SYS.ERROR: No hay capacidad de ahorro positiva para transferir al simulador.");
-        }
-    }
-
-    document.addEventListener('keydown', function(event) {
-        if (event.key === 'Enter') {
-            executeCalculation();
-        }
-    });
-    
-    function executeCalculation() {
-        const P = parseFloat(document.getElementById('principal').value) || 0;
-        let monthlyPMT = parseFloat(document.getElementById('pmt').value) || 0; 
-        const stepUpRate = (parseFloat(document.getElementById('step-up').value) || 0) / 100;
-        const r_percent = parseFloat(document.getElementById('rate').value);
-        const n = parseFloat(document.getElementById('frequency').value);
-        const t = parseFloat(document.getElementById('time').value);
-        
-        const divYield_percent = parseFloat(document.getElementById('dividend-yield').value) || 0;
-        const reinvestDividends = document.getElementById('reinvest-dividends').checked;
-        const divGrowthRate = parseFloat(document.getElementById('dividend-growth').value);
-
-        if (isNaN(r_percent) || isNaN(n) || isNaN(t) || t <= 0 || P < 0) {
-            document.getElementById('result').innerHTML = "<span style='color: var(--neon-pink); text-shadow: 0 0 5px var(--neon-pink); text-align: center; display: block;'>ERROR: FALTAN PARÁMETROS EN EL SIMULADOR.</span>";
-            return;
-        }
-
-        const r = r_percent / 100;
-        const divYield = divYield_percent / 100;
-        const inflationRate = 0.04; 
-        
-        const effectiveMonthlyRate = Math.pow(1 + (r / n), n / 12) - 1;
-        let monthlyDividendRate = divYield / 12; 
-        
-        let currentBalance = P;
-        let totalInvested = P;
-        let cashedOutDividends = 0; 
-        
-        let chartLabels = [0];
-        let chartDataInvested = [P];
-        let chartDataNominal = [P];
-        let chartDataReal = [P];
-
-        let rowsHTML = '';
-
-        for (let year = 1; year <= t; year++) {
-            for (let month = 1; month <= 12; month++) {
-                currentBalance = currentBalance * (1 + effectiveMonthlyRate);
-                let dividendThisMonth = currentBalance * monthlyDividendRate;
-
-                if (reinvestDividends) {
-                    currentBalance += dividendThisMonth; 
-                } else {
-                    cashedOutDividends += dividendThisMonth; 
-                }
-
-                currentBalance += monthlyPMT;
-                totalInvested += monthlyPMT;
-            }
-
-            let accumulatedInterest = currentBalance - totalInvested;
-            let realPurchasingPower = currentBalance / Math.pow(1 + inflationRate, year);
-
-            rowsHTML += `<tr>
-                <td>[ ${year} ]</td>
-                <td>${moneyFormatter.format(totalInvested)}</td>
-                <td class="highlight">${moneyFormatter.format(accumulatedInterest)}</td>
-                <td>${moneyFormatter.format(currentBalance)}</td>
-                <td style="color: var(--neon-yellow);">${moneyFormatter.format(realPurchasingPower)}</td>
-            </tr>`;
-
-            chartLabels.push(year);
-            chartDataInvested.push(Number(totalInvested.toFixed(2)));
-            chartDataNominal.push(Number(currentBalance.toFixed(2)));
-            chartDataReal.push(Number(realPurchasingPower.toFixed(2)));
-
-            // Step-up del ahorro del usuario
-            monthlyPMT = monthlyPMT * (1 + stepUpRate);
+            let html = '<tr><th>SYS</th>';
             
-            // CORRECCIÓN EXACTA: Si eligen 0%, el Yield porcentual se queda estático al 5%.
-            // Si eligen > 0%, el Yield porcentual se expande anualmente (Efecto DGI Real).
-            monthlyDividendRate = monthlyDividendRate * (1 + divGrowthRate);
-        }
+            // Generar cabeceras de vocales
+            vowels.forEach(v => {
+                html += `<th>${v}</th>`;
+            });
+            html += '</tr>';
 
-        document.getElementById('table-body').innerHTML = rowsHTML; 
-        document.getElementById('table-container').style.display = 'block';
-        document.getElementById('chart-container').style.display = 'block';
-
-        const finalInterest = currentBalance - totalInvested;
-        const finalRealBalance = currentBalance / Math.pow(1 + inflationRate, t);
-        
-        const projectedMonthlyPassiveIncome = currentBalance * monthlyDividendRate;
-        const realMonthlyPassiveIncome = projectedMonthlyPassiveIncome / Math.pow(1 + inflationRate, t);
-
-        const annualDividendIncome = projectedMonthlyPassiveIncome * 12;
-        const yieldOnCost = totalInvested > 0 ? (annualDividendIncome / totalInvested) * 100 : 0;
-
-        let dividendTerminalInfo = '';
-        if (divYield > 0) {
-            dividendTerminalInfo = `<br><span style="color: var(--neon-pink); font-size: 0.9em; border-top: 1px dashed var(--neon-pink); display: block; margin-top: 10px; padding-top: 10px;">> RENTA PASIVA ESTIMADA (MES):</span>` +
-            `<span style="font-size: 1.1em; color: var(--neon-pink); display: block;">${moneyFormatter.format(projectedMonthlyPassiveIncome)} <span style="font-size: 0.6em; color: #fff;">(NOMINAL)</span></span>` +
-            `<span style="font-size: 1.2em; color: var(--neon-yellow); text-shadow: 0 0 5px var(--neon-yellow); display: block; margin-bottom: 5px;">${moneyFormatter.format(realMonthlyPassiveIncome)} <span style="font-size: 0.6em; color: #fff; text-shadow: none;">(REAL HOY)</span></span>` +
-            `<span style="font-size: 0.9em; color: var(--neon-cyan); display: block; margin-bottom: 5px;">> YIELD ON COST PROMEDIO: <span style="font-weight: bold; color: #fff;">${yieldOnCost.toFixed(2)}%</span></span>`;
-            
-            if (!reinvestDividends) {
-                dividendTerminalInfo += `<span style="font-size: 0.85em; color: #fff;">> DIVIDENDOS COBRADOS EN EFECTIVO: ${moneyFormatter.format(cashedOutDividends)}</span><br>`;
-            }
-        }
-
-        document.getElementById('result').innerHTML = 
-            `<span style="color: #fff; font-size: 0.9em;">> BALANCE NOMINAL FINAL:</span><br>` +
-            `<span style="font-size: 1.4em; color: #fff; display: block; margin-bottom: 10px;">${moneyFormatter.format(currentBalance)}</span>` +
-            `<span style="font-size: 0.85em; color: var(--neon-cyan);">> TOTAL INVERTIDO: ${moneyFormatter.format(totalInvested)}</span><br>` +
-            `<span style="font-size: 0.85em; color: var(--neon-green);">> APRECIACIÓN PURA: ${moneyFormatter.format(finalInterest)}</span><br><br>` +
-            `<span style="color: var(--neon-yellow); font-size: 0.9em; text-shadow: 0 0 5px var(--neon-yellow);">> PODER ADQUISITIVO REAL:</span><br>` +
-            `<span style="font-size: 1.4em; color: var(--neon-yellow); text-shadow: 0 0 5px var(--neon-yellow); display: block;">${moneyFormatter.format(finalRealBalance)}</span>` +
-            `<span style="font-size: 0.7em; color: rgba(255,255,255,0.6);">(Descontando 4% inflación anual)</span>` + 
-            dividendTerminalInfo;
-
-        renderChart(chartLabels, chartDataInvested, chartDataNominal, chartDataReal);
-    }
-
-    function renderChart(labels, dataInvested, dataNominal, dataReal) {
-        const ctx = document.getElementById('growthChart').getContext('2d');
-        if (myChart !== null) myChart.destroy();
-
-        myChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [
-                    { label: 'Total Invertido', data: dataInvested, borderColor: '#ff007f', backgroundColor: 'rgba(255, 0, 127, 0.1)', borderWidth: 2, fill: true, tension: 0.3 },
-                    { label: 'Balance Nominal', data: dataNominal, borderColor: '#00f3ff', backgroundColor: 'rgba(0, 243, 255, 0.1)', borderWidth: 2, fill: true, tension: 0.3 },
-                    { label: 'Real (-4% Inflación)', data: dataReal, borderColor: '#ffea00', backgroundColor: 'rgba(255, 234, 0, 0.1)', borderWidth: 2, fill: true, tension: 0.3 }
-                ]
-            },
-            options: {
-                responsive: true,
-                plugins: { 
-                    legend: { labels: { color: '#00f3ff', font: { family: "'Courier New', Courier, monospace" } } },
-                    tooltip: {
-                        callbacks: {
-                            label: function(context) {
-                                let label = context.dataset.label || '';
-                                if (label) { label += ': '; }
-                                if (context.parsed.y !== null) {
-                                    label += moneyFormatter.format(context.parsed.y);
-                                }
-                                return label;
-                            }
-                        }
+            // Generar filas
+            data.forEach((row, rowIndex) => {
+                html += `<tr>`;
+                html += `<th>${consonants[rowIndex]}</th>`; // Cabecera de consonante
+                
+                row.forEach(char => {
+                    if (char === '') {
+                        html += `<td class="empty"></td>`;
+                    } else {
+                        html += `<td>${char}</td>`;
                     }
-                },
-                scales: {
-                    x: { grid: { color: 'rgba(0, 243, 255, 0.1)' }, ticks: { color: '#39ff14', font: { family: "'Courier New', Courier, monospace" } }, title: { display: true, text: 'AÑOS', color: '#ff007f', font: { family: "'Courier New', Courier, monospace" } } },
-                    y: { 
-                        grid: { color: 'rgba(0, 243, 255, 0.1)' }, 
-                        ticks: { 
-                            color: '#39ff14', 
-                            font: { family: "'Courier New', Courier, monospace" }, 
-                            callback: function(value) { return moneyFormatter.format(value); } 
-                        } 
-                    }
-                }
-            }
-        });
-    }
+                });
+                
+                html += `</tr>`;
+            });
 
-    function exportTableToCSV(filename) {
-        let csv = [];
-        let rows = document.querySelectorAll("#data-table tr");
-        
-        for (let i = 0; i < rows.length; i++) {
-            let row = [], cols = rows[i].querySelectorAll("td, th");
-            for (let j = 0; j < cols.length; j++) {
-                let data = cols[j].innerText.replace(/(\r\n|\n|\r)/gm, "");
-                data = data.replace(/"/g, '""'); 
-                row.push('"' + data + '"'); 
-            }
-            csv.push(row.join(","));
+            table.innerHTML = html;
         }
-        downloadCSV(csv.join("\n"), filename);
-    }
 
-    function downloadCSV(csv, filename) {
-        let csvFile = new Blob(["\uFEFF" + csv], {type: "text/csv;charset=utf-8;"});
-        let downloadLink = document.createElement("a");
-        downloadLink.download = filename;
-        downloadLink.href = window.URL.createObjectURL(csvFile);
-        downloadLink.style.display = "none";
-        document.body.appendChild(downloadLink);
-        downloadLink.click();
-        document.body.removeChild(downloadLink);
-    }
-</script>
-
+        // Cargar Hiragana por defecto al iniciar
+        window.onload = () => loadTable('hiragana');
+    </script>
 </body>
 </html>
