@@ -53,6 +53,8 @@
             display: flex;
             gap: 1rem;
             margin-bottom: 2rem;
+            flex-wrap: wrap;
+            justify-content: center;
         }
 
         .cyber-btn {
@@ -84,11 +86,18 @@
             text-shadow: 0 0 5px white;
         }
 
+        .table-wrapper {
+            max-width: 100%;
+            overflow-x: auto;
+            padding-bottom: 1rem;
+        }
+
         table {
             border-collapse: collapse;
             background: rgba(5, 5, 16, 0.8);
             border: 2px solid var(--neon-cyan);
             box-shadow: 0 0 20px var(--neon-cyan);
+            margin: 0 auto;
         }
 
         th, td {
@@ -127,6 +136,16 @@
             border-color: var(--neon-magenta);
         }
 
+        /* Fila separadora para los Dakuten/Handakuten */
+        .divider th {
+            height: 30px;
+            background: rgba(255, 0, 255, 0.1);
+            color: var(--neon-magenta);
+            text-shadow: 0 0 5px var(--neon-magenta);
+            font-size: 0.9rem;
+            letter-spacing: 2px;
+        }
+
         td.empty {
             background: repeating-linear-gradient(
                 45deg,
@@ -156,7 +175,7 @@
 
     <div class="header">
         <h1 class="glitch-title">SYS.KANA_DB</h1>
-        <p>ACCESO A MATRIZ DE CARACTERES JAPONESES</p>
+        <p>ACCESO A MATRIZ DE CARACTERES: DAKUTEN INTEGRADO</p>
     </div>
 
     <div class="controls">
@@ -164,12 +183,18 @@
         <button id="btn-katakana" class="cyber-btn" onclick="loadTable('katakana')">Katakana</button>
     </div>
 
-    <table id="kana-table">
+    <div class="table-wrapper">
+        <table id="kana-table">
+            <!-- El contenido se inyectará vía JavaScript -->
         </table>
+    </div>
 
     <script>
         const vowels = ['A', 'I', 'U', 'E', 'O'];
-        const consonants = ['∅', 'K', 'S', 'T', 'N', 'H', 'M', 'Y', 'R', 'W', 'N'];
+        const consonants = [
+            '∅', 'K', 'S', 'T', 'N', 'H', 'M', 'Y', 'R', 'W', 'N',
+            'G', 'Z', 'D', 'B', 'P'
+        ];
 
         const kanaData = {
             hiragana: [
@@ -183,7 +208,14 @@
                 ['や', '', 'ゆ', '', 'よ'],
                 ['ら', 'り', 'る', 'れ', 'ろ'],
                 ['わ', '', '', '', 'を'],
-                ['ん', '', '', '', '']
+                ['ん', '', '', '', ''],
+                // Dakuten (ten-ten)
+                ['が', 'ぎ', 'ぐ', 'げ', 'ご'],
+                ['ざ', 'じ', 'ず', 'ぜ', 'ぞ'],
+                ['だ', 'ぢ', 'づ', 'で', 'ど'],
+                ['ば', 'び', 'ぶ', 'べ', 'ぼ'],
+                // Handakuten (maru)
+                ['ぱ', 'ぴ', 'ぷ', 'ぺ', 'ぽ']
             ],
             katakana: [
                 ['ア', 'イ', 'ウ', 'エ', 'オ'],
@@ -196,7 +228,14 @@
                 ['ヤ', '', 'ユ', '', 'ヨ'],
                 ['ラ', 'リ', 'ル', 'レ', 'ロ'],
                 ['ワ', '', '', '', 'ヲ'],
-                ['ン', '', '', '', '']
+                ['ン', '', '', '', ''],
+                // Dakuten (ten-ten)
+                ['ガ', 'ギ', 'グ', 'ゲ', 'ゴ'],
+                ['ザ', 'ジ', 'ズ', 'ゼ', 'ゾ'],
+                ['ダ', 'ヂ', 'ヅ', 'デ', 'ド'],
+                ['バ', 'ビ', 'ブ', 'ベ', 'ボ'],
+                // Handakuten (maru)
+                ['パ', 'ピ', 'プ', 'ペ', 'ポ']
             ]
         };
 
@@ -218,6 +257,11 @@
 
             // Generar filas
             data.forEach((row, rowIndex) => {
+                // Separador visual antes de los Dakuten (fila G)
+                if (rowIndex === 11) {
+                    html += `<tr class="divider"><th colspan="6">MOD: DAKUTEN ( ゛) / HANDAKUTEN ( ゜)</th></tr>`;
+                }
+
                 html += `<tr>`;
                 html += `<th>${consonants[rowIndex]}</th>`; // Cabecera de consonante
                 
