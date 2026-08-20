@@ -260,73 +260,95 @@
         </div>
     </div>
 
-    <script>
-        document.getElementById('btnCrear').addEventListener('click', function() {
-            // Obtenemos los archivos seleccionados en los inputs
-            const historyFiles = document.getElementById('dirHistory').files;
-            const popFiles = document.getElementById('dirPops').files;
+   // Variables globales para almacenar nuestros datos indexados
+let provinceOwnership = {};
+
+document.getElementById('btnCrear').addEventListener('click', async function() {
+    const historyFiles = document.getElementById('dirHistory').files;
+    const provFiles = document.getElementById('dirProvinces').files;
+    
+    if (historyFiles.length === 0 || provFiles.length === 0) {
+        alert("Selecciona al menos las carpetas history/countries y history/provinces.");
+        return;
+    }
+
+    // Cambiar UI para mostrar que está cargando
+    const emptyState = document.getElementById('emptyState');
+    emptyState.innerHTML = "<h2>Indexando 2700+ archivos...</h2><p>Esto tomará unos segundos dependiendo de tu PC.</p>";
+
+    // 1. INDEXAR PROVINCIAS
+    provinceOwnership = {}; // Reiniciar el objeto
+    
+    for (let file of provFiles) {
+        if (!file.name.endsWith('.txt')) continue;
+        
+        // Extraemos el texto del archivo
+        const text = await file.text();
+        
+        // Buscamos la línea que dice owner = TAG usando Regex
+        const match = text.match(/owner\s*=\s*"?([A-Z]{3})"?/i);
+        
+        if (match) {
+            const tag = match[1].toUpperCase(); // Extraemos el TAG (ej. WIA)
+            const provName = file.name.replace('.txt', ''); // Ej. "123 - Wiang Chhan"
             
-            if (historyFiles.length === 0) {
-                alert("Por favor, selecciona al menos la carpeta 'history/countries' para generar la lista de países.");
-                return;
+            // Si el país no existe en nuestro registro, lo creamos
+            if (!provinceOwnership[tag]) {
+                provinceOwnership[tag] = [];
             }
-
-            // Ocultar estado vacío, mostrar dashboard
-            document.getElementById('emptyState').style.display = 'none';
-            const dashboard = document.getElementById('dashboard');
-            dashboard.style.display = 'flex';
-
-            const countryList = document.getElementById('countryList');
-            countryList.innerHTML = ''; // Limpiar lista
-
-            // Usamos la carpeta history/countries para extraer los nombres de los países
-            // Los archivos suelen llamarse "ENG - England.txt"
-            
-            // Convertimos FileList a Array y lo ordenamos alfabéticamente
-            let filesArray = Array.from(historyFiles);
-            filesArray.sort((a, b) => a.name.localeCompare(b.name));
-
-            filesArray.forEach(file => {
-                if (file.name.endsWith('.txt')) {
-                    // Extraer TAG y Nombre del archivo (ej. "ENG - England")
-                    let countryName = file.name.replace('.txt', '');
-                    
-                    let div = document.createElement('div');
-                    div.className = 'country-item';
-                    div.innerText = countryName;
-                    
-                    div.onclick = function() {
-                        // Quitar clase active a los demás
-                        document.querySelectorAll('.country-item').forEach(el => el.classList.remove('active'));
-                        div.classList.add('active');
-                        
-                        // Actualizar panel derecho
-                        mostrarDetallesPais(countryName, file);
-                    };
-                    
-                    countryList.appendChild(div);
-                }
-            });
-        });
-
-        function mostrarDetallesPais(countryName, fileObject) {
-            document.getElementById('selectedCountryName').innerText = countryName;
-            
-            // Aquí en el futuro usaremos FileReader para leer los contenidos reales de los .txt
-            // Por ahora mostramos información simulada del entorno
-            document.getElementById('provCount').innerText = "Cargando análisis de archivos...";
-            document.getElementById('provList').innerHTML = "<li>Lectura de /provinces pendiente...</li>";
-            document.getElementById('popData').innerText = "Análisis del motor Clausewitz requerido para leer los bloques de población.";
-            
-            // Ejemplo de cómo se leería un archivo real en JS:
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const contenido = e.target.result;
-                // Esto imprimiría el texto del archivo de historial en la consola
-                console.log(`Contenido de ${countryName}:`, contenido.substring(0, 100) + "...");
-            };
-            reader.readAsText(fileObject);
+            // Añadimos la provincia al país
+            provinceOwnership[tag].push(provName);
         }
-    </script>
+    }
+
+    // 2. GENERAR LISTA DE PAÍSES
+    emptyState.style.display = 'none';
+    document.getElementById('dashboard').style.display = 'flex';
+    const countryList = document.getElementById('countryList');
+    countryList.innerHTML = ''; 
+
+    let filesArray = Array.from(historyFiles).filter(f => f.name.endsWith('.txt'));
+    filesArray.sort((a, b) => a.name.localeCompare(b.name));
+
+    filesArray.forEach(file => {
+        let countryName = file.name.replace('.txt', '');
+        let div = document.createElement('div');
+        div.className = 'country-item';
+        div.innerText = countryName;
+        
+        div.onclick = function() {
+            document.querySelectorAll('.country-item').forEach(el => el.classList.remove('active'));
+            div.classList.add('active');
+            mostrarDetallesPais(countryName);
+        };
+        
+        countryList.appendChild(div);
+    });
+});
+
+function mostrarDetallesPais(countryFileName) {
+    document.getElementById('selectedCountryName').innerText = countryFileName;
+    
+    // Extraer las 3 primeras letras para obtener el TAG (Ej: "WIA" de "WIA - Wiang Chhan")
+    const tag = countryFileName.substring(0, 3).toUpperCase();
+    
+    const provCountEl = document.getElementById('provCount');
+    const provListEl = document.getElementById('provList');
+    
+    // Buscar si el TAG tiene provincias indexadas
+    const provinciasDelPais = provinceOwnership[tag] || [];
+
+    if (provinciasDelPais.length > 0) {
+        provCountEl.innerText = `Controla ${provinciasDelPais.length} provincias.`;
+        provListEl.innerHTML = provinciasDelPais.map(p => `<li>${p}</li>`).join('');
+    } else {
+        provCountEl.innerText = "No controla ninguna provincia.";
+        provListEl.innerHTML = "";
+    }
+
+    // Placeholder para la población
+    
+    document.getElementById('popData').innerText = "La lectura de provincias está activa. La lectura de pops es el siguiente paso.";
+}
 </body>
 </html>
