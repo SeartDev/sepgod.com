@@ -181,7 +181,6 @@
             padding: 2rem;
             flex-direction: column;
         }
-
     </style>
 </head>
 <body>
@@ -260,95 +259,97 @@
         </div>
     </div>
 
-   // Variables globales para almacenar nuestros datos indexados
-let provinceOwnership = {};
+    <!-- AQUÍ ESTÁ LA CORRECCIÓN: El código JavaScript ahora está dentro de la etiqueta <script> -->
+    <script>
+        // Variables globales para almacenar nuestros datos indexados
+        let provinceOwnership = {};
 
-document.getElementById('btnCrear').addEventListener('click', async function() {
-    const historyFiles = document.getElementById('dirHistory').files;
-    const provFiles = document.getElementById('dirProvinces').files;
-    
-    if (historyFiles.length === 0 || provFiles.length === 0) {
-        alert("Selecciona al menos las carpetas history/countries y history/provinces.");
-        return;
-    }
-
-    // Cambiar UI para mostrar que está cargando
-    const emptyState = document.getElementById('emptyState');
-    emptyState.innerHTML = "<h2>Indexando 2700+ archivos...</h2><p>Esto tomará unos segundos dependiendo de tu PC.</p>";
-
-    // 1. INDEXAR PROVINCIAS
-    provinceOwnership = {}; // Reiniciar el objeto
-    
-    for (let file of provFiles) {
-        if (!file.name.endsWith('.txt')) continue;
-        
-        // Extraemos el texto del archivo
-        const text = await file.text();
-        
-        // Buscamos la línea que dice owner = TAG usando Regex
-        const match = text.match(/owner\s*=\s*"?([A-Z]{3})"?/i);
-        
-        if (match) {
-            const tag = match[1].toUpperCase(); // Extraemos el TAG (ej. WIA)
-            const provName = file.name.replace('.txt', ''); // Ej. "123 - Wiang Chhan"
+        document.getElementById('btnCrear').addEventListener('click', async function() {
+            const historyFiles = document.getElementById('dirHistory').files;
+            const provFiles = document.getElementById('dirProvinces').files;
             
-            // Si el país no existe en nuestro registro, lo creamos
-            if (!provinceOwnership[tag]) {
-                provinceOwnership[tag] = [];
+            if (historyFiles.length === 0 || provFiles.length === 0) {
+                alert("Selecciona al menos las carpetas history/countries y history/provinces.");
+                return;
             }
-            // Añadimos la provincia al país
-            provinceOwnership[tag].push(provName);
+
+            // Cambiar UI para mostrar que está cargando
+            const emptyState = document.getElementById('emptyState');
+            emptyState.innerHTML = "<h2>Indexando 2700+ archivos...</h2><p>Esto tomará unos segundos dependiendo de tu PC.</p>";
+
+            // 1. INDEXAR PROVINCIAS
+            provinceOwnership = {}; // Reiniciar el objeto
+            
+            for (let file of provFiles) {
+                if (!file.name.endsWith('.txt')) continue;
+                
+                // Extraemos el texto del archivo
+                const text = await file.text();
+                
+                // Buscamos la línea que dice owner = TAG usando Regex
+                const match = text.match(/owner\s*=\s*"?([A-Z]{3})"?/i);
+                
+                if (match) {
+                    const tag = match[1].toUpperCase(); // Extraemos el TAG (ej. WIA)
+                    const provName = file.name.replace('.txt', ''); // Ej. "123 - Wiang Chhan"
+                    
+                    // Si el país no existe en nuestro registro, lo creamos
+                    if (!provinceOwnership[tag]) {
+                        provinceOwnership[tag] = [];
+                    }
+                    // Añadimos la provincia al país
+                    provinceOwnership[tag].push(provName);
+                }
+            }
+
+            // 2. GENERAR LISTA DE PAÍSES
+            emptyState.style.display = 'none';
+            document.getElementById('dashboard').style.display = 'flex';
+            const countryList = document.getElementById('countryList');
+            countryList.innerHTML = ''; 
+
+            let filesArray = Array.from(historyFiles).filter(f => f.name.endsWith('.txt'));
+            filesArray.sort((a, b) => a.name.localeCompare(b.name));
+
+            filesArray.forEach(file => {
+                let countryName = file.name.replace('.txt', '');
+                let div = document.createElement('div');
+                div.className = 'country-item';
+                div.innerText = countryName;
+                
+                div.onclick = function() {
+                    document.querySelectorAll('.country-item').forEach(el => el.classList.remove('active'));
+                    div.classList.add('active');
+                    mostrarDetallesPais(countryName);
+                };
+                
+                countryList.appendChild(div);
+            });
+        });
+
+        function mostrarDetallesPais(countryFileName) {
+            document.getElementById('selectedCountryName').innerText = countryFileName;
+            
+            // Extraer las 3 primeras letras para obtener el TAG (Ej: "WIA" de "WIA - Wiang Chhan")
+            const tag = countryFileName.substring(0, 3).toUpperCase();
+            
+            const provCountEl = document.getElementById('provCount');
+            const provListEl = document.getElementById('provList');
+            
+            // Buscar si el TAG tiene provincias indexadas
+            const provinciasDelPais = provinceOwnership[tag] || [];
+
+            if (provinciasDelPais.length > 0) {
+                provCountEl.innerText = `Controla ${provinciasDelPais.length} provincias.`;
+                provListEl.innerHTML = provinciasDelPais.map(p => `<li>${p}</li>`).join('');
+            } else {
+                provCountEl.innerText = "No controla ninguna provincia.";
+                provListEl.innerHTML = "";
+            }
+
+            // Placeholder para la población
+            document.getElementById('popData').innerText = "La lectura de provincias está activa. La lectura de pops es el siguiente paso.";
         }
-    }
-
-    // 2. GENERAR LISTA DE PAÍSES
-    emptyState.style.display = 'none';
-    document.getElementById('dashboard').style.display = 'flex';
-    const countryList = document.getElementById('countryList');
-    countryList.innerHTML = ''; 
-
-    let filesArray = Array.from(historyFiles).filter(f => f.name.endsWith('.txt'));
-    filesArray.sort((a, b) => a.name.localeCompare(b.name));
-
-    filesArray.forEach(file => {
-        let countryName = file.name.replace('.txt', '');
-        let div = document.createElement('div');
-        div.className = 'country-item';
-        div.innerText = countryName;
-        
-        div.onclick = function() {
-            document.querySelectorAll('.country-item').forEach(el => el.classList.remove('active'));
-            div.classList.add('active');
-            mostrarDetallesPais(countryName);
-        };
-        
-        countryList.appendChild(div);
-    });
-});
-
-function mostrarDetallesPais(countryFileName) {
-    document.getElementById('selectedCountryName').innerText = countryFileName;
-    
-    // Extraer las 3 primeras letras para obtener el TAG (Ej: "WIA" de "WIA - Wiang Chhan")
-    const tag = countryFileName.substring(0, 3).toUpperCase();
-    
-    const provCountEl = document.getElementById('provCount');
-    const provListEl = document.getElementById('provList');
-    
-    // Buscar si el TAG tiene provincias indexadas
-    const provinciasDelPais = provinceOwnership[tag] || [];
-
-    if (provinciasDelPais.length > 0) {
-        provCountEl.innerText = `Controla ${provinciasDelPais.length} provincias.`;
-        provListEl.innerHTML = provinciasDelPais.map(p => `<li>${p}</li>`).join('');
-    } else {
-        provCountEl.innerText = "No controla ninguna provincia.";
-        provListEl.innerHTML = "";
-    }
-
-    // Placeholder para la población
-    
-    document.getElementById('popData').innerText = "La lectura de provincias está activa. La lectura de pops es el siguiente paso.";
-}
+    </script>
 </body>
 </html>
