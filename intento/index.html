@@ -110,7 +110,7 @@
         }
 
         .dashboard {
-            display: none; /* Oculto hasta que se carguen datos */
+            display: none; 
             flex: 1;
             flex-direction: row;
             height: 100%;
@@ -164,6 +164,8 @@
             padding: 1.5rem;
             border-radius: 6px;
             border: 1px solid var(--border);
+            max-height: 70vh;
+            overflow-y: auto;
         }
 
         .card h3 {
@@ -181,6 +183,21 @@
             padding: 2rem;
             flex-direction: column;
         }
+
+        /* Estilo especial para la Capital */
+        .capital-item {
+            color: #ffd700;
+            font-weight: bold;
+            list-style-type: none;
+            margin-left: -20px;
+            padding-bottom: 10px;
+            border-bottom: 1px dashed var(--border);
+            margin-bottom: 10px;
+        }
+
+        .capital-item::before {
+            content: "👑 ";
+        }
     </style>
 </head>
 <body>
@@ -190,7 +207,6 @@
     </header>
 
     <div class="container">
-        <!-- Panel de Configuración -->
         <div class="config-panel">
             <h2>Directorios del Juego</h2>
             <br>
@@ -228,7 +244,6 @@
             <button id="btnCrear">Cargar Datos y Crear Entorno</button>
         </div>
 
-        <!-- Área de Trabajo -->
         <div class="workspace">
             <div class="empty-state" id="emptyState">
                 <h2>Esperando datos...</h2>
@@ -247,7 +262,7 @@
                         <div class="card">
                             <h3>Provincias Controladas</h3>
                             <p id="provCount">Esperando selección...</p>
-                            <ul id="provList" style="margin-top: 10px; padding-left: 20px; color: var(--text-muted); font-size: 0.9rem;"></ul>
+                            <ul id="provList" style="margin-top: 15px; padding-left: 20px; color: var(--text-muted); font-size: 0.9rem;"></ul>
                         </div>
                         <div class="card">
                             <h3>Población (Pops)</h3>
@@ -259,10 +274,10 @@
         </div>
     </div>
 
-    <!-- AQUÍ ESTÁ LA CORRECCIÓN: El código JavaScript ahora está dentro de la etiqueta <script> -->
     <script>
-        // Variables globales para almacenar nuestros datos indexados
+        // Variables globales
         let provinceOwnership = {};
+        let countryCapitals = {}; 
 
         document.getElementById('btnCrear').addEventListener('click', async function() {
             const historyFiles = document.getElementById('dirHistory').files;
@@ -273,36 +288,43 @@
                 return;
             }
 
-            // Cambiar UI para mostrar que está cargando
             const emptyState = document.getElementById('emptyState');
-            emptyState.innerHTML = "<h2>Indexando 2700+ archivos...</h2><p>Esto tomará unos segundos dependiendo de tu PC.</p>";
+            emptyState.innerHTML = "<h2>Indexando archivos...</h2><p>Extrayendo datos de provincias y capitales.</p>";
 
-            // 1. INDEXAR PROVINCIAS
-            provinceOwnership = {}; // Reiniciar el objeto
+            provinceOwnership = {}; 
+            countryCapitals = {}; 
             
+            // 1. INDEXAR CAPITALES
+            for (let file of historyFiles) {
+                if (!file.name.endsWith('.txt')) continue;
+                const text = await file.text();
+                const tag = file.name.substring(0, 3).toUpperCase();
+                
+                // Buscamos la línea "capital = 123"
+                const matchCapital = text.match(/capital\s*=\s*(\d+)/i);
+                if (matchCapital) {
+                    countryCapitals[tag] = matchCapital[1]; // Guardamos el ID de la provincia
+                }
+            }
+
+            // 2. INDEXAR PROVINCIAS
             for (let file of provFiles) {
                 if (!file.name.endsWith('.txt')) continue;
-                
-                // Extraemos el texto del archivo
                 const text = await file.text();
-                
-                // Buscamos la línea que dice owner = TAG usando Regex
                 const match = text.match(/owner\s*=\s*"?([A-Z]{3})"?/i);
                 
                 if (match) {
-                    const tag = match[1].toUpperCase(); // Extraemos el TAG (ej. WIA)
-                    const provName = file.name.replace('.txt', ''); // Ej. "123 - Wiang Chhan"
+                    const tag = match[1].toUpperCase(); 
+                    const provName = file.name.replace('.txt', ''); 
                     
-                    // Si el país no existe en nuestro registro, lo creamos
                     if (!provinceOwnership[tag]) {
                         provinceOwnership[tag] = [];
                     }
-                    // Añadimos la provincia al país
                     provinceOwnership[tag].push(provName);
                 }
             }
 
-            // 2. GENERAR LISTA DE PAÍSES
+            // 3. GENERAR LISTA DE PAÍSES
             emptyState.style.display = 'none';
             document.getElementById('dashboard').style.display = 'flex';
             const countryList = document.getElementById('countryList');
@@ -329,25 +351,48 @@
 
         function mostrarDetallesPais(countryFileName) {
             document.getElementById('selectedCountryName').innerText = countryFileName;
-            
-            // Extraer las 3 primeras letras para obtener el TAG (Ej: "WIA" de "WIA - Wiang Chhan")
             const tag = countryFileName.substring(0, 3).toUpperCase();
             
             const provCountEl = document.getElementById('provCount');
             const provListEl = document.getElementById('provList');
             
-            // Buscar si el TAG tiene provincias indexadas
             const provinciasDelPais = provinceOwnership[tag] || [];
+            const capitalId = countryCapitals[tag];
 
             if (provinciasDelPais.length > 0) {
                 provCountEl.innerText = `Controla ${provinciasDelPais.length} provincias.`;
-                provListEl.innerHTML = provinciasDelPais.map(p => `<li>${p}</li>`).join('');
+                
+                let capitalStr = null;
+                let otrasProvincias = [];
+
+                // Separar la capital de las demás provincias
+                provinciasDelPais.forEach(p => {
+                    const provId = p.split('-')[0].trim(); // Extrae el número antes del guion
+                    if (capitalId && provId === capitalId) {
+                        capitalStr = p;
+                    } else {
+                        otrasProvincias.push(p);
+                    }
+                });
+
+                // Ordenar las otras provincias de menor a mayor ID numérico
+                otrasProvincias.sort((a, b) => {
+                    return parseInt(a) - parseInt(b);
+                });
+
+                // Construir el HTML
+                let htmlList = '';
+                if (capitalStr) {
+                    htmlList += `<li class="capital-item">${capitalStr}</li>`;
+                }
+                htmlList += otrasProvincias.map(p => `<li>${p}</li>`).join('');
+                
+                provListEl.innerHTML = htmlList;
             } else {
                 provCountEl.innerText = "No controla ninguna provincia.";
                 provListEl.innerHTML = "";
             }
 
-            // Placeholder para la población
             document.getElementById('popData').innerText = "La lectura de provincias está activa. La lectura de pops es el siguiente paso.";
         }
     </script>
