@@ -224,6 +224,20 @@
         }
 
         .capital-item::before { content: "👑 "; }
+
+        .pop-number {
+            font-size: 2.5rem;
+            color: var(--text-main);
+            font-weight: bold;
+            margin-top: 10px;
+            margin-bottom: 5px;
+        }
+        
+        .pop-note {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            line-height: 1.4;
+        }
     </style>
 </head>
 <body>
@@ -277,7 +291,7 @@
 
             <div class="input-group">
                 <label>Carpeta history/pops</label>
-                <p>Población en 1836 y 1861.</p>
+                <p>Población en 1836 (o 1861).</p>
                 <input type="file" id="dirPops" webkitdirectory directory multiple>
             </div>
 
@@ -311,8 +325,8 @@
                             <ul id="provList" style="margin-top: 15px; padding-left: 20px; color: var(--text-muted); font-size: 0.9rem;"></ul>
                         </div>
                         <div class="card">
-                            <h3>Población (Pops)</h3>
-                            <p id="popData">Esperando selección...</p>
+                            <h3>Población Base (Pops)</h3>
+                            <div id="popData">Esperando selección...</div>
                         </div>
                     </div>
                 </div>
@@ -327,25 +341,28 @@
         let locData = {}; 
         let flagFiles = {}; 
         let currentObjectUrl = null; 
+        let provincePops = {}; // NUEVO: Guardará la suma de pops por ID de provincia { '123': 25000 }
 
         document.getElementById('btnCrear').addEventListener('click', async function() {
             const historyFiles = document.getElementById('dirHistory').files;
             const provFiles = document.getElementById('dirProvinces').files;
+            const popFiles = document.getElementById('dirPops').files;
             const locFileInput = document.getElementById('fileLoc').files;
             const flagsInput = document.getElementById('dirFlags').files;
             
-            if (historyFiles.length === 0 || provFiles.length === 0) {
-                alert("Selecciona al menos las carpetas history/countries y history/provinces.");
+            if (historyFiles.length === 0 || provFiles.length === 0 || popFiles.length === 0) {
+                alert("Selecciona al menos las carpetas history/countries, history/provinces y history/pops.");
                 return;
             }
 
             const emptyState = document.getElementById('emptyState');
-            emptyState.innerHTML = "<h2>Indexando archivos...</h2><p>Procesando provincias, gobiernos, banderas y localizaciones.</p>";
+            emptyState.innerHTML = "<h2>Indexando archivos...</h2><p>Esto puede tomar un momento procesando las matemáticas de población...</p>";
 
             provinceOwnership = {}; 
             countryData = {}; 
             locData = {};
             flagFiles = {};
+            provincePops = {};
 
             // 1. LEER LOCALISATION
             if (locFileInput.length > 0) {
@@ -360,11 +377,10 @@
                 }
             }
 
-            // 2. LEER BANDERAS (Admite .tga y .png)
+            // 2. LEER BANDERAS
             for (let file of flagsInput) {
                 if (file.name.length >= 7 && (file.name.toLowerCase().endsWith('.tga') || file.name.toLowerCase().endsWith('.png'))) {
                     const tag = file.name.substring(0, 3).toUpperCase();
-                    // Guardar solo la base (ej: MEX.tga), si ya existe no sobreescribir (evita fascistas/comunistas por defecto)
                     if (!flagFiles[tag] || file.name.length === 7) { 
                         flagFiles[tag] = file;
                     }
@@ -403,7 +419,33 @@
                 }
             }
 
-            // 5. GENERAR LISTA DE PAÍSES
+            // 5. INDEXAR POBLACIÓN (POPS) - NUEVO LÓGICA
+            for (let file of popFiles) {
+                if (!file.name.endsWith('.txt')) continue;
+                const text = await file.text();
+                const lines = text.split(/\r?\n/);
+                
+                let currentProvId = null;
+
+                for (let line of lines) {
+                    // Detecta el inicio de bloque de una provincia: ej. "123 = {" o "123={"
+                    const provMatch = line.match(/^(\d+)\s*=/);
+                    if (provMatch) {
+                        currentProvId = provMatch[1];
+                        if (!provincePops[currentProvId]) {
+                            provincePops[currentProvId] = 0;
+                        }
+                    }
+                    
+                    // Detecta el tamaño de la población: ej. "size = 1200"
+                    const sizeMatch = line.match(/^\s*size\s*=\s*(\d+)/i);
+                    if (sizeMatch && currentProvId) {
+                        provincePops[currentProvId] += parseInt(sizeMatch[1]);
+                    }
+                }
+            }
+
+            // 6. GENERAR LISTA DE PAÍSES
             emptyState.style.display = 'none';
             document.getElementById('dashboard').style.display = 'flex';
             const countryList = document.getElementById('countryList');
@@ -430,14 +472,13 @@
             });
         });
 
-        // Ahora es una función asíncrona para poder usar await con el buffer
         async function mostrarDetallesPais(tag, displayName) {
             document.getElementById('selectedCountryName').innerText = displayName;
             
             const data = countryData[tag] || {};
             document.getElementById('govType').innerText = data.gov ? `Gobierno: ${data.gov}` : 'Gobierno: Desconocido';
 
-            // --- LÓGICA DE BANDERA TGA ---
+            // --- LÓGICA DE BANDERA ---
             const flagImg = document.getElementById('flagIcon');
             const flagFile = flagFiles[tag];
 
@@ -448,12 +489,9 @@
                 
                 if (flagFile.name.toLowerCase().endsWith('.tga')) {
                     try {
-                        // Extraemos el binario
                         const buffer = await flagFile.arrayBuffer();
-                        // Inicializamos TGA.js
                         const tga = new TGA();
                         tga.load(new Uint8Array(buffer));
-                        // Convertimos a base64 PNG para el src
                         flagImg.src = tga.getDataURL('image/png');
                         flagImg.style.display = 'block';
                     } catch (e) {
@@ -461,7 +499,6 @@
                         flagImg.style.display = 'none';
                     }
                 } else {
-                    // Si es PNG (u otro formato soportado), cargar normal
                     currentObjectUrl = URL.createObjectURL(flagFile);
                     flagImg.src = currentObjectUrl;
                     flagImg.style.display = 'block';
@@ -469,13 +506,16 @@
             } else {
                 flagImg.style.display = 'none';
             }
-            // -----------------------------
             
+            // --- LÓGICA DE PROVINCIAS Y POBLACIÓN ---
             const provCountEl = document.getElementById('provCount');
             const provListEl = document.getElementById('provList');
+            const popDataEl = document.getElementById('popData');
             
             const provinciasDelPais = provinceOwnership[tag] || [];
             const capitalId = data.capital;
+            
+            let totalPop = 0; // Para sumar la población
 
             if (provinciasDelPais.length > 0) {
                 provCountEl.innerText = `Controla ${provinciasDelPais.length} provincias.`;
@@ -485,6 +525,12 @@
 
                 provinciasDelPais.forEach(p => {
                     const provId = p.split('-')[0].trim(); 
+                    
+                    // Sumamos la población de esta provincia si la encontramos en el indexado
+                    if (provincePops[provId]) {
+                        totalPop += provincePops[provId];
+                    }
+
                     if (capitalId && provId === capitalId) {
                         capitalStr = p;
                     } else {
@@ -506,7 +552,11 @@
                 provListEl.innerHTML = "";
             }
 
-            document.getElementById('popData').innerText = "La lectura de provincias está activa. La lectura de pops es el siguiente paso.";
+            // Mostrar el resultado de la población con formato
+            popDataEl.innerHTML = `
+                <div class="pop-number">${totalPop.toLocaleString()}</div>
+                <p class="pop-note">Nota: En las mecánicas de Victoria 2, esta cifra representa a los hombres adultos aptos para trabajar o luchar (Pops base). La población civil total del país en el juego es aproximadamente este número multiplicado por 4 <strong>(${(totalPop * 4).toLocaleString()})</strong>.</p>
+            `;
         }
     </script>
 </body>
