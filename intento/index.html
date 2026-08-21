@@ -256,7 +256,7 @@
 
             <div class="input-group">
                 <label>Carpeta gfx/flags</label>
-                <p>Opcional. (Solo para ver la bandera original en la interfaz).</p>
+                <p>Archivos de banderas.</p>
                 <input type="file" id="dirFlags" webkitdirectory directory multiple>
             </div>
 
@@ -719,7 +719,8 @@
             zip.file(`history/countries/${newTag} - ${fileNameFriendly}.txt`, historyText);
             zip.file(`history/provinces/${provSubfolder}${provTargetFile.name}`, provText); 
 
-            const locContent = `${newTag};${nameInput};${nameInput};${nameInput};${nameInput};${nameInput};;;;;;;;;x\n${newTag}_ADJ;${adjInput};${adjInput};${adjInput};${adjInput};${adjInput};;;;;;;;;x\n`;
+            // CORRECCIÓN LOCALISATION
+            const locContent = `${newTag};${nameInput};${nameInput};${nameInput};;${nameInput};;;;;;;;;x;;;;\n${newTag}_ADJ;${adjInput};${adjInput};${adjInput};;${adjInput};;;;;;;;;x;;;;\n`;
             zip.file(`localisation/00_${fileNameFriendly}_loc.csv`, locContent);
 
             originalCountriesTxtRaw += `\n${newTag} = "countries/${fileNameFriendly}.txt"\n`;
@@ -728,7 +729,6 @@
             // GENERACIÓN DE BANDERAS
             const flagBuffer = generateRandomTGAData();
             zip.file(`gfx/flags/${newTag}.tga`, flagBuffer);
-            // Copiamos la misma para las ideologías básicas para que el juego no dé error
             const ideologies = ['_communist', '_fascist', '_monarchy', '_republic'];
             ideologies.forEach(ideo => {
                 zip.file(`gfx/flags/${newTag}${ideo}.tga`, flagBuffer);
@@ -822,8 +822,9 @@
                 zip.file(`history/countries/${newTag} - ${provCleanName}.txt`, historyText);
                 zip.file(`history/provinces/${provSubfolder}${provTargetFile.name}`, provText);
 
-                fullLocContent += `${newTag};${nationName};${nationName};${nationName};${nationName};${nationName};;;;;;;;;x\n`;
-                fullLocContent += `${newTag}_ADJ;${nationAdj};${nationAdj};${nationAdj};${nationAdj};${nationAdj};;;;;;;;;x\n`;
+                // CORRECCIÓN LOCALISATION
+                fullLocContent += `${newTag};${nationName};${nationName};${nationName};;${nationName};;;;;;;;;x;;;;\n`;
+                fullLocContent += `${newTag}_ADJ;${nationAdj};${nationAdj};${nationAdj};;${nationAdj};;;;;;;;;x;;;;\n`;
                 addedCountriesTxtLines += `${newTag} = "countries/${provCleanName}.txt"\n`;
 
                 // GENERACIÓN DE BANDERAS ÚNICAS POR PAÍS
