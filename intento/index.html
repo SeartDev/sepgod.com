@@ -256,7 +256,7 @@
 
             <div class="input-group">
                 <label>Carpeta gfx/flags</label>
-                <p>Archivos de banderas.</p>
+                <p>Opcional. (Solo para ver la bandera original en la interfaz).</p>
                 <input type="file" id="dirFlags" webkitdirectory directory multiple>
             </div>
 
@@ -325,7 +325,7 @@
                             <div class="card" style="border-color: var(--success);">
                                 <h3 style="color: var(--success);">Balcanizar Provincia</h3>
                                 <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.8rem;">
-                                    Independiza una sola provincia seleccionada preservando la subcarpeta regional.
+                                    Independiza una provincia. <strong>Generará banderas nuevas automáticamente.</strong>
                                 </p>
 
                                 <div class="input-group" style="margin-bottom: 0.6rem;">
@@ -349,7 +349,7 @@
                             <div class="card" style="border-color: var(--danger);">
                                 <h3 style="color: var(--danger);">¡Balcanizar Totalmente!</h3>
                                 <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.8rem;">
-                                    Fragmenta <strong>todas</strong> las provincias no capitales respetando sus rutas originales en la carpeta history/provinces.
+                                    Fragmenta todas las provincias en micro-naciones. <strong>Generará cientos de banderas de forma procedural.</strong>
                                 </p>
                                 <button id="btnTotalChaos" class="btn-danger">¡Destruir e Independizar Todo!</button>
                             </div>
@@ -373,6 +373,87 @@
         let commonFilesMap = {}; 
         let historyFilesMap = {}; 
         let provFilesMap = {}; 
+
+        // -------------------------------------------------------------
+        // SISTEMA PROCEDURAL DE BANDERAS TGA (Integrado)
+        // -------------------------------------------------------------
+        function generateRandomTGAData() {
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = 93;
+            tempCanvas.height = 64;
+            const ctx = tempCanvas.getContext('2d');
+
+            const colores = ['#CE1126', '#002868', '#FFFFFF', '#FCD116', '#007A33', '#000000', '#FF9E1B'];
+            
+            function obtenerColores(cantidad) {
+                let paleta = [...colores];
+                let seleccion = [];
+                for (let i = 0; i < cantidad; i++) {
+                    const idx = Math.floor(Math.random() * paleta.length);
+                    seleccion.push(paleta[idx]);
+                    paleta.splice(idx, 1);
+                }
+                return seleccion;
+            }
+
+            const tipo = Math.floor(Math.random() * 5);
+            const w = tempCanvas.width;
+            const h = tempCanvas.height;
+
+            if (tipo === 0) {
+                const c = obtenerColores(3);
+                ctx.fillStyle = c[0]; ctx.fillRect(0, 0, 31, h);
+                ctx.fillStyle = c[1]; ctx.fillRect(31, 0, 31, h);
+                ctx.fillStyle = c[2]; ctx.fillRect(62, 0, 31, h);
+            } 
+            else if (tipo === 1) {
+                const c = obtenerColores(3);
+                ctx.fillStyle = c[0]; ctx.fillRect(0, 0, w, 21);
+                ctx.fillStyle = c[1]; ctx.fillRect(0, 21, w, 22);
+                ctx.fillStyle = c[2]; ctx.fillRect(0, 43, w, 21);
+            }
+            else if (tipo === 2) {
+                const c = obtenerColores(2);
+                ctx.fillStyle = c[0]; ctx.fillRect(0, 0, w, 32);
+                ctx.fillStyle = c[1]; ctx.fillRect(0, 32, w, 32);
+            }
+            else if (tipo === 3) {
+                const c = obtenerColores(3);
+                ctx.fillStyle = c[0]; ctx.fillRect(0, 0, w, h);
+                ctx.fillStyle = c[1]; ctx.fillRect(24, 0, 16, h); ctx.fillRect(0, 24, w, 16);
+                ctx.fillStyle = c[2]; ctx.fillRect(28, 0, 8, h); ctx.fillRect(0, 28, w, 8);
+            }
+            else if (tipo === 4) {
+                const c = obtenerColores(3);
+                ctx.fillStyle = c[0]; ctx.fillRect(0, 0, w, 32);
+                ctx.fillStyle = c[1]; ctx.fillRect(0, 32, w, 32);
+                ctx.fillStyle = c[2]; ctx.fillRect(0, 0, 38, 32);
+            }
+
+            const imageData = ctx.getImageData(0, 0, w, h);
+            const data = imageData.data;
+
+            const header = new Uint8Array(18);
+            header[2] = 2; // Uncompressed RGB
+            header[12] = w & 0xFF; header[13] = (w >> 8) & 0xFF;
+            header[14] = h & 0xFF; header[15] = (h >> 8) & 0xFF;
+            header[16] = 24; // 24 bpp
+            header[17] = 0x20; // Top-left origin
+
+            const pixels = new Uint8Array(w * h * 3);
+            let pIdx = 0;
+            for (let i = 0; i < data.length; i += 4) {
+                pixels[pIdx++] = data[i + 2]; // B
+                pixels[pIdx++] = data[i + 1]; // G
+                pixels[pIdx++] = data[i];     // R
+            }
+
+            const tgaFile = new Uint8Array(header.length + pixels.length);
+            tgaFile.set(header);
+            tgaFile.set(pixels, header.length);
+            return tgaFile.buffer;
+        }
+        // -------------------------------------------------------------
 
         document.getElementById('btnCrear').addEventListener('click', async function() {
             const countriesTxtInput = document.getElementById('fileCountriesTxt').files;
@@ -457,7 +538,6 @@
                 const text = await file.text();
                 const provIdMatch = file.name.match(/^(\d+)/);
                 
-                // Mapear el archivo guardando su estructura webkitRelativePath
                 if (provIdMatch) provFilesMap[provIdMatch[1]] = file;
 
                 const matchOwner = text.match(/owner\s*=\s*"?([A-Z0-9]{3})"?/i);
@@ -576,12 +656,9 @@
             return null;
         }
 
-        // FUNCIÓN AUXILIAR PARA EXTRAER SUBCARPETA DE PROVINCIA
         function getProvinceSubfolder(fileObject) {
             let pathParts = fileObject.webkitRelativePath.split('/');
-            // Elimina la carpeta raíz (ej. "provinces")
             pathParts.shift();
-            // Elimina el nombre del archivo (ej. "2348 - Buenos Aires.txt")
             pathParts.pop();
             return pathParts.length > 0 ? pathParts.join('/') + '/' : '';
         }
@@ -636,8 +713,6 @@
             provText += `\nadd_core = ${newTag}\n`;
 
             const fileNameFriendly = nameInput.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '');
-
-            // Extraemos la ruta regional de la provincia para el zip
             const provSubfolder = getProvinceSubfolder(provTargetFile);
 
             zip.file(`common/countries/${fileNameFriendly}.txt`, commonText);
@@ -650,12 +725,14 @@
             originalCountriesTxtRaw += `\n${newTag} = "countries/${fileNameFriendly}.txt"\n`;
             zip.file(`common/countries.txt`, originalCountriesTxtRaw);
 
-            const flagsInputsFiles = document.getElementById('dirFlags').files;
-            for (let file of flagsInputsFiles) {
-                if (file.name.toUpperCase().startsWith(currentSelectedTag.toUpperCase())) {
-                    zip.file(`gfx/flags/${newTag}${file.name.substring(3)}`, await file.arrayBuffer());
-                }
-            }
+            // GENERACIÓN DE BANDERAS
+            const flagBuffer = generateRandomTGAData();
+            zip.file(`gfx/flags/${newTag}.tga`, flagBuffer);
+            // Copiamos la misma para las ideologías básicas para que el juego no dé error
+            const ideologies = ['_communist', '_fascist', '_monarchy', '_republic'];
+            ideologies.forEach(ideo => {
+                zip.file(`gfx/flags/${newTag}${ideo}.tga`, flagBuffer);
+            });
 
             zip.generateAsync({type:"blob"}).then(content => {
                 const url = URL.createObjectURL(content);
@@ -667,7 +744,7 @@
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
                 countryData[newTag] = { capital: capitalId, gov: 'Desconocido' };
-                alert("¡Provincia balcanizada con éxito!");
+                alert("¡Provincia balcanizada con éxito y bandera generada!");
             });
         });
 
@@ -691,13 +768,12 @@
                 return;
             }
 
-            if (!confirm(`¿Estás seguro de balcanizar totalmente a ${currentSelectedTag}? Se crearán ${provinciasAIndependizar.length} nuevas naciones respetando sus subcarpetas originales.`)) {
+            if (!confirm(`¿Estás seguro? Se crearán ${provinciasAIndependizar.length} nuevas naciones, cada una con banderas TGA únicas generadas automáticamente.`)) {
                 return;
             }
 
             const baseHistoryFile = historyFilesMap[currentSelectedTag];
             const baseCommonFile = commonFilesMap[currentSelectedTag];
-            const flagsInputsFiles = document.getElementById('dirFlags').files;
 
             if (!baseHistoryFile || !baseCommonFile) {
                 alert("Faltan archivos base del país.");
@@ -714,10 +790,7 @@
                 if (!provTargetFile) continue;
 
                 let newTag = getNextFreeTag();
-                if (!newTag) {
-                    alert("Se agotaron los TAGs U00-U99. Balcanización parcial completada.");
-                    break;
-                }
+                if (!newTag) break;
 
                 countryData[newTag] = { capital: provId, gov: 'Desconocido' };
 
@@ -743,7 +816,6 @@
                 provText = provText.replace(/controller\s*=\s*"?[A-Z0-9]{3}"?/gi, `controller = ${newTag}`);
                 provText += `\nadd_core = ${newTag}\n`;
 
-                // Extraemos la ruta regional
                 const provSubfolder = getProvinceSubfolder(provTargetFile);
 
                 zip.file(`common/countries/${provCleanName}.txt`, commonText);
@@ -754,11 +826,13 @@
                 fullLocContent += `${newTag}_ADJ;${nationAdj};${nationAdj};${nationAdj};${nationAdj};${nationAdj};;;;;;;;;x\n`;
                 addedCountriesTxtLines += `${newTag} = "countries/${provCleanName}.txt"\n`;
 
-                for (let file of flagsInputsFiles) {
-                    if (file.name.toUpperCase().startsWith(currentSelectedTag.toUpperCase())) {
-                        zip.file(`gfx/flags/${newTag}${file.name.substring(3)}`, await file.arrayBuffer());
-                    }
-                }
+                // GENERACIÓN DE BANDERAS ÚNICAS POR PAÍS
+                const flagBuffer = generateRandomTGAData();
+                zip.file(`gfx/flags/${newTag}.tga`, flagBuffer);
+                const ideologies = ['_communist', '_fascist', '_monarchy', '_republic'];
+                ideologies.forEach(ideo => {
+                    zip.file(`gfx/flags/${newTag}${ideo}.tga`, flagBuffer);
+                });
             }
 
             zip.file(`localisation/00_TotalChaos_loc.csv`, fullLocContent);
@@ -774,7 +848,7 @@
                 a.click();
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
-                alert("¡Balcanización total completada con éxito preservando rutas!");
+                alert("¡Balcanización total completada con banderas generadas automáticamente!");
             });
         });
     </script>
