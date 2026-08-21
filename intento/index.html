@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Victoria 2 Mod Creator</title>
+    
+    <!-- LIBRERÍA EXTERNA PARA LEER ARCHIVOS TGA -->
+    <script src="https://cdn.jsdelivr.net/npm/tga-js@1.0.7/dist/tga.min.js"></script>
+
     <style>
         :root {
             --bg-color: #1e1e24;
@@ -159,7 +163,7 @@
             object-fit: cover;
             border: 1px solid #000;
             border-radius: 3px;
-            display: none; /* Oculto hasta que se cargue una */
+            display: none; 
             background-color: #333;
         }
 
@@ -235,13 +239,13 @@
             
             <div class="input-group">
                 <label>Archivo Localisation (.csv o .txt)</label>
-                <p>Opcional. Traduce los Tags a nombres reales (ej: countries.csv).</p>
+                <p>Opcional. Traduce los Tags a nombres reales.</p>
                 <input type="file" id="fileLoc" accept=".csv,.txt">
             </div>
 
             <div class="input-group">
                 <label>Carpeta gfx/flags</label>
-                <p>Opcional. Banderas (Nota: El navegador solo muestra .png, no .tga).</p>
+                <p>Opcional. Archivos de banderas originales (.tga o .png).</p>
                 <input type="file" id="dirFlags" webkitdirectory directory multiple>
             </div>
 
@@ -294,7 +298,6 @@
                 
                 <div class="details-panel" id="detailsPanel">
                     
-                    <!-- Nueva cabecera con bandera, título y gobierno -->
                     <div class="country-header">
                         <img id="flagIcon" class="flag-icon" src="" alt="Flag">
                         <h2 id="selectedCountryName">Selecciona un país</h2>
@@ -320,10 +323,10 @@
     <script>
         // Variables globales
         let provinceOwnership = {};
-        let countryData = {}; // Guardará capital y gobierno { 'MEX': { capital: '123', gov: 'democracy' } }
-        let locData = {}; // Guardará los nombres reales { 'MEX': 'Mexico' }
-        let flagFiles = {}; // Guardará los objetos File de las banderas
-        let currentObjectUrl = null; // Para gestionar la memoria de las imágenes
+        let countryData = {}; 
+        let locData = {}; 
+        let flagFiles = {}; 
+        let currentObjectUrl = null; 
 
         document.getElementById('btnCrear').addEventListener('click', async function() {
             const historyFiles = document.getElementById('dirHistory').files;
@@ -339,38 +342,36 @@
             const emptyState = document.getElementById('emptyState');
             emptyState.innerHTML = "<h2>Indexando archivos...</h2><p>Procesando provincias, gobiernos, banderas y localizaciones.</p>";
 
-            // Reiniciar datos
             provinceOwnership = {}; 
             countryData = {}; 
             locData = {};
             flagFiles = {};
 
-            // 1. LEER LOCALISATION (Opcional)
+            // 1. LEER LOCALISATION
             if (locFileInput.length > 0) {
                 const text = await locFileInput[0].text();
-                // Separar por saltos de línea
                 const lines = text.split(/\r?\n/);
                 for (let line of lines) {
-                    // Los CSV de Paradox separan por punto y coma
                     const parts = line.split(';');
                     if (parts.length > 1 && parts[0].length === 3) {
                         const tag = parts[0].toUpperCase();
-                        locData[tag] = parts[1]; // Guardamos el nombre real
+                        locData[tag] = parts[1]; 
                     }
                 }
             }
 
-            // 2. LEER BANDERAS (Opcional)
+            // 2. LEER BANDERAS (Admite .tga y .png)
             for (let file of flagsInput) {
-                // Buscamos archivos que tengan el TAG base (ej: MEX.png o MEX.tga)
-                // Ignoramos las variaciones por ahora (ej: MEX_fascist.tga) para la bandera principal
-                if (file.name.length >= 7 && file.name[3] === '.') {
+                if (file.name.length >= 7 && (file.name.toLowerCase().endsWith('.tga') || file.name.toLowerCase().endsWith('.png'))) {
                     const tag = file.name.substring(0, 3).toUpperCase();
-                    flagFiles[tag] = file;
+                    // Guardar solo la base (ej: MEX.tga), si ya existe no sobreescribir (evita fascistas/comunistas por defecto)
+                    if (!flagFiles[tag] || file.name.length === 7) { 
+                        flagFiles[tag] = file;
+                    }
                 }
             }
 
-            // 3. INDEXAR HISTORY/COUNTRIES (Capital y Gobierno)
+            // 3. INDEXAR HISTORY/COUNTRIES
             for (let file of historyFiles) {
                 if (!file.name.endsWith('.txt')) continue;
                 const text = await file.text();
@@ -382,10 +383,10 @@
                 if (matchCapital) countryData[tag].capital = matchCapital[1];
 
                 const matchGov = text.match(/government\s*=\s*([a-zA-Z_]+)/i);
-                if (matchGov) countryData[tag].gov = matchGov[1].replace(/_/g, ' '); // Cambia absolute_monarchy a absolute monarchy
+                if (matchGov) countryData[tag].gov = matchGov[1].replace(/_/g, ' '); 
             }
 
-            // 4. INDEXAR HISTORY/PROVINCES
+            // 4. INDEXAR PROVINCIAS
             for (let file of provFiles) {
                 if (!file.name.endsWith('.txt')) continue;
                 const text = await file.text();
@@ -413,46 +414,63 @@
 
             filesArray.forEach(file => {
                 const tag = file.name.substring(0, 3).toUpperCase();
-                // Usa el nombre real si existe, si no, usa el nombre del archivo
                 const displayName = locData[tag] ? `${tag} - ${locData[tag]}` : file.name.replace('.txt', '');
                 
                 let div = document.createElement('div');
                 div.className = 'country-item';
                 div.innerText = displayName;
                 
-                div.onclick = function() {
+                div.onclick = async function() {
                     document.querySelectorAll('.country-item').forEach(el => el.classList.remove('active'));
                     div.classList.add('active');
-                    mostrarDetallesPais(tag, displayName);
+                    await mostrarDetallesPais(tag, displayName);
                 };
                 
                 countryList.appendChild(div);
             });
         });
 
-        function mostrarDetallesPais(tag, displayName) {
-            // Actualizar Título
+        // Ahora es una función asíncrona para poder usar await con el buffer
+        async function mostrarDetallesPais(tag, displayName) {
             document.getElementById('selectedCountryName').innerText = displayName;
             
-            // Actualizar Gobierno
             const data = countryData[tag] || {};
             document.getElementById('govType').innerText = data.gov ? `Gobierno: ${data.gov}` : 'Gobierno: Desconocido';
 
-            // Actualizar Bandera
+            // --- LÓGICA DE BANDERA TGA ---
             const flagImg = document.getElementById('flagIcon');
-            if (flagFiles[tag]) {
-                // Si había una imagen cargada antes, liberamos la memoria
-                if (currentObjectUrl) URL.revokeObjectURL(currentObjectUrl);
+            const flagFile = flagFiles[tag];
+
+            if (flagFile) {
+                if (currentObjectUrl) {
+                    URL.revokeObjectURL(currentObjectUrl);
+                }
                 
-                // Creamos un enlace temporal local para mostrar el archivo
-                currentObjectUrl = URL.createObjectURL(flagFiles[tag]);
-                flagImg.src = currentObjectUrl;
-                flagImg.style.display = 'block';
+                if (flagFile.name.toLowerCase().endsWith('.tga')) {
+                    try {
+                        // Extraemos el binario
+                        const buffer = await flagFile.arrayBuffer();
+                        // Inicializamos TGA.js
+                        const tga = new TGA();
+                        tga.load(new Uint8Array(buffer));
+                        // Convertimos a base64 PNG para el src
+                        flagImg.src = tga.getDataURL('image/png');
+                        flagImg.style.display = 'block';
+                    } catch (e) {
+                        console.error("Error cargando TGA:", e);
+                        flagImg.style.display = 'none';
+                    }
+                } else {
+                    // Si es PNG (u otro formato soportado), cargar normal
+                    currentObjectUrl = URL.createObjectURL(flagFile);
+                    flagImg.src = currentObjectUrl;
+                    flagImg.style.display = 'block';
+                }
             } else {
                 flagImg.style.display = 'none';
             }
+            // -----------------------------
             
-            // Actualizar Provincias
             const provCountEl = document.getElementById('provCount');
             const provListEl = document.getElementById('provList');
             
