@@ -325,7 +325,7 @@
                             <div class="card" style="border-color: var(--success);">
                                 <h3 style="color: var(--success);">Balcanizar Provincia</h3>
                                 <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.8rem;">
-                                    Independiza una sola provincia seleccionada.
+                                    Independiza una sola provincia seleccionada preservando la subcarpeta regional.
                                 </p>
 
                                 <div class="input-group" style="margin-bottom: 0.6rem;">
@@ -349,7 +349,7 @@
                             <div class="card" style="border-color: var(--danger);">
                                 <h3 style="color: var(--danger);">¡Balcanizar Totalmente!</h3>
                                 <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.8rem;">
-                                    Fragmenta <strong>todas</strong> las provincias no capitales del país en micro-naciones independientes automáticas.
+                                    Fragmenta <strong>todas</strong> las provincias no capitales respetando sus rutas originales en la carpeta history/provinces.
                                 </p>
                                 <button id="btnTotalChaos" class="btn-danger">¡Destruir e Independizar Todo!</button>
                             </div>
@@ -456,6 +456,8 @@
                 if (!file.name.endsWith('.txt')) continue;
                 const text = await file.text();
                 const provIdMatch = file.name.match(/^(\d+)/);
+                
+                // Mapear el archivo guardando su estructura webkitRelativePath
                 if (provIdMatch) provFilesMap[provIdMatch[1]] = file;
 
                 const matchOwner = text.match(/owner\s*=\s*"?([A-Z0-9]{3})"?/i);
@@ -566,13 +568,22 @@
             }
         }
 
-        // FUNCIÓN AUXILIAR PARA OBTENER TAG LIBRE
         function getNextFreeTag() {
             for (let i = 0; i <= 99; i++) {
                 let testTag = "U" + i.toString().padStart(2, '0');
                 if (!countryData[testTag]) return testTag;
             }
             return null;
+        }
+
+        // FUNCIÓN AUXILIAR PARA EXTRAER SUBCARPETA DE PROVINCIA
+        function getProvinceSubfolder(fileObject) {
+            let pathParts = fileObject.webkitRelativePath.split('/');
+            // Elimina la carpeta raíz (ej. "provinces")
+            pathParts.shift();
+            // Elimina el nombre del archivo (ej. "2348 - Buenos Aires.txt")
+            pathParts.pop();
+            return pathParts.length > 0 ? pathParts.join('/') + '/' : '';
         }
 
         // 1. BALCANIZAR UNA SOLA PROVINCIA
@@ -626,9 +637,12 @@
 
             const fileNameFriendly = nameInput.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '');
 
+            // Extraemos la ruta regional de la provincia para el zip
+            const provSubfolder = getProvinceSubfolder(provTargetFile);
+
             zip.file(`common/countries/${fileNameFriendly}.txt`, commonText);
             zip.file(`history/countries/${newTag} - ${fileNameFriendly}.txt`, historyText);
-            zip.file(`history/provinces/${provTargetFile.name}`, provText); 
+            zip.file(`history/provinces/${provSubfolder}${provTargetFile.name}`, provText); 
 
             const locContent = `${newTag};${nameInput};${nameInput};${nameInput};${nameInput};${nameInput};;;;;;;;;x\n${newTag}_ADJ;${adjInput};${adjInput};${adjInput};${adjInput};${adjInput};;;;;;;;;x\n`;
             zip.file(`localisation/00_${fileNameFriendly}_loc.csv`, locContent);
@@ -667,7 +681,6 @@
             const provinciasDelPais = provinceOwnership[currentSelectedTag] || [];
             const capitalId = countryData[currentSelectedTag]?.capital;
 
-            // Filtrar para obtener solo las provincias que NO son la capital
             const provinciasAIndependizar = provinciasDelPais.filter(p => {
                 const provId = p.split('-')[0].trim();
                 return provId !== capitalId;
@@ -678,7 +691,7 @@
                 return;
             }
 
-            if (!confirm(`¿Estás seguro de balcanizar totalmente a ${currentSelectedTag}? Se crearán ${provinciasAIndependizar.length} nuevas naciones automáticamente.`)) {
+            if (!confirm(`¿Estás seguro de balcanizar totalmente a ${currentSelectedTag}? Se crearán ${provinciasAIndependizar.length} nuevas naciones respetando sus subcarpetas originales.`)) {
                 return;
             }
 
@@ -702,14 +715,12 @@
 
                 let newTag = getNextFreeTag();
                 if (!newTag) {
-                    alert("Se agotaron los TAGs U00-U99 durante la balcanización masiva.");
+                    alert("Se agotaron los TAGs U00-U99. Balcanización parcial completada.");
                     break;
                 }
 
-                // Registrar temporalmente el tag para que no se repita
                 countryData[newTag] = { capital: provId, gov: 'Desconocido' };
 
-                // Nombre limpio basado en el nombre de la provincia (ej. "2349 - Junin" -> "Junin")
                 let provCleanName = pStr.split('-')[1] ? pStr.split('-')[1].trim() : `State${provId}`;
                 provCleanName = provCleanName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '');
                 
@@ -720,34 +731,29 @@
                 let commonText = await baseCommonFile.text();
                 let provText = await provTargetFile.text();
 
-                // Modificar history país
                 historyText = historyText.replace(/capital\s*=\s*\d+/i, `capital = ${provId}`);
                 historyText = historyText.replace(/oob\s*=\s*"[^"]+"/gi, '# Ejército borrado');
 
-                // Color aleatorio
                 const r = Math.floor(Math.random() * 200) + 55;
                 const g = Math.floor(Math.random() * 200) + 55;
                 const b = Math.floor(Math.random() * 200) + 55;
                 commonText = commonText.replace(/color\s*=\s*\{[^}]+\}/i, `color = { ${r} ${g} ${b} }`);
 
-                // Modificar provincia
                 provText = provText.replace(/owner\s*=\s*"?[A-Z0-9]{3}"?/gi, `owner = ${newTag}`);
                 provText = provText.replace(/controller\s*=\s*"?[A-Z0-9]{3}"?/gi, `controller = ${newTag}`);
                 provText += `\nadd_core = ${newTag}\n`;
 
-                // Agregar archivos al zip
+                // Extraemos la ruta regional
+                const provSubfolder = getProvinceSubfolder(provTargetFile);
+
                 zip.file(`common/countries/${provCleanName}.txt`, commonText);
                 zip.file(`history/countries/${newTag} - ${provCleanName}.txt`, historyText);
-                zip.file(`history/provinces/${provTargetFile.name}`, provText);
+                zip.file(`history/provinces/${provSubfolder}${provTargetFile.name}`, provText);
 
-                // Acumular localización
                 fullLocContent += `${newTag};${nationName};${nationName};${nationName};${nationName};${nationName};;;;;;;;;x\n`;
                 fullLocContent += `${newTag}_ADJ;${nationAdj};${nationAdj};${nationAdj};${nationAdj};${nationAdj};;;;;;;;;x\n`;
-
-                // Acumular countries.txt
                 addedCountriesTxtLines += `${newTag} = "countries/${provCleanName}.txt"\n`;
 
-                // Clonar banderas
                 for (let file of flagsInputsFiles) {
                     if (file.name.toUpperCase().startsWith(currentSelectedTag.toUpperCase())) {
                         zip.file(`gfx/flags/${newTag}${file.name.substring(3)}`, await file.arrayBuffer());
@@ -755,10 +761,7 @@
                 }
             }
 
-            // Añadir localización global al zip
             zip.file(`localisation/00_TotalChaos_loc.csv`, fullLocContent);
-
-            // Actualizar countries.txt global
             originalCountriesTxtRaw += `\n` + addedCountriesTxtLines;
             zip.file(`common/countries.txt`, originalCountriesTxtRaw);
 
@@ -771,7 +774,7 @@
                 a.click();
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
-                alert("¡Balcanización total completada con éxito!");
+                alert("¡Balcanización total completada con éxito preservando rutas!");
             });
         });
     </script>
