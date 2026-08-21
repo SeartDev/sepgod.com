@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Victoria 2 Mod Creator</title>
     
-    <!-- LIBRERÍA EXTERNA PARA LEER ARCHIVOS TGA -->
-    <script src="https://cdn.jsdelivr.net/npm/tga-js@1.0.7/dist/tga.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/tga-js@1.0.7/dist/tga.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" crossorigin="anonymous"></script>
 
     <style>
         :root {
@@ -16,6 +16,8 @@
             --text-muted: #8e8e9f;
             --accent: #b33939;
             --accent-hover: #d24b4b;
+            --success: #8e44ad;
+            --success-hover: #9b59b6;
             --border: #3f3f4e;
             --gold: #ffd700;
         }
@@ -54,7 +56,6 @@
             overflow: hidden;
         }
 
-        /* Panel de Configuración */
         .config-panel {
             width: 350px;
             background-color: var(--panel-bg);
@@ -82,14 +83,14 @@
             line-height: 1.2;
         }
 
-        input[type="file"] {
+        input[type="file"], input[type="text"], select {
             width: 100%;
-            padding: 0.4rem;
+            padding: 0.5rem;
             background-color: var(--bg-color);
             border: 1px solid var(--border);
             color: var(--text-main);
             border-radius: 4px;
-            font-size: 0.8rem;
+            font-size: 0.85rem;
         }
 
         button {
@@ -108,7 +109,9 @@
 
         button:hover { background-color: var(--accent-hover); }
 
-        /* Panel Interactivo */
+        .btn-success { background-color: var(--success); }
+        .btn-success:hover { background-color: var(--success-hover); }
+
         .workspace {
             flex: 1;
             display: flex;
@@ -147,14 +150,23 @@
             overflow-y: auto;
         }
 
-        /* Estilos de la Cabecera del País */
         .country-header {
+            margin-bottom: 15px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 10px;
+        }
+
+        .country-header h2 {
+            font-size: 2.2rem;
+            margin: 0;
+            padding: 0;
+        }
+
+        .gov-container {
             display: flex;
             align-items: center;
             gap: 15px;
-            margin-bottom: 5px;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 10px;
+            margin-bottom: 2rem;
         }
 
         .flag-icon {
@@ -165,20 +177,14 @@
             border-radius: 3px;
             display: none; 
             background-color: #333;
-        }
-
-        .country-header h2 {
-            font-size: 2rem;
-            margin: 0;
-            border: none;
-            padding: 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
         }
 
         .gov-type {
             color: var(--text-muted);
-            font-size: 1rem;
+            font-size: 1.1rem;
             font-weight: bold;
-            margin-bottom: 1.5rem;
+            margin: 0;
             text-transform: capitalize;
         }
 
@@ -193,7 +199,7 @@
             padding: 1.5rem;
             border-radius: 6px;
             border: 1px solid var(--border);
-            max-height: 70vh;
+            max-height: 65vh;
             overflow-y: auto;
         }
 
@@ -224,20 +230,6 @@
         }
 
         .capital-item::before { content: "👑 "; }
-
-        .pop-number {
-            font-size: 2.5rem;
-            color: var(--text-main);
-            font-weight: bold;
-            margin-top: 10px;
-            margin-bottom: 5px;
-        }
-        
-        .pop-note {
-            font-size: 0.8rem;
-            color: var(--text-muted);
-            line-height: 1.4;
-        }
     </style>
 </head>
 <body>
@@ -267,12 +259,12 @@
 
             <div class="input-group">
                 <label>Archivo countries.txt</label>
-                <p>El archivo base que define los tags.</p>
+                <p>El archivo base que define los tags. (Obligatorio para Balcanizar)</p>
                 <input type="file" id="fileCountriesTxt" accept=".txt">
             </div>
 
             <div class="input-group">
-                <label>Carpeta /countries</label>
+                <label>Carpeta common/countries</label>
                 <p>Archivos de color, partidos y culturas.</p>
                 <input type="file" id="dirCountries" webkitdirectory directory multiple>
             </div>
@@ -287,12 +279,6 @@
                 <label>Carpeta history/provinces</label>
                 <p>Propietarios e infraestructura.</p>
                 <input type="file" id="dirProvinces" webkitdirectory directory multiple>
-            </div>
-
-            <div class="input-group">
-                <label>Carpeta history/pops</label>
-                <p>Población en 1836 (o 1861).</p>
-                <input type="file" id="dirPops" webkitdirectory directory multiple>
             </div>
 
             <button id="btnCrear">Cargar Datos y Crear Entorno</button>
@@ -313,10 +299,13 @@
                 <div class="details-panel" id="detailsPanel">
                     
                     <div class="country-header">
-                        <img id="flagIcon" class="flag-icon" src="" alt="Flag">
                         <h2 id="selectedCountryName">Selecciona un país</h2>
                     </div>
-                    <p class="gov-type" id="govType">Gobierno Desconocido</p>
+                    
+                    <div class="gov-container">
+                        <img id="flagIcon" class="flag-icon" src="" alt="Flag">
+                        <p class="gov-type" id="govType">Gobierno Desconocido</p>
+                    </div>
                     
                     <div class="data-grid">
                         <div class="card">
@@ -324,9 +313,27 @@
                             <p id="provCount">Esperando selección...</p>
                             <ul id="provList" style="margin-top: 15px; padding-left: 20px; color: var(--text-muted); font-size: 0.9rem;"></ul>
                         </div>
-                        <div class="card">
-                            <h3>Población Base (Pops)</h3>
-                            <div id="popData">Esperando selección...</div>
+                        
+                        <!-- TARJETA: BALCANIZAR NACIÓN -->
+                        <div class="card" style="border-color: var(--success);">
+                            <h3 style="color: var(--success);">Balcanizar Nación</h3>
+                            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+                                Crea un estado separatista. Clonará exactamente las culturas, tecnologías, reformas y partidos del país seleccionado, asignándole una nueva capital y un color aleatorio único.
+                            </p>
+
+                            <div class="input-group">
+                                <label>Nombre del Nuevo País</label>
+                                <input type="text" id="newNationName" placeholder="Ej. República del Río Grande">
+                            </div>
+
+                            <div class="input-group">
+                                <label>Provincia Capital Separatista</label>
+                                <select id="newNationCapital">
+                                    <option value="">Selecciona un país primero...</option>
+                                </select>
+                            </div>
+
+                            <button id="btnDownloadMod" class="btn-success">Balcanizar y Descargar .ZIP</button>
                         </div>
                     </div>
                 </div>
@@ -336,33 +343,42 @@
 
     <script>
         // Variables globales
+        let currentSelectedTag = null; 
         let provinceOwnership = {};
         let countryData = {}; 
         let locData = {}; 
         let flagFiles = {}; 
         let currentObjectUrl = null; 
-        let provincePops = {}; // NUEVO: Guardará la suma de pops por ID de provincia { '123': 25000 }
+        
+        // Variables para la clonación
+        let baseCountriesTxtMap = {}; // TAG -> Nombre del archivo en common (ej. "Mexico.txt")
+        let commonFilesMap = {}; // TAG -> Objeto File de common/countries
+        let historyFilesMap = {}; // TAG -> Objeto File de history/countries
 
         document.getElementById('btnCrear').addEventListener('click', async function() {
+            const countriesTxtInput = document.getElementById('fileCountriesTxt').files;
+            const commonDirInput = document.getElementById('dirCountries').files;
             const historyFiles = document.getElementById('dirHistory').files;
             const provFiles = document.getElementById('dirProvinces').files;
-            const popFiles = document.getElementById('dirPops').files;
             const locFileInput = document.getElementById('fileLoc').files;
             const flagsInput = document.getElementById('dirFlags').files;
             
-            if (historyFiles.length === 0 || provFiles.length === 0 || popFiles.length === 0) {
-                alert("Selecciona al menos las carpetas history/countries, history/provinces y history/pops.");
+            if (historyFiles.length === 0 || provFiles.length === 0 || countriesTxtInput.length === 0 || commonDirInput.length === 0) {
+                alert("Para la función de Balcanizar, necesitas seleccionar el archivo countries.txt, la carpeta common/countries, history/countries y history/provinces.");
                 return;
             }
 
             const emptyState = document.getElementById('emptyState');
-            emptyState.innerHTML = "<h2>Indexando archivos...</h2><p>Esto puede tomar un momento procesando las matemáticas de población...</p>";
+            emptyState.innerHTML = "<h2>Indexando archivos...</h2><p>Mapeando rutas de países para el sistema de clonación...</p>";
 
+            currentSelectedTag = null;
             provinceOwnership = {}; 
             countryData = {}; 
             locData = {};
             flagFiles = {};
-            provincePops = {};
+            baseCountriesTxtMap = {};
+            commonFilesMap = {};
+            historyFilesMap = {};
 
             // 1. LEER LOCALISATION
             if (locFileInput.length > 0) {
@@ -379,20 +395,41 @@
 
             // 2. LEER BANDERAS
             for (let file of flagsInput) {
-                if (file.name.length >= 7 && (file.name.toLowerCase().endsWith('.tga') || file.name.toLowerCase().endsWith('.png'))) {
+                const nameLower = file.name.toLowerCase();
+                if (nameLower.endsWith('.tga') || nameLower.endsWith('.png')) {
                     const tag = file.name.substring(0, 3).toUpperCase();
-                    if (!flagFiles[tag] || file.name.length === 7) { 
-                        flagFiles[tag] = file;
+                    if (file.name.length === 7) flagFiles[tag] = file;
+                }
+            }
+
+            // 3. MAPEAR COUNTRIES.TXT BASE
+            const countriesTxtText = await countriesTxtInput[0].text();
+            // Busca líneas como MEX = "countries/Mexico.txt"
+            const regexCountries = /([A-Z0-9]{3})\s*=\s*"?(?:countries\/)?([^"\r\n]+)"?/gi;
+            let matchC;
+            while ((matchC = regexCountries.exec(countriesTxtText)) !== null) {
+                let fileName = matchC[2];
+                if (fileName.includes('/')) fileName = fileName.split('/').pop();
+                baseCountriesTxtMap[matchC[1].toUpperCase()] = fileName;
+            }
+
+            // 4. MAPEAR CARPETA COMMON/COUNTRIES
+            for (let file of commonDirInput) {
+                for (let tag in baseCountriesTxtMap) {
+                    if (file.name.toLowerCase() === baseCountriesTxtMap[tag].toLowerCase()) {
+                        commonFilesMap[tag] = file;
+                        break;
                     }
                 }
             }
 
-            // 3. INDEXAR HISTORY/COUNTRIES
+            // 5. INDEXAR Y MAPEAR HISTORY/COUNTRIES
             for (let file of historyFiles) {
                 if (!file.name.endsWith('.txt')) continue;
                 const text = await file.text();
                 const tag = file.name.substring(0, 3).toUpperCase();
                 
+                historyFilesMap[tag] = file;
                 countryData[tag] = { capital: null, gov: 'Desconocido' };
 
                 const matchCapital = text.match(/capital\s*=\s*(\d+)/i);
@@ -402,7 +439,7 @@
                 if (matchGov) countryData[tag].gov = matchGov[1].replace(/_/g, ' '); 
             }
 
-            // 4. INDEXAR PROVINCIAS
+            // 6. INDEXAR PROVINCIAS
             for (let file of provFiles) {
                 if (!file.name.endsWith('.txt')) continue;
                 const text = await file.text();
@@ -411,41 +448,12 @@
                 if (match) {
                     const tag = match[1].toUpperCase(); 
                     const provName = file.name.replace('.txt', ''); 
-                    
-                    if (!provinceOwnership[tag]) {
-                        provinceOwnership[tag] = [];
-                    }
+                    if (!provinceOwnership[tag]) provinceOwnership[tag] = [];
                     provinceOwnership[tag].push(provName);
                 }
             }
 
-            // 5. INDEXAR POBLACIÓN (POPS) - NUEVO LÓGICA
-            for (let file of popFiles) {
-                if (!file.name.endsWith('.txt')) continue;
-                const text = await file.text();
-                const lines = text.split(/\r?\n/);
-                
-                let currentProvId = null;
-
-                for (let line of lines) {
-                    // Detecta el inicio de bloque de una provincia: ej. "123 = {" o "123={"
-                    const provMatch = line.match(/^(\d+)\s*=/);
-                    if (provMatch) {
-                        currentProvId = provMatch[1];
-                        if (!provincePops[currentProvId]) {
-                            provincePops[currentProvId] = 0;
-                        }
-                    }
-                    
-                    // Detecta el tamaño de la población: ej. "size = 1200"
-                    const sizeMatch = line.match(/^\s*size\s*=\s*(\d+)/i);
-                    if (sizeMatch && currentProvId) {
-                        provincePops[currentProvId] += parseInt(sizeMatch[1]);
-                    }
-                }
-            }
-
-            // 6. GENERAR LISTA DE PAÍSES
+            // 7. GENERAR LISTA DE PAÍSES
             emptyState.style.display = 'none';
             document.getElementById('dashboard').style.display = 'flex';
             const countryList = document.getElementById('countryList');
@@ -473,20 +481,18 @@
         });
 
         async function mostrarDetallesPais(tag, displayName) {
+            currentSelectedTag = tag;
             document.getElementById('selectedCountryName').innerText = displayName;
             
             const data = countryData[tag] || {};
             document.getElementById('govType').innerText = data.gov ? `Gobierno: ${data.gov}` : 'Gobierno: Desconocido';
 
-            // --- LÓGICA DE BANDERA ---
+            // BANDERA
             const flagImg = document.getElementById('flagIcon');
             const flagFile = flagFiles[tag];
 
             if (flagFile) {
-                if (currentObjectUrl) {
-                    URL.revokeObjectURL(currentObjectUrl);
-                }
-                
+                if (currentObjectUrl) URL.revokeObjectURL(currentObjectUrl);
                 if (flagFile.name.toLowerCase().endsWith('.tga')) {
                     try {
                         const buffer = await flagFile.arrayBuffer();
@@ -495,7 +501,6 @@
                         flagImg.src = tga.getDataURL('image/png');
                         flagImg.style.display = 'block';
                     } catch (e) {
-                        console.error("Error cargando TGA:", e);
                         flagImg.style.display = 'none';
                     }
                 } else {
@@ -507,35 +512,25 @@
                 flagImg.style.display = 'none';
             }
             
-            // --- LÓGICA DE PROVINCIAS Y POBLACIÓN ---
+            // PROVINCIAS
             const provCountEl = document.getElementById('provCount');
             const provListEl = document.getElementById('provList');
-            const popDataEl = document.getElementById('popData');
+            const capitalSelect = document.getElementById('newNationCapital');
             
             const provinciasDelPais = provinceOwnership[tag] || [];
             const capitalId = data.capital;
             
-            let totalPop = 0; // Para sumar la población
+            capitalSelect.innerHTML = '<option value="">Selecciona una provincia...</option>';
 
             if (provinciasDelPais.length > 0) {
                 provCountEl.innerText = `Controla ${provinciasDelPais.length} provincias.`;
-                
                 let capitalStr = null;
                 let otrasProvincias = [];
 
                 provinciasDelPais.forEach(p => {
                     const provId = p.split('-')[0].trim(); 
-                    
-                    // Sumamos la población de esta provincia si la encontramos en el indexado
-                    if (provincePops[provId]) {
-                        totalPop += provincePops[provId];
-                    }
-
-                    if (capitalId && provId === capitalId) {
-                        capitalStr = p;
-                    } else {
-                        otrasProvincias.push(p);
-                    }
+                    if (capitalId && provId === capitalId) capitalStr = p;
+                    else otrasProvincias.push(p);
                 });
 
                 otrasProvincias.sort((a, b) => parseInt(a) - parseInt(b));
@@ -543,21 +538,118 @@
                 let htmlList = '';
                 if (capitalStr) {
                     htmlList += `<li class="capital-item">${capitalStr}</li>`;
+                    const cId = capitalStr.split('-')[0].trim();
+                    capitalSelect.innerHTML += `<option value="${cId}">${capitalStr} (Actual Capital)</option>`;
                 }
-                htmlList += otrasProvincias.map(p => `<li>${p}</li>`).join('');
+                
+                otrasProvincias.forEach(p => {
+                    htmlList += `<li>${p}</li>`;
+                    const pId = p.split('-')[0].trim();
+                    capitalSelect.innerHTML += `<option value="${pId}">${p}</option>`;
+                });
                 
                 provListEl.innerHTML = htmlList;
             } else {
                 provCountEl.innerText = "No controla ninguna provincia.";
                 provListEl.innerHTML = "";
             }
-
-            // Mostrar el resultado de la población con formato
-            popDataEl.innerHTML = `
-                <div class="pop-number">${totalPop.toLocaleString()}</div>
-                <p class="pop-note">Nota: En las mecánicas de Victoria 2, esta cifra representa a los hombres adultos aptos para trabajar o luchar (Pops base). La población civil total del país en el juego es aproximadamente este número multiplicado por 4 <strong>(${(totalPop * 4).toLocaleString()})</strong>.</p>
-            `;
         }
+
+        // LÓGICA DE BALCANIZACIÓN
+        document.getElementById('btnDownloadMod').addEventListener('click', async function() {
+            if (!currentSelectedTag) {
+                alert("Primero selecciona un país de la lista de la izquierda.");
+                return;
+            }
+            
+            const nameInput = document.getElementById('newNationName').value.trim();
+            const capitalId = document.getElementById('newNationCapital').value;
+
+            if (!nameInput || !capitalId) {
+                alert("Por favor, escribe un nombre y selecciona la capital separatista.");
+                return;
+            }
+
+            const baseHistoryFile = historyFilesMap[currentSelectedTag];
+            const baseCommonFile = commonFilesMap[currentSelectedTag];
+
+            if (!baseHistoryFile || !baseCommonFile) {
+                alert(`Error: No se pudo localizar el archivo history o common original de ${currentSelectedTag}.`);
+                return;
+            }
+
+            // Generar TAG Único (U00 - U99)
+            let newTag = null;
+            for (let i = 0; i <= 99; i++) {
+                let testTag = "U" + i.toString().padStart(2, '0');
+                if (!countryData[testTag]) {
+                    newTag = testTag;
+                    break;
+                }
+            }
+
+            if (!newTag) {
+                alert("Error: No hay TAGs U00-U99 disponibles. Demasiados países personalizados.");
+                return;
+            }
+
+            // Extraer el texto base
+            let historyText = await baseHistoryFile.text();
+            let commonText = await baseCommonFile.text();
+
+            // 1. MODIFICAR HISTORY
+            // Reemplazar la capital
+            historyText = historyText.replace(/capital\s*=\s*\d+/i, `capital = ${capitalId}`);
+            // Borrar el orden de batalla (tropas iniciales) para evitar crashes por duplicados
+            historyText = historyText.replace(/oob\s*=\s*"[^"]+"/gi, '# Ejército original borrado por seguridad');
+
+            // 2. MODIFICAR COMMON (Partidos y Color)
+            // Generar color aleatorio brillante
+            const r = Math.floor(Math.random() * 200) + 55;
+            const g = Math.floor(Math.random() * 200) + 55;
+            const b = Math.floor(Math.random() * 200) + 55;
+            
+            // Buscar y reemplazar el bloque de color original
+            commonText = commonText.replace(/color\s*=\s*\{[^}]+\}/i, `color = { ${r} ${g} ${b} }`);
+
+            // Preparar el archivo ZIP
+            const fileNameFriendly = nameInput.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '');
+            const zip = new JSZip();
+
+            zip.file(`common/countries/${fileNameFriendly}.txt`, commonText);
+            zip.file(`history/countries/${newTag} - ${fileNameFriendly}.txt`, historyText);
+
+            const instructionsContent = `¡Mod de ${nameInput} creado exitosamente mediante Balcanización de ${currentSelectedTag}!
+Tu TAG asignado es: ${newTag}
+Tu color asignado es: R:${r} G:${g} B:${b}
+
+PASOS PARA INSTALAR EN TU MOD DE VICTORIA 2:
+1. Copia la carpeta "common" y "history" de este ZIP dentro de la carpeta principal de tu mod.
+2. Ve a la carpeta de tu mod: common/countries.txt
+3. Abre "countries.txt" con el bloc de notas y añade esta línea en cualquier parte (preferiblemente al final):
+
+${newTag} = "countries/${fileNameFriendly}.txt"
+
+4. (Opcional) Ve al archivo de localización (ej: localisation/countries.csv) y añade:
+${newTag};${nameInput};${nameInput};${nameInput};${nameInput};${nameInput};;;;;;;;;
+
+¡Listo! Disfruta de la caída de imperios.`;
+            zip.file("Instrucciones de Instalacion.txt", instructionsContent);
+
+            zip.generateAsync({type:"blob"}).then(function(content) {
+                const url = URL.createObjectURL(content);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `Victoria2_Balcan_${newTag}_${fileNameFriendly}.zip`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                // Actualizar DB local para que el próximo click asigne el siguiente TAG UXX
+                countryData[newTag] = { capital: capitalId, gov: 'Desconocido' };
+            });
+        });
     </script>
 </body>
 </html>
