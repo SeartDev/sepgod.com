@@ -251,7 +251,7 @@
 
             <div class="input-group">
                 <label>Carpeta gfx/flags</label>
-                <p>Opcional. Archivos de banderas originales (.tga o .png).</p>
+                <p>Archivos de banderas. (Requerido para clonar las banderas al balcanizar).</p>
                 <input type="file" id="dirFlags" webkitdirectory directory multiple>
             </div>
 
@@ -259,7 +259,7 @@
 
             <div class="input-group">
                 <label>Archivo countries.txt</label>
-                <p>El archivo base que define los tags. (Obligatorio para Balcanizar)</p>
+                <p>El archivo base que define los tags.</p>
                 <input type="file" id="fileCountriesTxt" accept=".txt">
             </div>
 
@@ -318,7 +318,7 @@
                         <div class="card" style="border-color: var(--success);">
                             <h3 style="color: var(--success);">Balcanizar Nación</h3>
                             <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
-                                Crea un estado separatista. Clonará exactamente las culturas, tecnologías, reformas y partidos del país seleccionado, asignándole una nueva capital y un color aleatorio único.
+                                Crea un estado separatista. Clonará culturas, tecnologías, partidos, <strong>banderas</strong>, y le transferirá la propiedad de la provincia seleccionada al nuevo país.
                             </p>
 
                             <div class="input-group">
@@ -327,7 +327,7 @@
                             </div>
 
                             <div class="input-group">
-                                <label>Provincia Capital Separatista</label>
+                                <label>Provincia a Independizar (Capital)</label>
                                 <select id="newNationCapital">
                                     <option value="">Selecciona un país primero...</option>
                                 </select>
@@ -347,13 +347,14 @@
         let provinceOwnership = {};
         let countryData = {}; 
         let locData = {}; 
-        let flagFiles = {}; 
+        let flagFilesMap = {}; // Guardará la bandera principal visual
         let currentObjectUrl = null; 
         
         // Variables para la clonación
-        let baseCountriesTxtMap = {}; // TAG -> Nombre del archivo en common (ej. "Mexico.txt")
-        let commonFilesMap = {}; // TAG -> Objeto File de common/countries
-        let historyFilesMap = {}; // TAG -> Objeto File de history/countries
+        let baseCountriesTxtMap = {}; 
+        let commonFilesMap = {}; 
+        let historyFilesMap = {}; 
+        let provFilesMap = {}; // NUEVO: Guardará los archivos de las provincias enteros para clonarlos.
 
         document.getElementById('btnCrear').addEventListener('click', async function() {
             const countriesTxtInput = document.getElementById('fileCountriesTxt').files;
@@ -364,21 +365,22 @@
             const flagsInput = document.getElementById('dirFlags').files;
             
             if (historyFiles.length === 0 || provFiles.length === 0 || countriesTxtInput.length === 0 || commonDirInput.length === 0) {
-                alert("Para la función de Balcanizar, necesitas seleccionar el archivo countries.txt, la carpeta common/countries, history/countries y history/provinces.");
+                alert("Faltan carpetas base. Asegúrate de cargar countries.txt, common/countries, history/countries y history/provinces.");
                 return;
             }
 
             const emptyState = document.getElementById('emptyState');
-            emptyState.innerHTML = "<h2>Indexando archivos...</h2><p>Mapeando rutas de países para el sistema de clonación...</p>";
+            emptyState.innerHTML = "<h2>Indexando archivos...</h2><p>Mapeando rutas de países, banderas y provincias para el sistema de clonación...</p>";
 
             currentSelectedTag = null;
             provinceOwnership = {}; 
             countryData = {}; 
             locData = {};
-            flagFiles = {};
+            flagFilesMap = {};
             baseCountriesTxtMap = {};
             commonFilesMap = {};
             historyFilesMap = {};
+            provFilesMap = {};
 
             // 1. LEER LOCALISATION
             if (locFileInput.length > 0) {
@@ -393,18 +395,17 @@
                 }
             }
 
-            // 2. LEER BANDERAS
+            // 2. LEER BANDERAS (Solo guardamos la visual aquí)
             for (let file of flagsInput) {
                 const nameLower = file.name.toLowerCase();
                 if (nameLower.endsWith('.tga') || nameLower.endsWith('.png')) {
                     const tag = file.name.substring(0, 3).toUpperCase();
-                    if (file.name.length === 7) flagFiles[tag] = file;
+                    if (file.name.length === 7) flagFilesMap[tag] = file;
                 }
             }
 
             // 3. MAPEAR COUNTRIES.TXT BASE
             const countriesTxtText = await countriesTxtInput[0].text();
-            // Busca líneas como MEX = "countries/Mexico.txt"
             const regexCountries = /([A-Z0-9]{3})\s*=\s*"?(?:countries\/)?([^"\r\n]+)"?/gi;
             let matchC;
             while ((matchC = regexCountries.exec(countriesTxtText)) !== null) {
@@ -439,14 +440,20 @@
                 if (matchGov) countryData[tag].gov = matchGov[1].replace(/_/g, ' '); 
             }
 
-            // 6. INDEXAR PROVINCIAS
+            // 6. INDEXAR Y MAPEAR PROVINCIAS
             for (let file of provFiles) {
                 if (!file.name.endsWith('.txt')) continue;
                 const text = await file.text();
-                const match = text.match(/owner\s*=\s*"?([A-Z]{3})"?/i);
                 
-                if (match) {
-                    const tag = match[1].toUpperCase(); 
+                // Extraer la ID numérica del archivo (ej. "2348" de "2348 - Buenos Aires.txt")
+                const provIdMatch = file.name.match(/^(\d+)/);
+                if (provIdMatch) {
+                    provFilesMap[provIdMatch[1]] = file; // Guardamos el archivo entero para poder modificarlo
+                }
+
+                const matchOwner = text.match(/owner\s*=\s*"?([A-Z0-9]{3})"?/i);
+                if (matchOwner) {
+                    const tag = matchOwner[1].toUpperCase(); 
                     const provName = file.name.replace('.txt', ''); 
                     if (!provinceOwnership[tag]) provinceOwnership[tag] = [];
                     provinceOwnership[tag].push(provName);
@@ -487,9 +494,9 @@
             const data = countryData[tag] || {};
             document.getElementById('govType').innerText = data.gov ? `Gobierno: ${data.gov}` : 'Gobierno: Desconocido';
 
-            // BANDERA
+            // BANDERA VISUAL
             const flagImg = document.getElementById('flagIcon');
-            const flagFile = flagFiles[tag];
+            const flagFile = flagFilesMap[tag];
 
             if (flagFile) {
                 if (currentObjectUrl) URL.revokeObjectURL(currentObjectUrl);
@@ -512,7 +519,7 @@
                 flagImg.style.display = 'none';
             }
             
-            // PROVINCIAS
+            // PROVINCIAS EN EL SELECTOR
             const provCountEl = document.getElementById('provCount');
             const provListEl = document.getElementById('provList');
             const capitalSelect = document.getElementById('newNationCapital');
@@ -566,15 +573,16 @@
             const capitalId = document.getElementById('newNationCapital').value;
 
             if (!nameInput || !capitalId) {
-                alert("Por favor, escribe un nombre y selecciona la capital separatista.");
+                alert("Por favor, escribe un nombre y selecciona la provincia a independizar.");
                 return;
             }
 
             const baseHistoryFile = historyFilesMap[currentSelectedTag];
             const baseCommonFile = commonFilesMap[currentSelectedTag];
+            const provTargetFile = provFilesMap[capitalId];
 
-            if (!baseHistoryFile || !baseCommonFile) {
-                alert(`Error: No se pudo localizar el archivo history o common original de ${currentSelectedTag}.`);
+            if (!baseHistoryFile || !baseCommonFile || !provTargetFile) {
+                alert(`Error: No se pudo localizar algún archivo original (history, common o province) para clonarlo.`);
                 return;
             }
 
@@ -589,51 +597,72 @@
             }
 
             if (!newTag) {
-                alert("Error: No hay TAGs U00-U99 disponibles. Demasiados países personalizados.");
+                alert("Error: No hay TAGs U00-U99 disponibles.");
                 return;
             }
 
-            // Extraer el texto base
+            // Extraer textos base
             let historyText = await baseHistoryFile.text();
             let commonText = await baseCommonFile.text();
+            let provText = await provTargetFile.text();
 
-            // 1. MODIFICAR HISTORY
-            // Reemplazar la capital
+            const zip = new JSZip();
+
+            // 1. MODIFICAR HISTORY/COUNTRIES
             historyText = historyText.replace(/capital\s*=\s*\d+/i, `capital = ${capitalId}`);
-            // Borrar el orden de batalla (tropas iniciales) para evitar crashes por duplicados
-            historyText = historyText.replace(/oob\s*=\s*"[^"]+"/gi, '# Ejército original borrado por seguridad');
+            historyText = historyText.replace(/oob\s*=\s*"[^"]+"/gi, '# Ejército borrado para evitar duplicados y crashes');
 
-            // 2. MODIFICAR COMMON (Partidos y Color)
-            // Generar color aleatorio brillante
+            // 2. MODIFICAR COMMON/COUNTRIES
             const r = Math.floor(Math.random() * 200) + 55;
             const g = Math.floor(Math.random() * 200) + 55;
             const b = Math.floor(Math.random() * 200) + 55;
-            
-            // Buscar y reemplazar el bloque de color original
             commonText = commonText.replace(/color\s*=\s*\{[^}]+\}/i, `color = { ${r} ${g} ${b} }`);
 
-            // Preparar el archivo ZIP
-            const fileNameFriendly = nameInput.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '');
-            const zip = new JSZip();
+            // 3. MODIFICAR HISTORY/PROVINCES (Transferir Propiedad)
+            provText = provText.replace(/owner\s*=\s*"?[A-Z0-9]{3}"?/gi, `owner = ${newTag}`);
+            provText = provText.replace(/controller\s*=\s*"?[A-Z0-9]{3}"?/gi, `controller = ${newTag}`);
+            // Añadir núcleo (core)
+            provText += `\nadd_core = ${newTag}\n`;
 
+            // Preparar Nombres
+            const fileNameFriendly = nameInput.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '');
+
+            // Agregar Textos al ZIP
             zip.file(`common/countries/${fileNameFriendly}.txt`, commonText);
             zip.file(`history/countries/${newTag} - ${fileNameFriendly}.txt`, historyText);
+            // V2 lee recursivamente las provincias, podemos ponerla en la raiz de history/provinces/
+            zip.file(`history/provinces/${provTargetFile.name}`, provText); 
 
+            // 4. CLONAR TODAS LAS BANDERAS ASOCIADAS
+            const flagsInputsFiles = document.getElementById('dirFlags').files;
+            if (flagsInputsFiles.length > 0) {
+                for (let file of flagsInputsFiles) {
+                    const fileNameUpper = file.name.toUpperCase();
+                    // Buscamos cualquier bandera que empiece con el TAG original (ej. MEX.tga, MEX_fascist.tga)
+                    if (fileNameUpper.startsWith(currentSelectedTag.toUpperCase())) {
+                        // Extraemos lo que sigue después del TAG (ej. "_fascist.tga" o ".tga")
+                        const suffix = file.name.substring(3);
+                        // Extraemos el binario y lo empacamos con el nuevo TAG (ej. U00_fascist.tga)
+                        const buffer = await file.arrayBuffer();
+                        zip.file(`gfx/flags/${newTag}${suffix}`, buffer);
+                    }
+                }
+            }
+
+            // Instrucciones
             const instructionsContent = `¡Mod de ${nameInput} creado exitosamente mediante Balcanización de ${currentSelectedTag}!
 Tu TAG asignado es: ${newTag}
 Tu color asignado es: R:${r} G:${g} B:${b}
 
 PASOS PARA INSTALAR EN TU MOD DE VICTORIA 2:
-1. Copia la carpeta "common" y "history" de este ZIP dentro de la carpeta principal de tu mod.
+1. Copia las carpetas "common", "history" y "gfx" de este ZIP dentro de la carpeta principal de tu mod.
+   (Nota: Si la provincia no se transfiere en el juego, asegúrate de borrar la caché de mapas en Documentos/Paradox Interactive/Victoria II/map/cache)
 2. Ve a la carpeta de tu mod: common/countries.txt
-3. Abre "countries.txt" con el bloc de notas y añade esta línea en cualquier parte (preferiblemente al final):
-
+3. Abre "countries.txt" con el bloc de notas y añade esta línea:
 ${newTag} = "countries/${fileNameFriendly}.txt"
 
-4. (Opcional) Ve al archivo de localización (ej: localisation/countries.csv) y añade:
-${newTag};${nameInput};${nameInput};${nameInput};${nameInput};${nameInput};;;;;;;;;
-
-¡Listo! Disfruta de la caída de imperios.`;
+4. (Opcional) Ve a tu archivo de localización (ej: localisation/countries.csv) y añade:
+${newTag};${nameInput};${nameInput};${nameInput};${nameInput};${nameInput};;;;;;;;;`;
             zip.file("Instrucciones de Instalacion.txt", instructionsContent);
 
             zip.generateAsync({type:"blob"}).then(function(content) {
@@ -646,7 +675,7 @@ ${newTag};${nameInput};${nameInput};${nameInput};${nameInput};${nameInput};;;;;;
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
                 
-                // Actualizar DB local para que el próximo click asigne el siguiente TAG UXX
+                // Actualizar DB local para el siguiente
                 countryData[newTag] = { capital: capitalId, gov: 'Desconocido' };
             });
         });
