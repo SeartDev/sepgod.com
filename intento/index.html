@@ -13,6 +13,7 @@
             --accent: #b33939;
             --accent-hover: #d24b4b;
             --border: #3f3f4e;
+            --gold: #ffd700;
         }
 
         * {
@@ -58,30 +59,33 @@
             overflow-y: auto;
         }
 
-        .input-group {
-            margin-bottom: 1.2rem;
-        }
+        .config-panel h2 { margin-bottom: 1rem; font-size: 1.2rem;}
+
+        .input-group { margin-bottom: 1.2rem; }
 
         .input-group label {
             display: block;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.2rem;
             font-weight: bold;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
+            color: var(--gold);
         }
 
         .input-group p {
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             color: var(--text-muted);
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.4rem;
+            line-height: 1.2;
         }
 
         input[type="file"] {
             width: 100%;
-            padding: 0.5rem;
+            padding: 0.4rem;
             background-color: var(--bg-color);
             border: 1px solid var(--border);
             color: var(--text-main);
             border-radius: 4px;
+            font-size: 0.8rem;
         }
 
         button {
@@ -95,13 +99,12 @@
             font-weight: bold;
             cursor: pointer;
             transition: background 0.3s;
+            margin-top: 10px;
         }
 
-        button:hover {
-            background-color: var(--accent-hover);
-        }
+        button:hover { background-color: var(--accent-hover); }
 
-        /* Panel Interactivo (Workspace) */
+        /* Panel Interactivo */
         .workspace {
             flex: 1;
             display: flex;
@@ -128,16 +131,11 @@
             border-bottom: 1px solid var(--border);
             cursor: pointer;
             transition: background 0.2s;
+            font-size: 0.9rem;
         }
 
-        .country-item:hover {
-            background-color: var(--panel-bg);
-        }
-
-        .country-item.active {
-            background-color: var(--accent);
-            border-left: 4px solid white;
-        }
+        .country-item:hover { background-color: var(--panel-bg); }
+        .country-item.active { background-color: var(--accent); border-left: 4px solid white; }
 
         .details-panel {
             flex: 1;
@@ -145,18 +143,45 @@
             overflow-y: auto;
         }
 
-        .details-panel h2 {
-            font-size: 2rem;
-            margin-bottom: 1rem;
+        /* Estilos de la Cabecera del País */
+        .country-header {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 5px;
             border-bottom: 1px solid var(--border);
-            padding-bottom: 0.5rem;
+            padding-bottom: 10px;
+        }
+
+        .flag-icon {
+            width: 54px;
+            height: 36px;
+            object-fit: cover;
+            border: 1px solid #000;
+            border-radius: 3px;
+            display: none; /* Oculto hasta que se cargue una */
+            background-color: #333;
+        }
+
+        .country-header h2 {
+            font-size: 2rem;
+            margin: 0;
+            border: none;
+            padding: 0;
+        }
+
+        .gov-type {
+            color: var(--text-muted);
+            font-size: 1rem;
+            font-weight: bold;
+            margin-bottom: 1.5rem;
+            text-transform: capitalize;
         }
 
         .data-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 1.5rem;
-            margin-top: 1.5rem;
         }
 
         .card {
@@ -184,9 +209,8 @@
             flex-direction: column;
         }
 
-        /* Estilo especial para la Capital */
         .capital-item {
-            color: #ffd700;
+            color: var(--gold);
             font-weight: bold;
             list-style-type: none;
             margin-left: -20px;
@@ -195,9 +219,7 @@
             margin-bottom: 10px;
         }
 
-        .capital-item::before {
-            content: "👑 ";
-        }
+        .capital-item::before { content: "👑 "; }
     </style>
 </head>
 <body>
@@ -207,10 +229,24 @@
     </header>
 
     <div class="container">
+        <!-- Panel de Configuración -->
         <div class="config-panel">
             <h2>Directorios del Juego</h2>
-            <br>
             
+            <div class="input-group">
+                <label>Archivo Localisation (.csv o .txt)</label>
+                <p>Opcional. Traduce los Tags a nombres reales (ej: countries.csv).</p>
+                <input type="file" id="fileLoc" accept=".csv,.txt">
+            </div>
+
+            <div class="input-group">
+                <label>Carpeta gfx/flags</label>
+                <p>Opcional. Banderas (Nota: El navegador solo muestra .png, no .tga).</p>
+                <input type="file" id="dirFlags" webkitdirectory directory multiple>
+            </div>
+
+            <hr style="border-color: var(--border); margin: 15px 0;">
+
             <div class="input-group">
                 <label>Archivo countries.txt</label>
                 <p>El archivo base que define los tags.</p>
@@ -225,7 +261,7 @@
 
             <div class="input-group">
                 <label>Carpeta history/countries</label>
-                <p>Archivos de historia de cada nación.</p>
+                <p>Historia, capital y gobierno de cada nación.</p>
                 <input type="file" id="dirHistory" webkitdirectory directory multiple>
             </div>
 
@@ -244,6 +280,7 @@
             <button id="btnCrear">Cargar Datos y Crear Entorno</button>
         </div>
 
+        <!-- Área de Trabajo -->
         <div class="workspace">
             <div class="empty-state" id="emptyState">
                 <h2>Esperando datos...</h2>
@@ -256,7 +293,13 @@
                 </div>
                 
                 <div class="details-panel" id="detailsPanel">
-                    <h2 id="selectedCountryName">Selecciona un país</h2>
+                    
+                    <!-- Nueva cabecera con bandera, título y gobierno -->
+                    <div class="country-header">
+                        <img id="flagIcon" class="flag-icon" src="" alt="Flag">
+                        <h2 id="selectedCountryName">Selecciona un país</h2>
+                    </div>
+                    <p class="gov-type" id="govType">Gobierno Desconocido</p>
                     
                     <div class="data-grid">
                         <div class="card">
@@ -277,11 +320,16 @@
     <script>
         // Variables globales
         let provinceOwnership = {};
-        let countryCapitals = {}; 
+        let countryData = {}; // Guardará capital y gobierno { 'MEX': { capital: '123', gov: 'democracy' } }
+        let locData = {}; // Guardará los nombres reales { 'MEX': 'Mexico' }
+        let flagFiles = {}; // Guardará los objetos File de las banderas
+        let currentObjectUrl = null; // Para gestionar la memoria de las imágenes
 
         document.getElementById('btnCrear').addEventListener('click', async function() {
             const historyFiles = document.getElementById('dirHistory').files;
             const provFiles = document.getElementById('dirProvinces').files;
+            const locFileInput = document.getElementById('fileLoc').files;
+            const flagsInput = document.getElementById('dirFlags').files;
             
             if (historyFiles.length === 0 || provFiles.length === 0) {
                 alert("Selecciona al menos las carpetas history/countries y history/provinces.");
@@ -289,25 +337,55 @@
             }
 
             const emptyState = document.getElementById('emptyState');
-            emptyState.innerHTML = "<h2>Indexando archivos...</h2><p>Extrayendo datos de provincias y capitales.</p>";
+            emptyState.innerHTML = "<h2>Indexando archivos...</h2><p>Procesando provincias, gobiernos, banderas y localizaciones.</p>";
 
+            // Reiniciar datos
             provinceOwnership = {}; 
-            countryCapitals = {}; 
-            
-            // 1. INDEXAR CAPITALES
+            countryData = {}; 
+            locData = {};
+            flagFiles = {};
+
+            // 1. LEER LOCALISATION (Opcional)
+            if (locFileInput.length > 0) {
+                const text = await locFileInput[0].text();
+                // Separar por saltos de línea
+                const lines = text.split(/\r?\n/);
+                for (let line of lines) {
+                    // Los CSV de Paradox separan por punto y coma
+                    const parts = line.split(';');
+                    if (parts.length > 1 && parts[0].length === 3) {
+                        const tag = parts[0].toUpperCase();
+                        locData[tag] = parts[1]; // Guardamos el nombre real
+                    }
+                }
+            }
+
+            // 2. LEER BANDERAS (Opcional)
+            for (let file of flagsInput) {
+                // Buscamos archivos que tengan el TAG base (ej: MEX.png o MEX.tga)
+                // Ignoramos las variaciones por ahora (ej: MEX_fascist.tga) para la bandera principal
+                if (file.name.length >= 7 && file.name[3] === '.') {
+                    const tag = file.name.substring(0, 3).toUpperCase();
+                    flagFiles[tag] = file;
+                }
+            }
+
+            // 3. INDEXAR HISTORY/COUNTRIES (Capital y Gobierno)
             for (let file of historyFiles) {
                 if (!file.name.endsWith('.txt')) continue;
                 const text = await file.text();
                 const tag = file.name.substring(0, 3).toUpperCase();
                 
-                // Buscamos la línea "capital = 123"
+                countryData[tag] = { capital: null, gov: 'Desconocido' };
+
                 const matchCapital = text.match(/capital\s*=\s*(\d+)/i);
-                if (matchCapital) {
-                    countryCapitals[tag] = matchCapital[1]; // Guardamos el ID de la provincia
-                }
+                if (matchCapital) countryData[tag].capital = matchCapital[1];
+
+                const matchGov = text.match(/government\s*=\s*([a-zA-Z_]+)/i);
+                if (matchGov) countryData[tag].gov = matchGov[1].replace(/_/g, ' '); // Cambia absolute_monarchy a absolute monarchy
             }
 
-            // 2. INDEXAR PROVINCIAS
+            // 4. INDEXAR HISTORY/PROVINCES
             for (let file of provFiles) {
                 if (!file.name.endsWith('.txt')) continue;
                 const text = await file.text();
@@ -324,7 +402,7 @@
                 }
             }
 
-            // 3. GENERAR LISTA DE PAÍSES
+            // 5. GENERAR LISTA DE PAÍSES
             emptyState.style.display = 'none';
             document.getElementById('dashboard').style.display = 'flex';
             const countryList = document.getElementById('countryList');
@@ -334,30 +412,52 @@
             filesArray.sort((a, b) => a.name.localeCompare(b.name));
 
             filesArray.forEach(file => {
-                let countryName = file.name.replace('.txt', '');
+                const tag = file.name.substring(0, 3).toUpperCase();
+                // Usa el nombre real si existe, si no, usa el nombre del archivo
+                const displayName = locData[tag] ? `${tag} - ${locData[tag]}` : file.name.replace('.txt', '');
+                
                 let div = document.createElement('div');
                 div.className = 'country-item';
-                div.innerText = countryName;
+                div.innerText = displayName;
                 
                 div.onclick = function() {
                     document.querySelectorAll('.country-item').forEach(el => el.classList.remove('active'));
                     div.classList.add('active');
-                    mostrarDetallesPais(countryName);
+                    mostrarDetallesPais(tag, displayName);
                 };
                 
                 countryList.appendChild(div);
             });
         });
 
-        function mostrarDetallesPais(countryFileName) {
-            document.getElementById('selectedCountryName').innerText = countryFileName;
-            const tag = countryFileName.substring(0, 3).toUpperCase();
+        function mostrarDetallesPais(tag, displayName) {
+            // Actualizar Título
+            document.getElementById('selectedCountryName').innerText = displayName;
             
+            // Actualizar Gobierno
+            const data = countryData[tag] || {};
+            document.getElementById('govType').innerText = data.gov ? `Gobierno: ${data.gov}` : 'Gobierno: Desconocido';
+
+            // Actualizar Bandera
+            const flagImg = document.getElementById('flagIcon');
+            if (flagFiles[tag]) {
+                // Si había una imagen cargada antes, liberamos la memoria
+                if (currentObjectUrl) URL.revokeObjectURL(currentObjectUrl);
+                
+                // Creamos un enlace temporal local para mostrar el archivo
+                currentObjectUrl = URL.createObjectURL(flagFiles[tag]);
+                flagImg.src = currentObjectUrl;
+                flagImg.style.display = 'block';
+            } else {
+                flagImg.style.display = 'none';
+            }
+            
+            // Actualizar Provincias
             const provCountEl = document.getElementById('provCount');
             const provListEl = document.getElementById('provList');
             
             const provinciasDelPais = provinceOwnership[tag] || [];
-            const capitalId = countryCapitals[tag];
+            const capitalId = data.capital;
 
             if (provinciasDelPais.length > 0) {
                 provCountEl.innerText = `Controla ${provinciasDelPais.length} provincias.`;
@@ -365,9 +465,8 @@
                 let capitalStr = null;
                 let otrasProvincias = [];
 
-                // Separar la capital de las demás provincias
                 provinciasDelPais.forEach(p => {
-                    const provId = p.split('-')[0].trim(); // Extrae el número antes del guion
+                    const provId = p.split('-')[0].trim(); 
                     if (capitalId && provId === capitalId) {
                         capitalStr = p;
                     } else {
@@ -375,12 +474,8 @@
                     }
                 });
 
-                // Ordenar las otras provincias de menor a mayor ID numérico
-                otrasProvincias.sort((a, b) => {
-                    return parseInt(a) - parseInt(b);
-                });
+                otrasProvincias.sort((a, b) => parseInt(a) - parseInt(b));
 
-                // Construir el HTML
                 let htmlList = '';
                 if (capitalStr) {
                     htmlList += `<li class="capital-item">${capitalStr}</li>`;
