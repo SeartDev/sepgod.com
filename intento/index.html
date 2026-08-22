@@ -22,8 +22,6 @@
             --danger-hover: #e74c3c;
             --border: #3f3f4e;
             --gold: #ffd700;
-            --blue: #2980b9;
-            --blue-hover: #3498db;
         }
 
         * {
@@ -118,9 +116,6 @@
 
         .btn-danger { background-color: var(--danger); }
         .btn-danger:hover { background-color: var(--danger-hover); }
-        
-        .btn-blue { background-color: var(--blue); }
-        .btn-blue:hover { background-color: var(--blue-hover); }
 
         .workspace {
             flex: 1;
@@ -249,26 +244,59 @@
     </header>
 
     <div class="container">
-        <!-- Panel de Configuración Mejorado -->
+        <!-- Panel de Configuración Optimizado -->
         <div class="config-panel">
-            <h2>Directorio del Juego</h2>
+            <h2>Directorios del Juego</h2>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem;">
+                Selecciona las carpetas específicas para evitar tiempos de carga extremos y países duplicados.
+            </p>
             
-            <div class="card" style="padding: 1rem; margin-bottom: 1.5rem;">
-                <div class="input-group" style="margin-bottom: 0;">
-                    <label style="color: var(--accent);">Carpeta de Victoria 2</label>
-                    <p>Selecciona la carpeta raíz donde tienes instalado el juego. El navegador pedirá permiso para leer los archivos locales (no se subirá nada a internet).</p>
-                    <input type="file" id="dirVictoria2" webkitdirectory directory multiple>
-                </div>
+            <div class="input-group">
+                <label>Archivo Localisation (.csv)</label>
+                <p>Opcional. Traduce los Tags a nombres reales.</p>
+                <input type="file" id="fileLoc" accept=".csv,.txt">
             </div>
 
-            <button id="btnCrear" class="btn-blue">Indexar Archivos y Crear Entorno</button>
+            <div class="input-group">
+                <label>Carpeta gfx/flags</label>
+                <p>Opcional. (Para ver la bandera original en la interfaz).</p>
+                <input type="file" id="dirFlags" webkitdirectory directory multiple>
+            </div>
+
+            <hr style="border-color: var(--border); margin: 15px 0;">
+
+            <div class="input-group">
+                <label>Archivo countries.txt</label>
+                <p>Ubicado en common/countries.txt</p>
+                <input type="file" id="fileCountriesTxt" accept=".txt">
+            </div>
+
+            <div class="input-group">
+                <label>Carpeta common/countries</label>
+                <p>Archivos de color, partidos y culturas.</p>
+                <input type="file" id="dirCountries" webkitdirectory directory multiple>
+            </div>
+
+            <div class="input-group">
+                <label>Carpeta history/countries</label>
+                <p>Historia, capital y gobierno de cada nación.</p>
+                <input type="file" id="dirHistory" webkitdirectory directory multiple>
+            </div>
+
+            <div class="input-group">
+                <label>Carpeta history/provinces</label>
+                <p>Propietarios e infraestructura.</p>
+                <input type="file" id="dirProvinces" webkitdirectory directory multiple>
+            </div>
+
+            <button id="btnCrear">Cargar Datos Rápido</button>
         </div>
 
         <!-- Área de Trabajo -->
         <div class="workspace">
             <div class="empty-state" id="emptyState">
                 <h2>Esperando datos...</h2>
-                <p>Selecciona la carpeta principal de Victoria 2 y haz clic en "Indexar Archivos".</p>
+                <p>Selecciona las carpetas en el panel izquierdo y haz clic en "Cargar Datos Rápido".</p>
             </div>
 
             <div class="dashboard" id="dashboard">
@@ -348,10 +376,9 @@
         let commonFilesMap = {}; 
         let historyFilesMap = {}; 
         let provFilesMap = {}; 
-        let v2FlagsFilesGlobal = []; // Para almacenar las banderas de forma global
 
         // -------------------------------------------------------------
-        // SISTEMA PROCEDURAL DE BANDERAS TGA (Integrado)
+        // SISTEMA PROCEDURAL DE BANDERAS TGA 
         // -------------------------------------------------------------
         function generateRandomTGAData() {
             const tempCanvas = document.createElement('canvas');
@@ -410,18 +437,18 @@
             const data = imageData.data;
 
             const header = new Uint8Array(18);
-            header[2] = 2; 
+            header[2] = 2; // Uncompressed RGB
             header[12] = w & 0xFF; header[13] = (w >> 8) & 0xFF;
             header[14] = h & 0xFF; header[15] = (h >> 8) & 0xFF;
-            header[16] = 24; 
-            header[17] = 0x20; 
+            header[16] = 24; // 24 bpp
+            header[17] = 0x20; // Top-left origin
 
             const pixels = new Uint8Array(w * h * 3);
             let pIdx = 0;
             for (let i = 0; i < data.length; i += 4) {
-                pixels[pIdx++] = data[i + 2]; 
-                pixels[pIdx++] = data[i + 1]; 
-                pixels[pIdx++] = data[i];     
+                pixels[pIdx++] = data[i + 2]; // B
+                pixels[pIdx++] = data[i + 1]; // G
+                pixels[pIdx++] = data[i];     // R
             }
 
             const tgaFile = new Uint8Array(header.length + pixels.length);
@@ -432,17 +459,21 @@
         // -------------------------------------------------------------
 
         document.getElementById('btnCrear').addEventListener('click', async function() {
-            const v2FolderInput = document.getElementById('dirVictoria2').files;
+            const countriesTxtInput = document.getElementById('fileCountriesTxt').files;
+            const commonDirInput = document.getElementById('dirCountries').files;
+            const historyFiles = document.getElementById('dirHistory').files;
+            const provFiles = document.getElementById('dirProvinces').files;
+            const locFileInput = document.getElementById('fileLoc').files;
+            const flagsInput = document.getElementById('dirFlags').files;
             
-            if (v2FolderInput.length === 0) {
-                alert("Por favor, selecciona la carpeta raíz de Victoria 2.");
+            if (historyFiles.length === 0 || provFiles.length === 0 || countriesTxtInput.length === 0 || commonDirInput.length === 0) {
+                alert("Faltan carpetas base. Asegúrate de cargar countries.txt, common/countries, history/countries y history/provinces.");
                 return;
             }
 
             const emptyState = document.getElementById('emptyState');
-            emptyState.innerHTML = "<h2>Indexando archivos...</h2><p>Mapeando rutas de la instalación de Victoria 2. Esto tomará unos segundos.</p>";
+            emptyState.innerHTML = "<h2>Indexando archivos...</h2><p>Mapeando datos de forma rápida...</p>";
 
-            // Reseteo de variables
             currentSelectedTag = null;
             provinceOwnership = {}; 
             countryData = {}; 
@@ -452,42 +483,9 @@
             commonFilesMap = {};
             historyFilesMap = {};
             provFilesMap = {};
-            v2FlagsFilesGlobal = [];
 
-            let countriesTxtFile = null;
-            let commonFiles = [];
-            let historyFiles = [];
-            let provFiles = [];
-            let locFiles = [];
-
-            // 1. CLASIFICACIÓN DE ARCHIVOS
-            for (let file of v2FolderInput) {
-                const path = file.webkitRelativePath.toLowerCase();
-                
-                if (path.includes('/common/countries.txt')) {
-                    countriesTxtFile = file;
-                } else if (path.includes('/common/countries/')) {
-                    commonFiles.push(file);
-                } else if (path.includes('/history/countries/')) {
-                    historyFiles.push(file);
-                } else if (path.includes('/history/provinces/')) {
-                    provFiles.push(file);
-                } else if (path.includes('/localisation/') && (path.endsWith('.csv') || path.endsWith('.txt'))) {
-                    locFiles.push(file);
-                } else if (path.includes('/gfx/flags/') && (path.endsWith('.tga') || path.endsWith('.png'))) {
-                    v2FlagsFilesGlobal.push(file);
-                }
-            }
-
-            if (!countriesTxtFile || historyFiles.length === 0 || provFiles.length === 0) {
-                alert("No se detectó la estructura correcta. ¿Seguro que seleccionaste la carpeta principal de Victoria 2?");
-                emptyState.innerHTML = "<h2>Error</h2><p>Vuelve a seleccionar la carpeta correcta.</p>";
-                return;
-            }
-
-            // 2. LEER LOCALISATION (TODOS LOS CSV)
-            for (let file of locFiles) {
-                const text = await file.text();
+            if (locFileInput.length > 0) {
+                const text = await locFileInput[0].text();
                 const lines = text.split(/\r?\n/);
                 for (let line of lines) {
                     const parts = line.split(';');
@@ -497,19 +495,15 @@
                 }
             }
 
-            // 3. LEER BANDERAS BASE
-            for (let file of v2FlagsFilesGlobal) {
-                // Obtenemos solo el nombre del archivo sin la ruta completa
-                const fileName = file.name;
-                const fileNameLower = fileName.toLowerCase();
-                if (fileNameLower.endsWith('.tga') || fileNameLower.endsWith('.png')) {
-                    const tag = fileName.substring(0, 3).toUpperCase();
-                    if (fileName.length === 7) flagFilesMap[tag] = file;
+            for (let file of flagsInput) {
+                const nameLower = file.name.toLowerCase();
+                if (nameLower.endsWith('.tga') || nameLower.endsWith('.png')) {
+                    const tag = file.name.substring(0, 3).toUpperCase();
+                    if (file.name.length === 7) flagFilesMap[tag] = file;
                 }
             }
 
-            // 4. MAPEAR COUNTRIES.TXT BASE
-            originalCountriesTxtRaw = await countriesTxtFile.text();
+            originalCountriesTxtRaw = await countriesTxtInput[0].text();
             const regexCountries = /([A-Z0-9]{3})\s*=\s*"?(?:countries\/)?([^"\r\n]+)"?/gi;
             let matchC;
             while ((matchC = regexCountries.exec(originalCountriesTxtRaw)) !== null) {
@@ -518,8 +512,7 @@
                 baseCountriesTxtMap[matchC[1].toUpperCase()] = fileName;
             }
 
-            // 5. MAPEAR CARPETA COMMON/COUNTRIES
-            for (let file of commonFiles) {
+            for (let file of commonDirInput) {
                 for (let tag in baseCountriesTxtMap) {
                     if (file.name.toLowerCase() === baseCountriesTxtMap[tag].toLowerCase()) {
                         commonFilesMap[tag] = file;
@@ -528,7 +521,6 @@
                 }
             }
 
-            // 6. INDEXAR HISTORY/COUNTRIES
             for (let file of historyFiles) {
                 if (!file.name.endsWith('.txt')) continue;
                 const text = await file.text();
@@ -544,7 +536,6 @@
                 if (matchGov) countryData[tag].gov = matchGov[1].replace(/_/g, ' '); 
             }
 
-            // 7. INDEXAR PROVINCIAS
             for (let file of provFiles) {
                 if (!file.name.endsWith('.txt')) continue;
                 const text = await file.text();
@@ -561,7 +552,6 @@
                 }
             }
 
-            // 8. GENERAR LISTA DE PAÍSES
             emptyState.style.display = 'none';
             document.getElementById('dashboard').style.display = 'flex';
             const countryList = document.getElementById('countryList');
@@ -669,10 +659,13 @@
             return null;
         }
 
+        // Esta función ahora detecta de forma robusta la subcarpeta regional
+        // basada en la ruta relativa del archivo cargado.
         function getProvinceSubfolder(fileObject) {
             let pathParts = fileObject.webkitRelativePath.split('/');
             const provIndex = pathParts.findIndex(p => p.toLowerCase() === 'provinces');
             if (provIndex !== -1) {
+                 // Extrae todas las carpetas que estén entre "provinces" y el archivo final
                  const subfolders = pathParts.slice(provIndex + 1, pathParts.length - 1);
                  if (subfolders.length > 0) {
                      return subfolders.join('/') + '/';
@@ -737,6 +730,7 @@
             zip.file(`history/countries/${newTag} - ${fileNameFriendly}.txt`, historyText);
             zip.file(`history/provinces/${provSubfolder}${provTargetFile.name}`, provText); 
 
+            // Aplicada la corrección exacta de localización de Victoria 2
             const locContent = `${newTag};${nameInput};${nameInput};${nameInput};;${nameInput};;;;;;;;;x;;;;\n${newTag}_ADJ;${adjInput};${adjInput};${adjInput};;${adjInput};;;;;;;;;x;;;;\n`;
             zip.file(`localisation/00_${fileNameFriendly}_loc.csv`, locContent);
 
@@ -839,11 +833,11 @@
                 zip.file(`history/countries/${newTag} - ${provCleanName}.txt`, historyText);
                 zip.file(`history/provinces/${provSubfolder}${provTargetFile.name}`, provText);
 
+                // Aplicada la corrección exacta de localización
                 fullLocContent += `${newTag};${nationName};${nationName};${nationName};;${nationName};;;;;;;;;x;;;;\n`;
                 fullLocContent += `${newTag}_ADJ;${nationAdj};${nationAdj};${nationAdj};;${nationAdj};;;;;;;;;x;;;;\n`;
                 addedCountriesTxtLines += `${newTag} = "countries/${provCleanName}.txt"\n`;
 
-                // GENERACIÓN DE BANDERAS ÚNICAS POR PAÍS
                 const flagBuffer = generateRandomTGAData();
                 zip.file(`gfx/flags/${newTag}.tga`, flagBuffer);
                 const ideologies = ['_communist', '_fascist', '_monarchy', '_republic'];
