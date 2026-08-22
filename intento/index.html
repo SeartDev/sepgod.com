@@ -244,7 +244,7 @@
     </header>
 
     <div class="container">
-        <!-- Panel de Configuración Optimizado -->
+        <!-- Panel de Configuración -->
         <div class="config-panel">
             <h2>Directorios del Juego</h2>
             <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem;">
@@ -267,7 +267,7 @@
 
             <div class="input-group">
                 <label>Archivo countries.txt</label>
-                <p>Ubicado en common/countries.txt</p>
+                <p>El archivo base que define los tags.</p>
                 <input type="file" id="fileCountriesTxt" accept=".txt">
             </div>
 
@@ -324,7 +324,6 @@
                         
                         <!-- PANEL DE ACCIONES DE BALCANIZACIÓN -->
                         <div style="display: flex; flex-direction: column; gap: 1rem;">
-                            <!-- TARJETA: BALCANIZAR PROVINCIA -->
                             <div class="card" style="border-color: var(--success);">
                                 <h3 style="color: var(--success);">Balcanizar Provincia</h3>
                                 <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.8rem;">
@@ -348,7 +347,6 @@
                                 <button id="btnDownloadMod" class="btn-success" style="margin-top:0;">Balcanizar Provincia</button>
                             </div>
 
-                            <!-- TARJETA: BALCANIZAR TOTALMENTE -->
                             <div class="card" style="border-color: var(--danger);">
                                 <h3 style="color: var(--danger);">¡Balcanizar Totalmente!</h3>
                                 <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.8rem;">
@@ -467,7 +465,7 @@
             const flagsInput = document.getElementById('dirFlags').files;
             
             if (historyFiles.length === 0 || provFiles.length === 0 || countriesTxtInput.length === 0 || commonDirInput.length === 0) {
-                alert("Faltan carpetas base. Asegúrate de cargar countries.txt, common/countries, history/countries y history/provinces.");
+                alert("Faltan carpetas base necesarias.");
                 return;
             }
 
@@ -578,6 +576,12 @@
             });
         });
 
+        // NUEVA FUNCIÓN MÁS ROBUSTA PARA LEER IDs
+        function extractProvId(provString) {
+            const match = provString.match(/^(\d+)/);
+            return match ? match[1] : null;
+        }
+
         async function mostrarDetallesPais(tag, displayName) {
             currentSelectedTag = tag;
             document.getElementById('selectedCountryName').innerText = displayName;
@@ -624,24 +628,24 @@
                 let otrasProvincias = [];
 
                 provinciasDelPais.forEach(p => {
-                    const provId = p.split('-')[0].trim(); 
-                    if (capitalId && provId === capitalId) capitalStr = p;
+                    const provId = extractProvId(p);
+                    if (provId === capitalId) capitalStr = p;
                     else otrasProvincias.push(p);
                 });
 
-                otrasProvincias.sort((a, b) => parseInt(a) - parseInt(b));
+                otrasProvincias.sort((a, b) => parseInt(extractProvId(a)) - parseInt(extractProvId(b)));
 
                 let htmlList = '';
                 if (capitalStr) {
                     htmlList += `<li class="capital-item">${capitalStr}</li>`;
-                    const cId = capitalStr.split('-')[0].trim();
+                    const cId = extractProvId(capitalStr);
                     capitalSelect.innerHTML += `<option value="${cId}">${capitalStr} (Actual Capital)</option>`;
                 }
                 
                 otrasProvincias.forEach(p => {
                     htmlList += `<li>${p}</li>`;
-                    const pId = p.split('-')[0].trim();
-                    capitalSelect.innerHTML += `<option value="${pId}">${p}</option>`;
+                    const pId = extractProvId(p);
+                    if (pId) capitalSelect.innerHTML += `<option value="${pId}">${p}</option>`;
                 });
                 
                 provListEl.innerHTML = htmlList;
@@ -651,21 +655,23 @@
             }
         }
 
+        // GENERADOR DE TAGS EXPANDIDO (Soporta 2600 países nuevos)
         function getNextFreeTag() {
-            for (let i = 0; i <= 99; i++) {
-                let testTag = "U" + i.toString().padStart(2, '0');
-                if (!countryData[testTag]) return testTag;
+            // Usamos todo el abecedario para evitar el límite de 100 países
+            const prefixes = ['U', 'X', 'Y', 'Z', 'W', 'V', 'T', 'S', 'R', 'Q', 'P', 'O', 'N', 'M', 'L', 'K', 'J', 'I', 'H', 'G', 'F', 'E', 'D', 'C', 'B', 'A'];
+            for(let prefix of prefixes) {
+                for (let i = 0; i <= 99; i++) {
+                    let testTag = prefix + i.toString().padStart(2, '0');
+                    if (!countryData[testTag]) return testTag;
+                }
             }
-            return null;
+            return null; // Solo ocurrirá si balcanizas más de 2600 provincias
         }
 
-        // Esta función ahora detecta de forma robusta la subcarpeta regional
-        // basada en la ruta relativa del archivo cargado.
         function getProvinceSubfolder(fileObject) {
             let pathParts = fileObject.webkitRelativePath.split('/');
             const provIndex = pathParts.findIndex(p => p.toLowerCase() === 'provinces');
             if (provIndex !== -1) {
-                 // Extrae todas las carpetas que estén entre "provinces" y el archivo final
                  const subfolders = pathParts.slice(provIndex + 1, pathParts.length - 1);
                  if (subfolders.length > 0) {
                      return subfolders.join('/') + '/';
@@ -701,7 +707,7 @@
 
             let newTag = getNextFreeTag();
             if (!newTag) {
-                alert("No hay TAGs U00-U99 disponibles.");
+                alert("Error crítico: Se han agotado todos los TAGs disponibles.");
                 return;
             }
 
@@ -730,14 +736,12 @@
             zip.file(`history/countries/${newTag} - ${fileNameFriendly}.txt`, historyText);
             zip.file(`history/provinces/${provSubfolder}${provTargetFile.name}`, provText); 
 
-            // Aplicada la corrección exacta de localización de Victoria 2
             const locContent = `${newTag};${nameInput};${nameInput};${nameInput};;${nameInput};;;;;;;;;x;;;;\n${newTag}_ADJ;${adjInput};${adjInput};${adjInput};;${adjInput};;;;;;;;;x;;;;\n`;
             zip.file(`localisation/00_${fileNameFriendly}_loc.csv`, locContent);
 
             originalCountriesTxtRaw += `\n${newTag} = "countries/${fileNameFriendly}.txt"\n`;
             zip.file(`common/countries.txt`, originalCountriesTxtRaw);
 
-            // GENERACIÓN DE BANDERAS
             const flagBuffer = generateRandomTGAData();
             zip.file(`gfx/flags/${newTag}.tga`, flagBuffer);
             const ideologies = ['_communist', '_fascist', '_monarchy', '_republic'];
@@ -770,8 +774,8 @@
             const capitalId = countryData[currentSelectedTag]?.capital;
 
             const provinciasAIndependizar = provinciasDelPais.filter(p => {
-                const provId = p.split('-')[0].trim();
-                return provId !== capitalId;
+                const provId = extractProvId(p);
+                return provId && provId !== capitalId;
             });
 
             if (provinciasAIndependizar.length === 0) {
@@ -794,18 +798,22 @@
             const zip = new JSZip();
             let addedCountriesTxtLines = "";
             let fullLocContent = "";
+            let paisesCreados = 0;
 
             for (let pStr of provinciasAIndependizar) {
-                const provId = pStr.split('-')[0].trim();
+                const provId = extractProvId(pStr);
                 const provTargetFile = provFilesMap[provId];
                 if (!provTargetFile) continue;
 
                 let newTag = getNextFreeTag();
-                if (!newTag) break;
+                if (!newTag) {
+                    alert("Aviso: Se han agotado los TAGs disponibles a mitad del proceso.");
+                    break;
+                }
 
                 countryData[newTag] = { capital: provId, gov: 'Desconocido' };
 
-                let provCleanName = pStr.split('-')[1] ? pStr.split('-')[1].trim() : `State${provId}`;
+                let provCleanName = pStr.includes('-') ? pStr.split('-').slice(1).join('-').trim() : `State${provId}`;
                 provCleanName = provCleanName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '');
                 
                 const nationName = `Rep. de ${provCleanName}`;
@@ -833,7 +841,6 @@
                 zip.file(`history/countries/${newTag} - ${provCleanName}.txt`, historyText);
                 zip.file(`history/provinces/${provSubfolder}${provTargetFile.name}`, provText);
 
-                // Aplicada la corrección exacta de localización
                 fullLocContent += `${newTag};${nationName};${nationName};${nationName};;${nationName};;;;;;;;;x;;;;\n`;
                 fullLocContent += `${newTag}_ADJ;${nationAdj};${nationAdj};${nationAdj};;${nationAdj};;;;;;;;;x;;;;\n`;
                 addedCountriesTxtLines += `${newTag} = "countries/${provCleanName}.txt"\n`;
@@ -844,6 +851,13 @@
                 ideologies.forEach(ideo => {
                     zip.file(`gfx/flags/${newTag}${ideo}.tga`, flagBuffer);
                 });
+                
+                paisesCreados++;
+            }
+
+            if (paisesCreados === 0) {
+                alert("Error: No se pudo generar ninguna nación. Revisa tus archivos de historia.");
+                return;
             }
 
             zip.file(`localisation/00_TotalChaos_loc.csv`, fullLocContent);
@@ -859,7 +873,7 @@
                 a.click();
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
-                alert("¡Balcanización total completada con banderas generadas automáticamente!");
+                alert(`¡Éxito! Se crearon ${paisesCreados} naciones nuevas.`);
             });
         });
     </script>
