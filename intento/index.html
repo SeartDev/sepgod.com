@@ -22,6 +22,8 @@
             --danger-hover: #e74c3c;
             --border: #3f3f4e;
             --gold: #ffd700;
+            --blue: #2980b9;
+            --blue-hover: #3498db;
         }
 
         * {
@@ -116,6 +118,9 @@
 
         .btn-danger { background-color: var(--danger); }
         .btn-danger:hover { background-color: var(--danger-hover); }
+        
+        .btn-blue { background-color: var(--blue); }
+        .btn-blue:hover { background-color: var(--blue-hover); }
 
         .workspace {
             flex: 1;
@@ -244,59 +249,26 @@
     </header>
 
     <div class="container">
-        <!-- Panel de Configuración -->
+        <!-- Panel de Configuración Optimizado -->
         <div class="config-panel">
-            <h2>Directorios del Juego</h2>
-            <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem;">
-                Selecciona las carpetas específicas para evitar tiempos de carga extremos y países duplicados.
-            </p>
+            <h2>Directorio del Juego</h2>
             
-            <div class="input-group">
-                <label>Archivo Localisation (.csv)</label>
-                <p>Opcional. Traduce los Tags a nombres reales.</p>
-                <input type="file" id="fileLoc" accept=".csv,.txt">
+            <div class="card" style="padding: 1rem; margin-bottom: 1.5rem;">
+                <div class="input-group" style="margin-bottom: 0;">
+                    <label style="color: var(--accent);">Carpeta de Victoria 2</label>
+                    <p>Selecciona la carpeta raíz donde tienes instalado el juego.</p>
+                    <input type="file" id="dirVictoria2" webkitdirectory directory multiple>
+                </div>
             </div>
 
-            <div class="input-group">
-                <label>Carpeta gfx/flags</label>
-                <p>Opcional. (Para ver la bandera original en la interfaz).</p>
-                <input type="file" id="dirFlags" webkitdirectory directory multiple>
-            </div>
-
-            <hr style="border-color: var(--border); margin: 15px 0;">
-
-            <div class="input-group">
-                <label>Archivo countries.txt</label>
-                <p>El archivo base que define los tags.</p>
-                <input type="file" id="fileCountriesTxt" accept=".txt">
-            </div>
-
-            <div class="input-group">
-                <label>Carpeta common/countries</label>
-                <p>Archivos de color, partidos y culturas.</p>
-                <input type="file" id="dirCountries" webkitdirectory directory multiple>
-            </div>
-
-            <div class="input-group">
-                <label>Carpeta history/countries</label>
-                <p>Historia, capital y gobierno de cada nación.</p>
-                <input type="file" id="dirHistory" webkitdirectory directory multiple>
-            </div>
-
-            <div class="input-group">
-                <label>Carpeta history/provinces</label>
-                <p>Propietarios e infraestructura.</p>
-                <input type="file" id="dirProvinces" webkitdirectory directory multiple>
-            </div>
-
-            <button id="btnCrear">Cargar Datos Rápido</button>
+            <button id="btnCrear" class="btn-blue">Indexar Archivos y Crear Entorno</button>
         </div>
 
         <!-- Área de Trabajo -->
         <div class="workspace">
             <div class="empty-state" id="emptyState">
                 <h2>Esperando datos...</h2>
-                <p>Selecciona las carpetas en el panel izquierdo y haz clic en "Cargar Datos Rápido".</p>
+                <p>Selecciona la carpeta principal de Victoria 2 y haz clic en "Indexar Archivos".</p>
             </div>
 
             <div class="dashboard" id="dashboard">
@@ -324,6 +296,7 @@
                         
                         <!-- PANEL DE ACCIONES DE BALCANIZACIÓN -->
                         <div style="display: flex; flex-direction: column; gap: 1rem;">
+                            <!-- TARJETA: BALCANIZAR PROVINCIA -->
                             <div class="card" style="border-color: var(--success);">
                                 <h3 style="color: var(--success);">Balcanizar Provincia</h3>
                                 <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.8rem;">
@@ -347,10 +320,11 @@
                                 <button id="btnDownloadMod" class="btn-success" style="margin-top:0;">Balcanizar Provincia</button>
                             </div>
 
+                            <!-- TARJETA: BALCANIZAR TOTALMENTE -->
                             <div class="card" style="border-color: var(--danger);">
                                 <h3 style="color: var(--danger);">¡Balcanizar Totalmente!</h3>
                                 <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.8rem;">
-                                    Fragmenta todas las provincias en micro-naciones. <strong>Generará cientos de banderas de forma procedural.</strong>
+                                    Fragmenta todas las provincias en micro-naciones. <strong>Generará gobiernos, partidos, nombres y banderas únicas proceduralmente.</strong>
                                 </p>
                                 <button id="btnTotalChaos" class="btn-danger">¡Destruir e Independizar Todo!</button>
                             </div>
@@ -374,6 +348,18 @@
         let commonFilesMap = {}; 
         let historyFilesMap = {}; 
         let provFilesMap = {}; 
+        let v2FlagsFilesGlobal = []; 
+
+        // Listas para la generación procedimental
+        const prefijosNacion = [
+            "República de", "Imperio de", "Principado de", "Reino de", "Ducado de",
+            "Gran Ducado de", "Confederación de", "Federación de", "Unión de",
+            "Estados Unidos de", "Estado Libre de", "Comuna de", "Rep. Popular de",
+            "Rep. Democrática de", "Sultanato de", "Emirato de", "Califato de",
+            "Territorio de", "Nación de", "Dominio de", "Protectorado de", "Liga de"
+        ];
+        const tiposGobierno = ['presidential_dictatorship', 'absolute_monarchy', 'democracy'];
+        const ideologias = ['reactionary', 'liberal', 'conservative'];
 
         // -------------------------------------------------------------
         // SISTEMA PROCEDURAL DE BANDERAS TGA 
@@ -384,7 +370,7 @@
             tempCanvas.height = 64;
             const ctx = tempCanvas.getContext('2d');
 
-            const colores = ['#CE1126', '#002868', '#FFFFFF', '#FCD116', '#007A33', '#000000', '#FF9E1B'];
+            const colores = ['#CE1126', '#002868', '#FFFFFF', '#FCD116', '#007A33', '#000000', '#FF9E1B', '#4B5320', '#8A2BE2'];
             
             function obtenerColores(cantidad) {
                 let paleta = [...colores];
@@ -454,23 +440,66 @@
             tgaFile.set(pixels, header.length);
             return tgaFile.buffer;
         }
-        // -------------------------------------------------------------
 
+        // -------------------------------------------------------------
+        // FUNCIONES AUXILIARES
+        // -------------------------------------------------------------
+        function extractProvId(provString) {
+            const match = provString.match(/^(\d+)/);
+            return match ? match[1] : null;
+        }
+
+        function getNextFreeTag() {
+            const prefixes = ['U', 'X', 'Y', 'Z', 'W', 'V', 'T', 'S', 'R', 'Q', 'P', 'O', 'N', 'M', 'L', 'K', 'J', 'I', 'H', 'G', 'F', 'E', 'D', 'C', 'B', 'A'];
+            for(let prefix of prefixes) {
+                for (let i = 0; i <= 99; i++) {
+                    let testTag = prefix + i.toString().padStart(2, '0');
+                    if (!countryData[testTag]) return testTag;
+                }
+            }
+            return null;
+        }
+
+        function getProvinceSubfolder(fileObject) {
+            let pathParts = fileObject.webkitRelativePath.split('/');
+            const provIndex = pathParts.findIndex(p => p.toLowerCase() === 'provinces');
+            if (provIndex !== -1) {
+                 const subfolders = pathParts.slice(provIndex + 1, pathParts.length - 1);
+                 if (subfolders.length > 0) return subfolders.join('/') + '/';
+            }
+            return '';
+        }
+
+        // Extrae el nombre del partido de common/countries según la ideología
+        function getPartyNameByIdeology(commonText, ideology) {
+            const blocks = commonText.split("party = {");
+            for (let i = 1; i < blocks.length; i++) {
+                const block = blocks[i];
+                const ideologyMatch = block.match(/ideology\s*=\s*([a-zA-Z_]+)/);
+                if (ideologyMatch && ideologyMatch[1].toLowerCase() === ideology) {
+                    const nameMatch = block.match(/name\s*=\s*"([^"]+)"/);
+                    if (nameMatch) return nameMatch[1];
+                    const nameMatchNoQuotes = block.match(/name\s*=\s*([^\s\r\n]+)/);
+                    if (nameMatchNoQuotes) return nameMatchNoQuotes[1];
+                }
+            }
+            return null;
+        }
+
+
+        // -------------------------------------------------------------
+        // CARGA E INDEXACIÓN DE ARCHIVOS
+        // -------------------------------------------------------------
         document.getElementById('btnCrear').addEventListener('click', async function() {
-            const countriesTxtInput = document.getElementById('fileCountriesTxt').files;
-            const commonDirInput = document.getElementById('dirCountries').files;
-            const historyFiles = document.getElementById('dirHistory').files;
-            const provFiles = document.getElementById('dirProvinces').files;
-            const locFileInput = document.getElementById('fileLoc').files;
-            const flagsInput = document.getElementById('dirFlags').files;
+            const v2FolderInput = document.getElementById('dirVictoria2').files;
             
-            if (historyFiles.length === 0 || provFiles.length === 0 || countriesTxtInput.length === 0 || commonDirInput.length === 0) {
-                alert("Faltan carpetas base necesarias.");
+            if (v2FolderInput.length === 0) {
+                alert("Por favor, selecciona la carpeta raíz de Victoria 2.");
                 return;
             }
 
             const emptyState = document.getElementById('emptyState');
-            emptyState.innerHTML = "<h2>Indexando archivos...</h2><p>Mapeando datos de forma rápida...</p>";
+            emptyState.innerHTML = "<h2>Indexando archivos...</h2><p>Mapeando rutas de la instalación de Victoria 2. Esto tomará unos segundos.</p>";
 
             currentSelectedTag = null;
             provinceOwnership = {}; 
@@ -481,27 +510,49 @@
             commonFilesMap = {};
             historyFilesMap = {};
             provFilesMap = {};
+            v2FlagsFilesGlobal = [];
 
-            if (locFileInput.length > 0) {
-                const text = await locFileInput[0].text();
+            let countriesTxtFile = null;
+            let commonFiles = [];
+            let historyFiles = [];
+            let provFiles = [];
+            let locFiles = [];
+
+            for (let file of v2FolderInput) {
+                const path = file.webkitRelativePath.toLowerCase();
+                if (path.includes('/common/countries.txt')) countriesTxtFile = file;
+                else if (path.includes('/common/countries/')) commonFiles.push(file);
+                else if (path.includes('/history/countries/')) historyFiles.push(file);
+                else if (path.includes('/history/provinces/')) provFiles.push(file);
+                else if (path.includes('/localisation/') && (path.endsWith('.csv') || path.endsWith('.txt'))) locFiles.push(file);
+                else if (path.includes('/gfx/flags/') && (path.endsWith('.tga') || path.endsWith('.png'))) v2FlagsFilesGlobal.push(file);
+            }
+
+            if (!countriesTxtFile || historyFiles.length === 0 || provFiles.length === 0) {
+                alert("No se detectó la estructura correcta. ¿Seguro que seleccionaste la carpeta principal de Victoria 2?");
+                emptyState.innerHTML = "<h2>Error</h2><p>Vuelve a seleccionar la carpeta correcta.</p>";
+                return;
+            }
+
+            for (let file of locFiles) {
+                const text = await file.text();
                 const lines = text.split(/\r?\n/);
                 for (let line of lines) {
                     const parts = line.split(';');
-                    if (parts.length > 1 && parts[0].length === 3) {
-                        locData[parts[0].toUpperCase()] = parts[1]; 
-                    }
+                    if (parts.length > 1 && parts[0].length === 3) locData[parts[0].toUpperCase()] = parts[1]; 
                 }
             }
 
-            for (let file of flagsInput) {
-                const nameLower = file.name.toLowerCase();
-                if (nameLower.endsWith('.tga') || nameLower.endsWith('.png')) {
-                    const tag = file.name.substring(0, 3).toUpperCase();
-                    if (file.name.length === 7) flagFilesMap[tag] = file;
+            for (let file of v2FlagsFilesGlobal) {
+                const fileName = file.name;
+                const fileNameLower = fileName.toLowerCase();
+                if (fileNameLower.endsWith('.tga') || fileNameLower.endsWith('.png')) {
+                    const tag = fileName.substring(0, 3).toUpperCase();
+                    if (fileName.length === 7) flagFilesMap[tag] = file;
                 }
             }
 
-            originalCountriesTxtRaw = await countriesTxtInput[0].text();
+            originalCountriesTxtRaw = await countriesTxtFile.text();
             const regexCountries = /([A-Z0-9]{3})\s*=\s*"?(?:countries\/)?([^"\r\n]+)"?/gi;
             let matchC;
             while ((matchC = regexCountries.exec(originalCountriesTxtRaw)) !== null) {
@@ -510,7 +561,7 @@
                 baseCountriesTxtMap[matchC[1].toUpperCase()] = fileName;
             }
 
-            for (let file of commonDirInput) {
+            for (let file of commonFiles) {
                 for (let tag in baseCountriesTxtMap) {
                     if (file.name.toLowerCase() === baseCountriesTxtMap[tag].toLowerCase()) {
                         commonFilesMap[tag] = file;
@@ -575,12 +626,6 @@
                 countryList.appendChild(div);
             });
         });
-
-        // NUEVA FUNCIÓN MÁS ROBUSTA PARA LEER IDs
-        function extractProvId(provString) {
-            const match = provString.match(/^(\d+)/);
-            return match ? match[1] : null;
-        }
 
         async function mostrarDetallesPais(tag, displayName) {
             currentSelectedTag = tag;
@@ -655,30 +700,9 @@
             }
         }
 
-        // GENERADOR DE TAGS EXPANDIDO (Soporta 2600 países nuevos)
-        function getNextFreeTag() {
-            // Usamos todo el abecedario para evitar el límite de 100 países
-            const prefixes = ['U', 'X', 'Y', 'Z', 'W', 'V', 'T', 'S', 'R', 'Q', 'P', 'O', 'N', 'M', 'L', 'K', 'J', 'I', 'H', 'G', 'F', 'E', 'D', 'C', 'B', 'A'];
-            for(let prefix of prefixes) {
-                for (let i = 0; i <= 99; i++) {
-                    let testTag = prefix + i.toString().padStart(2, '0');
-                    if (!countryData[testTag]) return testTag;
-                }
-            }
-            return null; // Solo ocurrirá si balcanizas más de 2600 provincias
-        }
-
-        function getProvinceSubfolder(fileObject) {
-            let pathParts = fileObject.webkitRelativePath.split('/');
-            const provIndex = pathParts.findIndex(p => p.toLowerCase() === 'provinces');
-            if (provIndex !== -1) {
-                 const subfolders = pathParts.slice(provIndex + 1, pathParts.length - 1);
-                 if (subfolders.length > 0) {
-                     return subfolders.join('/') + '/';
-                 }
-            }
-            return '';
-        }
+        // -------------------------------------------------------------
+        // LÓGICA DE BALCANIZACIÓN
+        // -------------------------------------------------------------
 
         // 1. BALCANIZAR UNA SOLA PROVINCIA
         document.getElementById('btnDownloadMod').addEventListener('click', async function() {
@@ -707,7 +731,7 @@
 
             let newTag = getNextFreeTag();
             if (!newTag) {
-                alert("Error crítico: Se han agotado todos los TAGs disponibles.");
+                alert("No hay TAGs disponibles.");
                 return;
             }
 
@@ -744,8 +768,8 @@
 
             const flagBuffer = generateRandomTGAData();
             zip.file(`gfx/flags/${newTag}.tga`, flagBuffer);
-            const ideologies = ['_communist', '_fascist', '_monarchy', '_republic'];
-            ideologies.forEach(ideo => {
+            const ideologiesGame = ['_communist', '_fascist', '_monarchy', '_republic'];
+            ideologiesGame.forEach(ideo => {
                 zip.file(`gfx/flags/${newTag}${ideo}.tga`, flagBuffer);
             });
 
@@ -759,11 +783,11 @@
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
                 countryData[newTag] = { capital: capitalId, gov: 'Desconocido' };
-                alert("¡Provincia balcanizada con éxito y bandera generada!");
+                alert("¡Provincia balcanizada con éxito!");
             });
         });
 
-        // 2. BALCANIZAR TOTALMENTE
+        // 2. BALCANIZAR TOTALMENTE (Con aleatoriedad avanzada)
         document.getElementById('btnTotalChaos').addEventListener('click', async function() {
             if (!currentSelectedTag) {
                 alert("Primero selecciona un país.");
@@ -783,7 +807,7 @@
                 return;
             }
 
-            if (!confirm(`¿Estás seguro? Se crearán ${provinciasAIndependizar.length} nuevas naciones, cada una con banderas TGA únicas generadas automáticamente.`)) {
+            if (!confirm(`¿Estás seguro? Se crearán ${provinciasAIndependizar.length} nuevas naciones totalmente aleatorias.`)) {
                 return;
             }
 
@@ -806,25 +830,37 @@
                 if (!provTargetFile) continue;
 
                 let newTag = getNextFreeTag();
-                if (!newTag) {
-                    alert("Aviso: Se han agotado los TAGs disponibles a mitad del proceso.");
-                    break;
-                }
-
-                countryData[newTag] = { capital: provId, gov: 'Desconocido' };
+                if (!newTag) break;
 
                 let provCleanName = pStr.includes('-') ? pStr.split('-').slice(1).join('-').trim() : `State${provId}`;
                 provCleanName = provCleanName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '');
                 
-                const nationName = `Rep. de ${provCleanName}`;
+                // ALEATORIZACIÓN DE NOMBRE
+                const randPrefix = prefijosNacion[Math.floor(Math.random() * prefijosNacion.length)];
+                const nationName = `${randPrefix} ${provCleanName}`;
                 const nationAdj = `${provCleanName}nse`;
 
                 let historyText = await baseHistoryFile.text();
                 let commonText = await baseCommonFile.text();
                 let provText = await provTargetFile.text();
 
+                // ALEATORIZACIÓN DE GOBIERNO Y PARTIDO GOBERNANTE
+                const randGov = tiposGobierno[Math.floor(Math.random() * tiposGobierno.length)];
+                const randIdeo = ideologias[Math.floor(Math.random() * ideologias.length)];
+                const partyName = getPartyNameByIdeology(commonText, randIdeo);
+
                 historyText = historyText.replace(/capital\s*=\s*\d+/i, `capital = ${provId}`);
                 historyText = historyText.replace(/oob\s*=\s*"[^"]+"/gi, '# Ejército borrado');
+                
+                // Reemplazamos el gobierno en el texto de history
+                historyText = historyText.replace(/government\s*=\s*[a-zA-Z_]+/i, `government = ${randGov}`);
+                
+                // Reemplazamos el partido gobernante si existe en su archivo common
+                if (partyName) {
+                    historyText = historyText.replace(/ruling_party\s*=\s*[^\r\n]+/i, `ruling_party = "${partyName}"`);
+                }
+
+                countryData[newTag] = { capital: provId, gov: randGov };
 
                 const r = Math.floor(Math.random() * 200) + 55;
                 const g = Math.floor(Math.random() * 200) + 55;
@@ -847,17 +883,12 @@
 
                 const flagBuffer = generateRandomTGAData();
                 zip.file(`gfx/flags/${newTag}.tga`, flagBuffer);
-                const ideologies = ['_communist', '_fascist', '_monarchy', '_republic'];
-                ideologies.forEach(ideo => {
+                const ideologiesGame = ['_communist', '_fascist', '_monarchy', '_republic'];
+                ideologiesGame.forEach(ideo => {
                     zip.file(`gfx/flags/${newTag}${ideo}.tga`, flagBuffer);
                 });
                 
                 paisesCreados++;
-            }
-
-            if (paisesCreados === 0) {
-                alert("Error: No se pudo generar ninguna nación. Revisa tus archivos de historia.");
-                return;
             }
 
             zip.file(`localisation/00_TotalChaos_loc.csv`, fullLocContent);
@@ -873,7 +904,7 @@
                 a.click();
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
-                alert(`¡Éxito! Se crearon ${paisesCreados} naciones nuevas.`);
+                alert(`¡Caos desatado! Se crearon ${paisesCreados} naciones con gobiernos, partidos, nombres y banderas aleatorias.`);
             });
         });
     </script>
