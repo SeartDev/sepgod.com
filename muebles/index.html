@@ -1,1 +1,294 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Creador de Planogramas</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --secondary-color: #3498db;
+            --bg-color: #ecf0f1;
+            --shelf-color: #7f8c8d;
+            --slot-color: #ffffff;
+        }
 
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            color: var(--primary-color);
+        }
+
+        /* Contenedores de vistas */
+        .view {
+            display: none;
+            width: 100%;
+            max-width: 800px;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .view.active {
+            display: block;
+        }
+
+        /* Botones */
+        .btn-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        button {
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #2980b9;
+        }
+
+        button.btn-outline {
+            background-color: transparent;
+            color: var(--primary-color);
+            border: 2px solid var(--primary-color);
+        }
+
+        button.btn-outline:hover {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        /* Formulario */
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #bdc3c7;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+
+        /* Diseño visual del Mueble (Planograma) */
+        .mueble-container {
+            margin-top: 30px;
+            background-color: #34495e;
+            padding: 20px;
+            border-radius: 8px;
+            border: 8px solid #2c3e50;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+        }
+
+        .mueble-titulo {
+            color: white;
+            margin-top: 0;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .charola {
+            display: flex;
+            justify-content: space-evenly;
+            align-items: flex-end;
+            background-color: transparent;
+            border-bottom: 12px solid var(--shelf-color);
+            height: 120px; /* Altura de la charola */
+            margin-bottom: 20px;
+            padding-bottom: 5px;
+            box-shadow: 0 4px 2px -2px rgba(0,0,0,0.4);
+        }
+
+        .charola:last-child {
+            margin-bottom: 0;
+        }
+
+        .producto-slot {
+            width: 60px;
+            height: 80px;
+            background-color: var(--slot-color);
+            border: 2px dashed #bdc3c7;
+            border-radius: 4px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #95a5a6;
+            font-size: 12px;
+            text-align: center;
+            transition: transform 0.2s, background-color 0.2s;
+            cursor: pointer;
+        }
+
+        .producto-slot:hover {
+            transform: scale(1.05);
+            background-color: #f1c40f;
+            border-color: #f39c12;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Gestor de Planogramas</h1>
+
+    <!-- VISTA 1: MENÚ PRINCIPAL -->
+    <div id="vista-menu" class="view active">
+        <h2>¿Qué deseas hacer?</h2>
+        <div class="btn-group">
+            <button onclick="mostrarVista('vista-crear')">Crear Mueble</button>
+            <button onclick="cargarMueble()" class="btn-outline">Cargar Mueble</button>
+        </div>
+    </div>
+
+    <!-- VISTA 2: FORMULARIO CREAR MUEBLE -->
+    <div id="vista-crear" class="view">
+        <h2>Configuración del Mueble</h2>
+        
+        <div class="form-group">
+            <label for="nombreMueble">Nombre del Mueble:</label>
+            <input type="text" id="nombreMueble" placeholder="Ej. Anaquel de Bebidas" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="numCharolas">Cantidad de Charolas (Niveles):</label>
+            <input type="number" id="numCharolas" min="1" max="10" placeholder="Ej. 4" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="numProductos">Cantidad de productos por charola:</label>
+            <input type="number" id="numProductos" min="1" max="20" placeholder="Ej. 5" required>
+        </div>
+
+        <div class="btn-group">
+            <button onclick="mostrarVista('vista-menu')" class="btn-outline">Cancelar</button>
+            <button onclick="crearMueble()">Generar Visualmente</button>
+        </div>
+    </div>
+
+    <!-- VISTA 3: PLANOGRAMA VISUAL -->
+    <div id="vista-planograma" class="view">
+        <h2 id="titulo-visual">Planograma</h2>
+        
+        <div class="btn-group" style="margin-bottom: 20px;">
+            <button onclick="mostrarVista('vista-menu')" class="btn-outline">Volver al Menú</button>
+            <button onclick="mostrarVista('vista-crear')">Crear Nuevo</button>
+        </div>
+
+        <div id="contenedor-mueble" class="mueble-container">
+            <!-- Las charolas y productos se generarán aquí con JavaScript -->
+        </div>
+    </div>
+
+    <script>
+        // Función para alternar entre las pantallas
+        function mostrarVista(idVista) {
+            // Ocultar todas las vistas
+            document.querySelectorAll('.view').forEach(vista => {
+                vista.classList.remove('active');
+            });
+            // Mostrar la vista solicitada
+            document.getElementById(idVista).classList.add('active');
+        }
+
+        // Función principal para crear el mueble desde el formulario
+        function crearMueble() {
+            const nombre = document.getElementById('nombreMueble').value;
+            const charolas = parseInt(document.getElementById('numCharolas').value);
+            const productos = parseInt(document.getElementById('numProductos').value);
+
+            // Validaciones básicas
+            if (!nombre || isNaN(charolas) || isNaN(productos) || charolas <= 0 || productos <= 0) {
+                alert("Por favor, completa todos los campos con valores válidos mayores a 0.");
+                return;
+            }
+
+            // Guardar datos en el almacenamiento local del navegador
+            const datosMueble = {
+                nombre: nombre,
+                charolas: charolas,
+                productos: productos
+            };
+            localStorage.setItem('ultimoPlanograma', JSON.stringify(datosMueble));
+
+            // Dibujar el mueble
+            dibujarMueble(nombre, charolas, productos);
+        }
+
+        // Función para cargar un mueble guardado previamente
+        function cargarMueble() {
+            const datosGuardados = localStorage.getItem('ultimoPlanograma');
+            
+            if (datosGuardados) {
+                const datos = JSON.parse(datosGuardados);
+                dibujarMueble(datos.nombre, datos.charolas, datos.productos);
+            } else {
+                alert("No hay ningún mueble guardado. Por favor, crea uno nuevo.");
+            }
+        }
+
+        // Función que genera el HTML visual del mueble
+        function dibujarMueble(nombre, charolas, productos) {
+            document.getElementById('titulo-visual').textContent = `Mueble: ${nombre}`;
+            const contenedor = document.getElementById('contenedor-mueble');
+            
+            // Limpiar contenedor
+            contenedor.innerHTML = '';
+            
+            // Título interno del mueble
+            const tituloInterno = document.createElement('h3');
+            tituloInterno.className = 'mueble-titulo';
+            tituloInterno.textContent = nombre;
+            contenedor.appendChild(tituloInterno);
+
+            // Generar las charolas (de arriba hacia abajo)
+            for (let i = 0; i < charolas; i++) {
+                const charola = document.createElement('div');
+                charola.className = 'charola';
+
+                // Generar los espacios (slots) en cada charola
+                for (let j = 0; j < productos; j++) {
+                    const slot = document.createElement('div');
+                    slot.className = 'producto-slot';
+                    slot.innerHTML = 'Espacio<br>Vacío';
+                    charola.appendChild(slot);
+                }
+
+                contenedor.appendChild(charola);
+            }
+
+            // Cambiar a la vista del planograma
+            mostrarVista('vista-planograma');
+        }
+    </script>
+</body>
+</html>
