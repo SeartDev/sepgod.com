@@ -77,6 +77,16 @@
 
         button.btn-api { background-color: var(--api-color); padding: 12px 15px;}
         button.btn-api:hover { background-color: #732d91; }
+        
+        /* Botón Editar en Modal */
+        button.btn-edit-corner {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            padding: 8px 15px;
+            font-size: 14px;
+            z-index: 10;
+        }
 
         /* Formulario y Buscador */
         .form-group { margin-bottom: 20px; text-align: left; }
@@ -198,7 +208,7 @@
             text-overflow: ellipsis; 
         }
 
-        /* VENTANA MODAL (EDITOR) */
+        /* VENTANAS MODALES */
         .modal-overlay {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
@@ -245,6 +255,66 @@
             max-height: 100%;
             object-fit: contain;
             display: none; 
+        }
+
+        /* Estilos específicos para la vista de Info del Producto */
+        #modal-info .modal-content {
+            text-align: center;
+        }
+        .info-img-large {
+            width: 100%;
+            height: 200px;
+            object-fit: contain;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .info-title {
+            font-size: 22px;
+            color: var(--primary-color);
+            margin: 10px 0 5px 0;
+        }
+        .info-code {
+            color: #7f8c8d;
+            font-size: 14px;
+            margin-bottom: 20px;
+        }
+        .inventory-container {
+            display: flex;
+            justify-content: space-around;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+            margin-top: 15px;
+        }
+        .inventory-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .inventory-label {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #7f8c8d;
+            margin-bottom: 5px;
+        }
+        .inventory-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+        /* Alerta en rojo para stock 0 */
+        .text-danger {
+            color: var(--highlight-color) !important;
+            text-shadow: 0px 0px 8px rgba(231, 76, 60, 0.4);
+        }
+
+        /* Grid para inputs de cantidades */
+        .grid-2-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
         }
 
     </style>
@@ -309,7 +379,7 @@
         </div>
         <div id="resultadoBusqueda"></div>
 
-        <p style="font-size: 14px; margin-bottom:10px;">Haz clic en cualquier espacio vacío para editar el producto.</p>
+        <p style="font-size: 14px; margin-bottom:10px;">Haz clic en cualquier espacio para ver su información o agregarlo si está vacío.</p>
 
         <!-- MUEBLE GENERADO -->
         <div id="contenedor-mueble" class="mueble-container">
@@ -317,7 +387,31 @@
         </div>
     </div>
 
-    <!-- MODAL: EDITOR DE PRODUCTO -->
+    <!-- MODAL 1: INFORMACIÓN DEL PRODUCTO (Elegante) -->
+    <div id="modal-info" class="modal-overlay">
+        <div class="modal-content">
+            <!-- Botón Editar Esquina Superior Izquierda -->
+            <button class="btn-outline btn-edit-corner" onclick="irAEditar()">✏️ Editar</button>
+            <span class="modal-close" onclick="cerrarInfo()">&times;</span>
+            
+            <img id="infoImagen" class="info-img-large" src="" alt="Imagen del Producto">
+            <h3 id="infoNombre" class="info-title"></h3>
+            <p class="info-code">Código: <span id="infoCodigo"></span></p>
+            
+            <div class="inventory-container">
+                <div class="inventory-box">
+                    <span class="inventory-label">En Piso</span>
+                    <span id="infoPiso" class="inventory-value"></span>
+                </div>
+                <div class="inventory-box">
+                    <span class="inventory-label">En Bodega</span>
+                    <span id="infoBodega" class="inventory-value"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 2: EDITOR DE PRODUCTO -->
     <div id="modal-editor" class="modal-overlay">
         <div class="modal-content">
             <span class="modal-close" onclick="cerrarModal()">&times;</span>
@@ -327,7 +421,6 @@
                 <label for="prodCodigo">Código de Barras (Opcional):</label>
                 <div class="input-con-boton">
                     <input type="text" id="prodCodigo" placeholder="Ej. 7501055365470">
-                    <!-- NUEVO BOTÓN: TEST CÓDIGOS -->
                     <button type="button" id="btnTestApi" onclick="testCodigoAPI()" class="btn-api" title="Buscar información en base de datos abierta">⚡ Test códigos</button>
                 </div>
             </div>
@@ -335,6 +428,18 @@
             <div class="form-group">
                 <label for="prodNombre">Nombre del Producto:</label>
                 <input type="text" id="prodNombre" placeholder="Ej. Coca-Cola 600ml">
+            </div>
+
+            <!-- NUEVOS CAMPOS: CANTIDAD EN PISO Y BODEGA -->
+            <div class="form-group grid-2-col">
+                <div>
+                    <label for="prodPiso">Cantidad en piso:</label>
+                    <input type="number" id="prodPiso" min="0" placeholder="Ej. 10">
+                </div>
+                <div>
+                    <label for="prodBodega">Cantidad en bodega:</label>
+                    <input type="number" id="prodBodega" min="0" placeholder="Ej. 50">
+                </div>
             </div>
 
             <div class="form-group">
@@ -356,7 +461,7 @@
     <script>
         let planogramaData = null;
         let slotActual = null; 
-        let imagenBase64Actual = null; // Guardará Base64 local o la URL externa de la API
+        let imagenBase64Actual = null;
 
         // --- GESTIÓN DE VISTAS ---
         function mostrarVista(idVista) {
@@ -486,7 +591,8 @@
                     slotEl.className = 'producto-slot';
                     slotEl.id = `slot-${indexFila}-${indexColumna}`;
                     
-                    slotEl.onclick = () => abrirEditorProducto(indexFila, indexColumna);
+                    // NUEVO FLUJO DE CLICK: Lógica para decidir si abre Info o Editor
+                    slotEl.onclick = () => manejarClickSlot(indexFila, indexColumna);
 
                     if (producto) {
                         slotEl.classList.add('tiene-producto');
@@ -566,7 +672,56 @@
             todosResaltados.forEach(el => el.classList.remove('resaltado'));
         }
 
-        // --- GESTIÓN DEL MODAL / EDITOR ---
+        // --- LÓGICA DE CLICKS Y MODALES ---
+
+        // Función que decide a dónde llevarte según el estado del slot
+        function manejarClickSlot(fila, columna) {
+            const productoActual = planogramaData.estructura[fila][columna];
+            if (productoActual) {
+                abrirInfoProducto(fila, columna);
+            } else {
+                abrirEditorProducto(fila, columna);
+            }
+        }
+
+        // --- MODAL DE INFORMACIÓN (Producto Existente) ---
+        function abrirInfoProducto(fila, columna) {
+            slotActual = { fila, columna };
+            const producto = planogramaData.estructura[fila][columna];
+
+            document.getElementById('infoImagen').src = producto.imagen;
+            document.getElementById('infoNombre').textContent = producto.nombre;
+            document.getElementById('infoCodigo').textContent = producto.codigo || 'Sin código';
+
+            // Cantidades asegurando que sea un número (fallback a 0)
+            const cantPiso = parseInt(producto.cantidadPiso) || 0;
+            const cantBodega = parseInt(producto.cantidadBodega) || 0;
+
+            const elemPiso = document.getElementById('infoPiso');
+            const elemBodega = document.getElementById('infoBodega');
+
+            elemPiso.textContent = cantPiso;
+            elemBodega.textContent = cantBodega;
+
+            // Alerta Roja si stock = 0
+            elemPiso.className = cantPiso === 0 ? 'inventory-value text-danger' : 'inventory-value';
+            elemBodega.className = cantBodega === 0 ? 'inventory-value text-danger' : 'inventory-value';
+
+            document.getElementById('modal-info').classList.add('active');
+        }
+
+        function cerrarInfo() {
+            document.getElementById('modal-info').classList.remove('active');
+            slotActual = null;
+        }
+
+        function irAEditar() {
+            // Pasamos del Info al Editor usando el mismo slotActual
+            document.getElementById('modal-info').classList.remove('active');
+            abrirEditorProducto(slotActual.fila, slotActual.columna);
+        }
+
+        // --- MODAL DEL EDITOR ---
         function abrirEditorProducto(fila, columna) {
             slotActual = { fila, columna };
             const productoActual = planogramaData.estructura[fila][columna];
@@ -576,17 +731,23 @@
             document.getElementById('inputImagen').value = '';
             document.getElementById('prodNombre').value = '';
             document.getElementById('prodCodigo').value = '';
+            document.getElementById('prodPiso').value = '';
+            document.getElementById('prodBodega').value = '';
+            
             const previewImg = document.getElementById('imagenPreviewImg');
             const previewText = document.getElementById('previewText');
             
             previewImg.src = '';
             previewImg.style.display = 'none';
             previewText.style.display = 'block';
-            imagenBase64Actual = null; // Reiniciar estado temporal de imagen
+            imagenBase64Actual = null;
 
             if (productoActual) {
                 document.getElementById('prodNombre').value = productoActual.nombre;
                 document.getElementById('prodCodigo').value = productoActual.codigo || '';
+                document.getElementById('prodPiso').value = productoActual.cantidadPiso || 0;
+                document.getElementById('prodBodega').value = productoActual.cantidadBodega || 0;
+
                 if(productoActual.imagen) {
                     previewImg.src = productoActual.imagen;
                     previewImg.style.display = 'block';
@@ -625,7 +786,6 @@
             }
         }
 
-        // --- NUEVO: FUNCIÓN PARA CONECTAR A LA API OPEN FOOD FACTS ---
         async function testCodigoAPI() {
             const codigo = document.getElementById('prodCodigo').value.trim();
             if (!codigo) {
@@ -639,7 +799,6 @@
             btnApi.disabled = true;
 
             try {
-                // Hacemos la consulta a la base de datos pública Open Food Facts
                 const url = `https://world.openfoodfacts.org/api/v0/product/${codigo}.json`;
                 const respuesta = await fetch(url);
                 const datos = await respuesta.json();
@@ -647,9 +806,7 @@
                 if (datos.status === 1 && datos.product) {
                     const producto = datos.product;
                     
-                    // Asignar el nombre si lo encuentra
                     if (producto.product_name) {
-                        // Si trae marca, la unimos al nombre para que sea más claro
                         let nombreFinal = producto.product_name;
                         if(producto.brands) {
                             nombreFinal = producto.brands + ' - ' + nombreFinal;
@@ -657,7 +814,6 @@
                         document.getElementById('prodNombre').value = nombreFinal;
                     }
 
-                    // Asignar la imagen si la encuentra
                     const urlImagen = producto.image_front_url || producto.image_url;
                     if (urlImagen) {
                         const previewImg = document.getElementById('imagenPreviewImg');
@@ -667,7 +823,6 @@
                         previewImg.style.display = 'block';
                         previewText.style.display = 'none';
                         
-                        // Guardamos la URL de la imagen en vez de la subida por el usuario
                         imagenBase64Actual = urlImagen;
                     }
                 } else {
@@ -677,18 +832,20 @@
                 console.error("Error al buscar en API:", error);
                 alert("Ocurrió un error al intentar conectar con la base de datos de productos.");
             } finally {
-                // Restauramos el botón
                 btnApi.innerHTML = textoOriginal;
                 btnApi.disabled = false;
             }
         }
 
-        // --- GUARDAR PRODUCTO EN EL SLOT ---
+        // --- GUARDAR PRODUCTO ---
         function guardarProducto() {
             if (!slotActual) return;
 
             const nombre = document.getElementById('prodNombre').value;
             const codigo = document.getElementById('prodCodigo').value;
+            // Recolectar nuevos valores parseados a entero (si está vacío, asume 0)
+            const cantPiso = parseInt(document.getElementById('prodPiso').value) || 0;
+            const cantBodega = parseInt(document.getElementById('prodBodega').value) || 0;
             
             if (!nombre) {
                 alert("Por favor, ponle un nombre al producto.");
@@ -698,7 +855,6 @@
             const productoExistente = planogramaData.estructura[slotActual.fila][slotActual.columna];
             let imagenFinal = imagenBase64Actual;
 
-            // Si no subió ni trajo imagen nueva, usar la que ya tenía (si existía)
             if (!imagenFinal && productoExistente) {
                 imagenFinal = productoExistente.imagen; 
             }
@@ -711,7 +867,9 @@
             const nuevoProducto = {
                 nombre: nombre,
                 codigo: codigo,
-                imagen: imagenFinal 
+                imagen: imagenFinal,
+                cantidadPiso: cantPiso,
+                cantidadBodega: cantBodega
             };
 
             planogramaData.estructura[slotActual.fila][slotActual.columna] = nuevoProducto;
