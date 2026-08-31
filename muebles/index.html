@@ -185,6 +185,13 @@
         }
         .producto-slot.tiene-producto .slot-vacio-text { display: none; }
         
+        /* ESTILO NUEVO: Alerta roja en el slot si no hay stock en piso */
+        .producto-slot.sin-stock-piso {
+            border: 2px solid var(--highlight-color) !important;
+            background-color: #ffebee !important; /* Fondo rojo muy claro */
+            box-shadow: inset 0 0 5px rgba(231, 76, 60, 0.3);
+        }
+
         .producto-slot.resaltado {
             border: 4px solid var(--highlight-color) !important;
             box-shadow: 0 0 20px rgba(231, 76, 60, 0.9) !important;
@@ -430,7 +437,7 @@
                 <input type="text" id="prodNombre" placeholder="Ej. Coca-Cola 600ml">
             </div>
 
-            <!-- NUEVOS CAMPOS: CANTIDAD EN PISO Y BODEGA -->
+            <!-- CAMPOS: CANTIDAD EN PISO Y BODEGA -->
             <div class="form-group grid-2-col">
                 <div>
                     <label for="prodPiso">Cantidad en piso:</label>
@@ -591,11 +598,17 @@
                     slotEl.className = 'producto-slot';
                     slotEl.id = `slot-${indexFila}-${indexColumna}`;
                     
-                    // NUEVO FLUJO DE CLICK: Lógica para decidir si abre Info o Editor
+                    // FLUJO DE CLICK: Lógica para decidir si abre Info o Editor
                     slotEl.onclick = () => manejarClickSlot(indexFila, indexColumna);
 
                     if (producto) {
                         slotEl.classList.add('tiene-producto');
+                        
+                        // EVALUAR STOCK EN PISO: Si es 0, agregar clase roja
+                        const cantPiso = parseInt(producto.cantidadPiso) || 0;
+                        if (cantPiso === 0) {
+                            slotEl.classList.add('sin-stock-piso');
+                        }
                         
                         const imgEl = document.createElement('img');
                         imgEl.className = 'slot-imagen';
@@ -674,7 +687,6 @@
 
         // --- LÓGICA DE CLICKS Y MODALES ---
 
-        // Función que decide a dónde llevarte según el estado del slot
         function manejarClickSlot(fila, columna) {
             const productoActual = planogramaData.estructura[fila][columna];
             if (productoActual) {
@@ -693,7 +705,6 @@
             document.getElementById('infoNombre').textContent = producto.nombre;
             document.getElementById('infoCodigo').textContent = producto.codigo || 'Sin código';
 
-            // Cantidades asegurando que sea un número (fallback a 0)
             const cantPiso = parseInt(producto.cantidadPiso) || 0;
             const cantBodega = parseInt(producto.cantidadBodega) || 0;
 
@@ -703,7 +714,6 @@
             elemPiso.textContent = cantPiso;
             elemBodega.textContent = cantBodega;
 
-            // Alerta Roja si stock = 0
             elemPiso.className = cantPiso === 0 ? 'inventory-value text-danger' : 'inventory-value';
             elemBodega.className = cantBodega === 0 ? 'inventory-value text-danger' : 'inventory-value';
 
@@ -716,7 +726,6 @@
         }
 
         function irAEditar() {
-            // Pasamos del Info al Editor usando el mismo slotActual
             document.getElementById('modal-info').classList.remove('active');
             abrirEditorProducto(slotActual.fila, slotActual.columna);
         }
@@ -843,7 +852,6 @@
 
             const nombre = document.getElementById('prodNombre').value;
             const codigo = document.getElementById('prodCodigo').value;
-            // Recolectar nuevos valores parseados a entero (si está vacío, asume 0)
             const cantPiso = parseInt(document.getElementById('prodPiso').value) || 0;
             const cantBodega = parseInt(document.getElementById('prodBodega').value) || 0;
             
