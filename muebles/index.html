@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestor de Planogramas - Buscador</title>
+    <title>Gestor de Planogramas - Buscador API</title>
     <style>
         :root {
             --primary-color: #2c3e50;
@@ -11,6 +11,7 @@
             --success-color: #27ae60;
             --warning-color: #f39c12;
             --highlight-color: #e74c3c;
+            --api-color: #8e44ad;
             --bg-color: #ecf0f1;
             --shelf-color: #7f8c8d;
             --slot-color: #ffffff;
@@ -58,20 +59,24 @@
             transition: background-color 0.3s, transform 0.1s;
             display: flex;
             align-items: center;
+            justify-content: center;
             gap: 8px;
         }
         button:hover { background-color: #2980b9; }
         button:active { transform: scale(0.97); }
-        button.btn-outline {
-            background-color: transparent;
-            color: var(--primary-color);
-            border: 2px solid var(--primary-color);
-        }
+        button:disabled { background-color: #95a5a6; cursor: not-allowed; transform: none; }
+        
+        button.btn-outline { background-color: transparent; color: var(--primary-color); border: 2px solid var(--primary-color); }
         button.btn-outline:hover { background-color: var(--primary-color); color: white; }
+        
         button.btn-success { background-color: var(--success-color); }
         button.btn-success:hover { background-color: #219150; }
+        
         button.btn-warning { background-color: var(--warning-color); color: white; }
         button.btn-warning:hover { background-color: #d68910; }
+
+        button.btn-api { background-color: var(--api-color); padding: 12px 15px;}
+        button.btn-api:hover { background-color: #732d91; }
 
         /* Formulario y Buscador */
         .form-group { margin-bottom: 20px; text-align: left; }
@@ -83,6 +88,11 @@
             border-radius: 5px;
             box-sizing: border-box;
             font-size: 16px;
+        }
+
+        .input-con-boton {
+            display: flex;
+            gap: 10px;
         }
 
         .search-container {
@@ -165,7 +175,6 @@
         }
         .producto-slot.tiene-producto .slot-vacio-text { display: none; }
         
-        /* Clase para cuando se encuentra en el buscador */
         .producto-slot.resaltado {
             border: 4px solid var(--highlight-color) !important;
             box-shadow: 0 0 20px rgba(231, 76, 60, 0.9) !important;
@@ -252,7 +261,6 @@
             <button onclick="mostrarVista('vista-crear')">➕ Crear Mueble Nuevo</button>
             <button onclick="cargarMueble()" class="btn-outline">🔄 Cargar Último Mueble</button>
             
-            <!-- Botón y campo oculto para importar archivo -->
             <button onclick="document.getElementById('inputImportar').click()" class="btn-warning">📂 Importar Archivo .json</button>
             <input type="file" id="inputImportar" accept=".json" style="display: none;" onchange="importarDesdeArchivo(event)">
         </div>
@@ -283,7 +291,7 @@
         </div>
     </div>
 
-    <!-- VISTA 3: PLANOGRAMA VISUAL (INTERACTIVO Y CON BUSCADOR) -->
+    <!-- VISTA 3: PLANOGRAMA VISUAL -->
     <div id="vista-planograma" class="view">
         <h2 id="titulo-visual">Planograma Interactivo</h2>
         
@@ -316,11 +324,11 @@
             <h3 id="modal-titulo">Editar Espacio</h3>
             
             <div class="form-group">
-                <label>Imagen del Producto:</label>
-                <input type="file" id="inputImagen" accept="image/*" onchange="previsualizarImagen(this)">
-                <div class="preview-container">
-                    <span id="previewText">Vista previa</span>
-                    <img id="imagenPreviewImg" src="" alt="Previsualización">
+                <label for="prodCodigo">Código de Barras (Opcional):</label>
+                <div class="input-con-boton">
+                    <input type="text" id="prodCodigo" placeholder="Ej. 7501055365470">
+                    <!-- NUEVO BOTÓN: TEST CÓDIGOS -->
+                    <button type="button" id="btnTestApi" onclick="testCodigoAPI()" class="btn-api" title="Buscar información en base de datos abierta">⚡ Test códigos</button>
                 </div>
             </div>
 
@@ -330,11 +338,15 @@
             </div>
 
             <div class="form-group">
-                <label for="prodCodigo">Código de Barras (Opcional):</label>
-                <input type="text" id="prodCodigo" placeholder="Ej. 750123456789">
+                <label>Imagen del Producto (Manual):</label>
+                <input type="file" id="inputImagen" accept="image/*" onchange="previsualizarImagen(this)">
+                <div class="preview-container">
+                    <span id="previewText">Vista previa</span>
+                    <img id="imagenPreviewImg" src="" alt="Previsualización">
+                </div>
             </div>
 
-            <div class="btn-group">
+            <div class="btn-group" style="margin-top: 30px;">
                 <button onclick="cerrarModal()" class="btn-outline">Cancelar</button>
                 <button onclick="guardarProducto()" class="btn-success">Guardar Producto</button>
             </div>
@@ -344,6 +356,7 @@
     <script>
         let planogramaData = null;
         let slotActual = null; 
+        let imagenBase64Actual = null; // Guardará Base64 local o la URL externa de la API
 
         // --- GESTIÓN DE VISTAS ---
         function mostrarVista(idVista) {
@@ -357,7 +370,7 @@
             }
         }
 
-        // --- CARGAR/GUARDAR EN LOCAL STORAGE (Caché del navegador) ---
+        // --- CARGAR/GUARDAR EN LOCAL STORAGE ---
         function cargarMueble() {
             const datosGuardados = localStorage.getItem('planogramaInteractivo');
             if (datosGuardados) {
@@ -374,7 +387,7 @@
             }
         }
 
-        // --- EXPORTAR E IMPORTAR COMO ARCHIVO .JSON ---
+        // --- EXPORTAR E IMPORTAR ---
         function exportarAArchivo() {
             if (!planogramaData) {
                 alert("No hay datos para exportar.");
@@ -453,7 +466,7 @@
         function dibujarMuebleCompleto() {
             if(!planogramaData) return;
 
-            limpiarBusqueda(true); // Limpiar el buscador cada que se dibuja el mueble
+            limpiarBusqueda(true); 
 
             document.getElementById('titulo-visual').textContent = `Mueble: ${planogramaData.nombre}`;
             const contenedor = document.getElementById('contenedor-mueble');
@@ -471,8 +484,6 @@
                 charolaData.forEach((producto, indexColumna) => {
                     const slotEl = document.createElement('div');
                     slotEl.className = 'producto-slot';
-                    
-                    // Asignamos un ID único a cada espacio para encontrarlo fácil con el buscador
                     slotEl.id = `slot-${indexFila}-${indexColumna}`;
                     
                     slotEl.onclick = () => abrirEditorProducto(indexFila, indexColumna);
@@ -510,12 +521,11 @@
             mostrarVista('vista-planograma');
         }
 
-        // --- FUNCIONES DEL BUSCADOR ---
+        // --- FUNCIONES DEL BUSCADOR EN MUEBLE ---
         function buscarProducto() {
             const query = document.getElementById('inputBuscar').value.trim().toLowerCase();
             const divResultado = document.getElementById('resultadoBusqueda');
             
-            // Limpiar estilos resaltados anteriores pero mantener el texto en el input
             limpiarBusqueda(false); 
 
             if (!query) {
@@ -525,7 +535,6 @@
 
             let encontrados = [];
 
-            // Recorrer toda la matriz buscando coincidencias
             planogramaData.estructura.forEach((charolaData, indexFila) => {
                 charolaData.forEach((producto, indexColumna) => {
                     if (producto) {
@@ -533,10 +542,7 @@
                         const codigoMatch = producto.codigo && producto.codigo.toLowerCase().includes(query);
 
                         if (nombreMatch || codigoMatch) {
-                            // Guardar texto de ubicación (Sumamos 1 para que empiece a contar en 1 y no en 0)
                             encontrados.push(`<strong>Charola ${indexFila + 1}</strong>, Posición <strong>${indexColumna + 1}</strong>`);
-                            
-                            // Resaltar visualmente
                             const slotDOM = document.getElementById(`slot-${indexFila}-${indexColumna}`);
                             if(slotDOM) slotDOM.classList.add('resaltado');
                         }
@@ -544,7 +550,6 @@
                 });
             });
 
-            // Mostrar el resultado en pantalla
             if (encontrados.length > 0) {
                 divResultado.innerHTML = `<span style="color: green;">✅ <strong>¡Encontrado!</strong> Se ubicó en:</span><br>${encontrados.join('<br>')}`;
             } else {
@@ -557,8 +562,6 @@
                 document.getElementById('inputBuscar').value = '';
             }
             document.getElementById('resultadoBusqueda').innerHTML = '';
-            
-            // Quitar clase resaltado de todos los slots
             const todosResaltados = document.querySelectorAll('.producto-slot.resaltado');
             todosResaltados.forEach(el => el.classList.remove('resaltado'));
         }
@@ -575,9 +578,11 @@
             document.getElementById('prodCodigo').value = '';
             const previewImg = document.getElementById('imagenPreviewImg');
             const previewText = document.getElementById('previewText');
+            
             previewImg.src = '';
             previewImg.style.display = 'none';
             previewText.style.display = 'block';
+            imagenBase64Actual = null; // Reiniciar estado temporal de imagen
 
             if (productoActual) {
                 document.getElementById('prodNombre').value = productoActual.nombre;
@@ -596,8 +601,6 @@
             slotActual = null;
         }
 
-        let imagenBase64Actual = null;
-
         function previsualizarImagen(input) {
             const previewImg = document.getElementById('imagenPreviewImg');
             const previewText = document.getElementById('previewText');
@@ -614,7 +617,7 @@
                 reader.readAsDataURL(input.files[0]); 
             } else {
                 const productoActual = planogramaData.estructura[slotActual.fila][slotActual.columna];
-                if(!productoActual) {
+                if(!productoActual || !productoActual.imagen) {
                     previewImg.src = '';
                     previewImg.style.display = 'none';
                     previewText.style.display = 'block';
@@ -622,6 +625,65 @@
             }
         }
 
+        // --- NUEVO: FUNCIÓN PARA CONECTAR A LA API OPEN FOOD FACTS ---
+        async function testCodigoAPI() {
+            const codigo = document.getElementById('prodCodigo').value.trim();
+            if (!codigo) {
+                alert("Primero escribe un código de barras para buscar.");
+                return;
+            }
+
+            const btnApi = document.getElementById('btnTestApi');
+            const textoOriginal = btnApi.innerHTML;
+            btnApi.innerHTML = "⏳ Buscando...";
+            btnApi.disabled = true;
+
+            try {
+                // Hacemos la consulta a la base de datos pública Open Food Facts
+                const url = `https://world.openfoodfacts.org/api/v0/product/${codigo}.json`;
+                const respuesta = await fetch(url);
+                const datos = await respuesta.json();
+
+                if (datos.status === 1 && datos.product) {
+                    const producto = datos.product;
+                    
+                    // Asignar el nombre si lo encuentra
+                    if (producto.product_name) {
+                        // Si trae marca, la unimos al nombre para que sea más claro
+                        let nombreFinal = producto.product_name;
+                        if(producto.brands) {
+                            nombreFinal = producto.brands + ' - ' + nombreFinal;
+                        }
+                        document.getElementById('prodNombre').value = nombreFinal;
+                    }
+
+                    // Asignar la imagen si la encuentra
+                    const urlImagen = producto.image_front_url || producto.image_url;
+                    if (urlImagen) {
+                        const previewImg = document.getElementById('imagenPreviewImg');
+                        const previewText = document.getElementById('previewText');
+                        
+                        previewImg.src = urlImagen;
+                        previewImg.style.display = 'block';
+                        previewText.style.display = 'none';
+                        
+                        // Guardamos la URL de la imagen en vez de la subida por el usuario
+                        imagenBase64Actual = urlImagen;
+                    }
+                } else {
+                    alert("No se encontró el producto en la base de datos pública. Tendrás que llenarlo manualmente.");
+                }
+            } catch (error) {
+                console.error("Error al buscar en API:", error);
+                alert("Ocurrió un error al intentar conectar con la base de datos de productos.");
+            } finally {
+                // Restauramos el botón
+                btnApi.innerHTML = textoOriginal;
+                btnApi.disabled = false;
+            }
+        }
+
+        // --- GUARDAR PRODUCTO EN EL SLOT ---
         function guardarProducto() {
             if (!slotActual) return;
 
@@ -636,12 +698,13 @@
             const productoExistente = planogramaData.estructura[slotActual.fila][slotActual.columna];
             let imagenFinal = imagenBase64Actual;
 
+            // Si no subió ni trajo imagen nueva, usar la que ya tenía (si existía)
             if (!imagenFinal && productoExistente) {
                 imagenFinal = productoExistente.imagen; 
             }
 
             if (!imagenFinal) {
-                alert("Por favor, selecciona una imagen para el producto.");
+                alert("Por favor, selecciona una imagen o búscalo con el código.");
                 return;
             }
 
