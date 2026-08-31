@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestor de Planogramas - Editor de Productos</title>
+    <title>Gestor de Planogramas - Editor y Guardado</title>
     <style>
         :root {
             --primary-color: #2c3e50;
             --secondary-color: #3498db;
             --success-color: #27ae60;
+            --warning-color: #f39c12;
             --bg-color: #ecf0f1;
             --shelf-color: #7f8c8d;
             --slot-color: #ffffff;
@@ -44,7 +45,7 @@
         .view.active { display: block; }
 
         /* Botones */
-        .btn-group { display: flex; gap: 15px; justify-content: center; margin-top: 20px; }
+        .btn-group { display: flex; gap: 15px; justify-content: center; margin-top: 20px; flex-wrap: wrap; }
         button {
             background-color: var(--secondary-color);
             color: white;
@@ -65,11 +66,13 @@
         button.btn-outline:hover { background-color: var(--primary-color); color: white; }
         button.btn-success { background-color: var(--success-color); }
         button.btn-success:hover { background-color: #219150; }
+        button.btn-warning { background-color: var(--warning-color); color: white; }
+        button.btn-warning:hover { background-color: #d68910; }
 
         /* Formulario */
         .form-group { margin-bottom: 20px; text-align: left; }
         label { display: block; margin-bottom: 8px; font-weight: bold; color: var(--primary-color); }
-        input {
+        input[type="text"], input[type="number"] {
             width: 100%;
             padding: 12px;
             border: 1px solid #bdc3c7;
@@ -86,21 +89,21 @@
             border-radius: 8px;
             border: 10px solid #2c3e50;
             box-shadow: inset 0 0 30px rgba(0,0,0,0.7);
-            overflow-x: auto; /* Scroll si hay muchos productos */
+            overflow-x: auto; 
         }
         .mueble-titulo { color: white; margin-top: 0; margin-bottom: 25px; text-transform: uppercase; letter-spacing: 2px; }
         
         .charola {
             display: flex;
-            justify-content: flex-start; /* Alinear productos al inicio */
+            justify-content: flex-start; 
             align-items: flex-end;
             background-color: transparent;
             border-bottom: 15px solid var(--shelf-color);
-            min-height: 150px; /* Altura mínima de la charola */
+            min-height: 150px; 
             margin-bottom: 25px;
             padding-bottom: 8px;
             box-shadow: 0 5px 3px -2px rgba(0,0,0,0.5);
-            gap: 15px; /* Espacio entre productos */
+            gap: 15px; 
             padding-left: 15px;
             padding-right: 15px;
         }
@@ -122,7 +125,7 @@
             text-align: center;
             transition: all 0.2s;
             cursor: pointer;
-            overflow: hidden; /* Cortar contenido que sobresalga */
+            overflow: hidden;
             position: relative;
             box-sizing: border-box;
             padding: 5px;
@@ -135,7 +138,6 @@
             box-shadow: 0 5px 10px rgba(0,0,0,0.2);
         }
 
-        /* Estado del Slot cuando TIENE producto */
         .producto-slot.tiene-producto {
             border: 1px solid #ddd;
             background-color: white;
@@ -146,7 +148,7 @@
         .slot-imagen {
             width: 100%;
             height: 70%;
-            object-fit: contain; /* Ajustar imagen sin deformar */
+            object-fit: contain; 
             margin-bottom: 5px;
         }
         .slot-nombre {
@@ -156,7 +158,7 @@
             font-weight: bold;
             white-space: nowrap;
             overflow: hidden;
-            text-overflow: ellipsis; /* Puntos suspensivos si el nombre es largo */
+            text-overflow: ellipsis; 
         }
 
         /* VENTANA MODAL (EDITOR) */
@@ -164,7 +166,7 @@
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.7);
-            display: none; /* Oculto por defecto */
+            display: none; 
             justify-content: center;
             align-items: center;
             z-index: 1000;
@@ -189,8 +191,6 @@
         }
         .modal-close:hover { color: #e74c3c; }
 
-        /* Vista previa de imagen en el modal */
-        #inputImagen { margin-bottom: 10px; }
         .preview-container {
             width: 100%;
             height: 150px;
@@ -207,7 +207,7 @@
             max-width: 100%;
             max-height: 100%;
             object-fit: contain;
-            display: none; /* Oculto hasta que haya imagen */
+            display: none; 
         }
 
     </style>
@@ -219,10 +219,14 @@
     <!-- VISTA 1: MENÚ PRINCIPAL -->
     <div id="vista-menu" class="view active">
         <h2>¿Qué deseas hacer?</h2>
-        <p>Crea la estructura de tu mueble o carga el último diseño guardado.</p>
+        <p>Crea la estructura de tu mueble, carga el último guardado o importa un archivo.</p>
         <div class="btn-group">
             <button onclick="mostrarVista('vista-crear')">Crear Mueble Nuevo</button>
             <button onclick="cargarMueble()" class="btn-outline">Cargar Último Mueble</button>
+            
+            <!-- Botón y campo oculto para importar archivo -->
+            <button onclick="document.getElementById('inputImportar').click()" class="btn-warning">Importar Archivo .json</button>
+            <input type="file" id="inputImportar" accept=".json" style="display: none;" onchange="importarDesdeArchivo(event)">
         </div>
     </div>
 
@@ -254,11 +258,13 @@
     <!-- VISTA 3: PLANOGRAMA VISUAL (INTERACTIVO) -->
     <div id="vista-planograma" class="view">
         <h2 id="titulo-visual">Planograma Interactiva</h2>
-        <p>Haz clic en cualquier espacio vacío (<span style="color:#f39c12;font-weight:bold;">[]</span>) para editar el producto.</p>
+        <p>Haz clic en cualquier espacio vacío para editar el producto.</p>
         
         <div class="btn-group" style="margin-bottom: 20px;">
             <button onclick="mostrarVista('vista-menu')" class="btn-outline">Volver al Menú</button>
             <button onclick="mostrarVista('vista-crear')">Crear Nuevo Mueble</button>
+            <!-- Botón para exportar archivo -->
+            <button onclick="exportarAArchivo()" class="btn-warning">💾 Guardar en Archivo</button>
         </div>
 
         <div id="contenedor-mueble" class="mueble-container">
@@ -272,7 +278,6 @@
             <span class="modal-close" onclick="cerrarModal()">&times;</span>
             <h3 id="modal-titulo">Editar Espacio</h3>
             
-            <!-- Campo Imagen -->
             <div class="form-group">
                 <label>Imagen del Producto:</label>
                 <input type="file" id="inputImagen" accept="image/*" onchange="previsualizarImagen(this)">
@@ -282,13 +287,11 @@
                 </div>
             </div>
 
-            <!-- Campo Nombre -->
             <div class="form-group">
                 <label for="prodNombre">Nombre del Producto:</label>
                 <input type="text" id="prodNombre" placeholder="Ej. Coca-Cola 600ml">
             </div>
 
-            <!-- Campo Código de Barras -->
             <div class="form-group">
                 <label for="prodCodigo">Código de Barras (Opcional):</label>
                 <input type="text" id="prodCodigo" placeholder="Ej. 750123456789">
@@ -302,18 +305,14 @@
     </div>
 
     <script>
-        // --- VARIABLES GLOBALES ---
-        // Estructura de datos que guardará todo: { nombre: '', filas: [ [ {prod}, {vacío} ], [...] ] }
         let planogramaData = null;
-        let slotActual = null; // Guardará { fila, columna } del slot que se está editando
+        let slotActual = null; 
 
-        // --- GESTIÓN DE VISTAS Y CARGA ---
-
+        // --- GESTIÓN DE VISTAS ---
         function mostrarVista(idVista) {
             document.querySelectorAll('.view').forEach(vista => vista.classList.remove('active'));
             document.getElementById(idVista).classList.add('active');
             
-            // Limpiar formulario si vamos a crear
             if(idVista === 'vista-crear') {
                 document.getElementById('nombreMueble').value = '';
                 document.getElementById('numCharolas').value = '';
@@ -321,20 +320,85 @@
             }
         }
 
-        // Carga datos desde LocalStorage y dibuja
+        // --- CARGAR/GUARDAR EN LOCAL STORAGE (Caché del navegador) ---
         function cargarMueble() {
             const datosGuardados = localStorage.getItem('planogramaInteractivo');
-            
             if (datosGuardados) {
                 planogramaData = JSON.parse(datosGuardados);
                 dibujarMuebleCompleto();
             } else {
-                alert("No hay ningún planograma guardado. Crea uno nuevo.");
-                mostrarVista('vista-crear');
+                alert("No hay ningún planograma guardado temporalmente. Crea uno nuevo o importa un archivo.");
             }
         }
 
-        // --- CREACIÓN DE LA ESTRUCTURA INICIAL ---
+        function guardarEnLocalStorage() {
+            if (planogramaData) {
+                localStorage.setItem('planogramaInteractivo', JSON.stringify(planogramaData));
+            }
+        }
+
+        // --- EXPORTAR E IMPORTAR COMO ARCHIVO .JSON ---
+
+        function exportarAArchivo() {
+            if (!planogramaData) {
+                alert("No hay datos para exportar.");
+                return;
+            }
+
+            // Convertimos nuestro objeto de datos a texto JSON
+            const datosTexto = JSON.stringify(planogramaData, null, 2);
+            
+            // Creamos un archivo virtual (Blob)
+            const archivoBlob = new Blob([datosTexto], { type: 'application/json' });
+            const urlArchivo = URL.createObjectURL(archivoBlob);
+            
+            // Creamos un enlace oculto para forzar la descarga
+            const enlaceDescarga = document.createElement('a');
+            enlaceDescarga.href = urlArchivo;
+            
+            // Limpiamos el nombre del mueble para que sea un nombre de archivo válido
+            const nombreSeguro = planogramaData.nombre.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+            enlaceDescarga.download = `planograma_${nombreSeguro}.json`;
+            
+            document.body.appendChild(enlaceDescarga);
+            enlaceDescarga.click();
+            
+            document.body.removeChild(enlaceDescarga);
+            URL.revokeObjectURL(urlArchivo);
+        }
+
+        function importarDesdeArchivo(event) {
+            const archivo = event.target.files[0];
+            if (!archivo) return;
+
+            const lector = new FileReader();
+            
+            lector.onload = function(e) {
+                try {
+                    const contenido = e.target.result;
+                    const datosNuevos = JSON.parse(contenido);
+                    
+                    // Validación simple para asegurarnos que es el formato correcto
+                    if (datosNuevos && datosNuevos.nombre && datosNuevos.estructura) {
+                        planogramaData = datosNuevos;
+                        guardarEnLocalStorage(); // Guardamos también en la memoria local
+                        dibujarMuebleCompleto();
+                        
+                        // Reseteamos el input file por si quieren volver a cargar el mismo archivo
+                        event.target.value = '';
+                    } else {
+                        alert("El archivo no parece ser un planograma válido.");
+                    }
+                } catch (error) {
+                    alert("Error al leer el archivo. Asegúrate de que sea un archivo JSON válido creado por esta aplicación.");
+                }
+            };
+            
+            // Leemos el archivo como texto
+            lector.readAsText(archivo);
+        }
+
+        // --- CREACIÓN Y RENDERIZADO VISUAL ---
 
         function crearEstructuraMueble() {
             const nombre = document.getElementById('nombreMueble').value;
@@ -346,88 +410,74 @@
                 return;
             }
 
-            // Inicializar la estructura de datos vacía
             planogramaData = {
                 nombre: nombre,
-                estructura: [] // Matriz de charolas x productos
+                estructura: [] 
             };
 
             for (let i = 0; i < numCharolas; i++) {
                 let charola = [];
                 for (let j = 0; j < numProductos; j++) {
-                    // Cada slot empieza nulo (vacío)
                     charola.push(null); 
                 }
                 planogramaData.estructura.push(charola);
             }
 
-            // Guardar estructura base y dibujar
             guardarEnLocalStorage();
             dibujarMuebleCompleto();
         }
-
-        // --- RENDERIZADO VISUAL DEL MUEBLE ---
 
         function dibujarMuebleCompleto() {
             if(!planogramaData) return;
 
             document.getElementById('titulo-visual').textContent = `Mueble: ${planogramaData.nombre}`;
             const contenedor = document.getElementById('contenedor-mueble');
-            contenedor.innerHTML = ''; // Limpiar
+            contenedor.innerHTML = ''; 
             
             const tituloInterno = document.createElement('h3');
             tituloInterno.className = 'mueble-titulo';
             tituloInterno.textContent = planogramaData.nombre;
             contenedor.appendChild(tituloInterno);
 
-            // Recorrer filas (charolas)
             planogramaData.estructura.forEach((charolaData, indexFila) => {
                 const charolaEl = document.createElement('div');
                 charolaEl.className = 'charola';
 
-                // Recorrer columnas (productos) dentro de la charola
                 charolaData.forEach((producto, indexColumna) => {
                     const slotEl = document.createElement('div');
                     slotEl.className = 'producto-slot';
-                    // Asignar evento clic para editar
                     slotEl.onclick = () => abrirEditorProducto(indexFila, indexColumna);
 
                     if (producto) {
-                        // SI TIENE PRODUCTO: Dibujar imagen y nombre
                         slotEl.classList.add('tiene-producto');
                         
                         const imgEl = document.createElement('img');
                         imgEl.className = 'slot-imagen';
-                        imgEl.src = producto.imagen; // Base64 guardada
+                        imgEl.src = producto.imagen;
                         imgEl.alt = producto.nombre;
 
                         const nombreEl = document.createElement('div');
                         nombreEl.className = 'slot-nombre';
                         nombreEl.textContent = producto.nombre;
-                        nombreEl.title = producto.nombre; // Tooltip con nombre completo
+                        nombreEl.title = producto.nombre; 
 
                         slotEl.appendChild(imgEl);
                         slotEl.appendChild(nombreEl);
 
-                        // Opcional: Mostrar código al pasar el ratón
                         if(producto.codigo) {
                              slotEl.title = `${producto.nombre} - CB: ${producto.codigo}`;
                         }
 
                     } else {
-                        // ESTÁ VACÍO: Dibujar texto por defecto
                         const textoVacio = document.createElement('span');
                         textoVacio.className = 'slot-vacio-text';
                         textoVacio.innerHTML = `[ ${indexFila + 1}.${indexColumna + 1} ]<br>Vacío`;
                         slotEl.appendChild(textoVacio);
                     }
-
                     charolaEl.appendChild(slotEl);
                 });
-
                 contenedor.appendChild(charolaEl);
             });
-
             mostrarVista('vista-planograma');
         }
 
@@ -439,7 +489,6 @@
             
             document.getElementById('modal-titulo').textContent = `Editar Espacio [${fila + 1}, ${columna + 1}]`;
             
-            // Limpiar modal
             document.getElementById('inputImagen').value = '';
             document.getElementById('prodNombre').value = '';
             document.getElementById('prodCodigo').value = '';
@@ -449,7 +498,6 @@
             previewImg.style.display = 'none';
             previewText.style.display = 'block';
 
-            // Si ya hay un producto, cargar sus datos en el modal
             if (productoActual) {
                 document.getElementById('prodNombre').value = productoActual.nombre;
                 document.getElementById('prodCodigo').value = productoActual.codigo || '';
@@ -459,7 +507,6 @@
                     previewText.style.display = 'none';
                 }
             }
-
             document.getElementById('modal-editor').classList.add('active');
         }
 
@@ -468,13 +515,12 @@
             slotActual = null;
         }
 
-        // Lógica para previsualizar la imagen seleccionada y convertirla a Base64
-        let imagenBase64Actual = null; // Variable temporal
+        let imagenBase64Actual = null;
 
         function previsualizarImagen(input) {
             const previewImg = document.getElementById('imagenPreviewImg');
             const previewText = document.getElementById('previewText');
-            imagenBase64Actual = null; // Reset temporal
+            imagenBase64Actual = null;
 
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
@@ -483,12 +529,11 @@
                     previewImg.src = e.target.result;
                     previewImg.style.display = 'block';
                     previewText.style.display = 'none';
-                    imagenBase64Actual = e.target.result; // Aquí está la cadena Base64
+                    imagenBase64Actual = e.target.result; 
                 }
 
-                reader.readAsDataURL(input.files[0]); // Convertir imagen a datos URL
+                reader.readAsDataURL(input.files[0]); 
             } else {
-                // Si cancela la selección, mantener la imagen anterior si existía
                 const productoActual = planogramaData.estructura[slotActual.fila][slotActual.columna];
                 if(!productoActual) {
                     previewImg.src = '';
@@ -498,26 +543,22 @@
             }
         }
 
-        // --- GUARDADO DE DATOS ---
-
         function guardarProducto() {
             if (!slotActual) return;
 
             const nombre = document.getElementById('prodNombre').value;
             const codigo = document.getElementById('prodCodigo').value;
             
-            // Validación: Al menos el nombre es obligatorio si se va a guardar
             if (!nombre) {
                 alert("Por favor, ponle un nombre al producto.");
                 return;
             }
 
-            // Obtener la imagen. Prioridad: 1. Nueva seleccionada, 2. La que ya tenía, 3. Nada (error)
             const productoExistente = planogramaData.estructura[slotActual.fila][slotActual.columna];
             let imagenFinal = imagenBase64Actual;
 
             if (!imagenFinal && productoExistente) {
-                imagenFinal = productoExistente.imagen; // Mantener la vieja si no se subió nueva
+                imagenFinal = productoExistente.imagen; 
             }
 
             if (!imagenFinal) {
@@ -525,26 +566,17 @@
                 return;
             }
 
-            // Crear objeto de producto
             const nuevoProducto = {
                 nombre: nombre,
                 codigo: codigo,
-                imagen: imagenFinal // Cadena Base64
+                imagen: imagenFinal 
             };
 
-            // Actualizar la estructura de datos global
             planogramaData.estructura[slotActual.fila][slotActual.columna] = nuevoProducto;
 
-            // Guardar todo y redibujar
             guardarEnLocalStorage();
             dibujarMuebleCompleto();
             cerrarModal();
-        }
-
-        function guardarEnLocalStorage() {
-            if (planogramaData) {
-                localStorage.setItem('planogramaInteractivo', JSON.stringify(planogramaData));
-            }
         }
 
     </script>
