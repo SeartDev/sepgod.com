@@ -3,14 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Creador de Planogramas</title>
+    <title>Gestor de Planogramas - Editor de Productos</title>
     <style>
         :root {
             --primary-color: #2c3e50;
             --secondary-color: #3498db;
+            --success-color: #27ae60;
             --bg-color: #ecf0f1;
             --shelf-color: #7f8c8d;
             --slot-color: #ffffff;
+            --text-color: #333;
         }
 
         body {
@@ -21,36 +23,28 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            color: var(--text-color);
         }
 
-        h1 {
-            color: var(--primary-color);
-        }
+        h1 { color: var(--primary-color); margin-bottom: 10px; }
 
         /* Contenedores de vistas */
         .view {
             display: none;
             width: 100%;
-            max-width: 800px;
+            max-width: 900px;
             background: white;
             padding: 30px;
             border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
             text-align: center;
+            box-sizing: border-box;
         }
 
-        .view.active {
-            display: block;
-        }
+        .view.active { display: block; }
 
         /* Botones */
-        .btn-group {
-            display: flex;
-            gap: 15px;
-            justify-content: center;
-            margin-top: 20px;
-        }
-
+        .btn-group { display: flex; gap: 15px; justify-content: center; margin-top: 20px; }
         button {
             background-color: var(--secondary-color);
             color: white;
@@ -59,102 +53,163 @@
             font-size: 16px;
             border-radius: 5px;
             cursor: pointer;
-            transition: background-color 0.3s;
+            transition: background-color 0.3s, transform 0.1s;
         }
-
-        button:hover {
-            background-color: #2980b9;
-        }
-
+        button:hover { background-color: #2980b9; }
+        button:active { transform: scale(0.97); }
         button.btn-outline {
             background-color: transparent;
             color: var(--primary-color);
             border: 2px solid var(--primary-color);
         }
-
-        button.btn-outline:hover {
-            background-color: var(--primary-color);
-            color: white;
-        }
+        button.btn-outline:hover { background-color: var(--primary-color); color: white; }
+        button.btn-success { background-color: var(--success-color); }
+        button.btn-success:hover { background-color: #219150; }
 
         /* Formulario */
-        .form-group {
-            margin-bottom: 20px;
-            text-align: left;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: bold;
-            color: var(--primary-color);
-        }
-
+        .form-group { margin-bottom: 20px; text-align: left; }
+        label { display: block; margin-bottom: 8px; font-weight: bold; color: var(--primary-color); }
         input {
             width: 100%;
-            padding: 10px;
+            padding: 12px;
             border: 1px solid #bdc3c7;
             border-radius: 5px;
             box-sizing: border-box;
             font-size: 16px;
         }
 
-        /* Diseño visual del Mueble (Planograma) */
+        /* Diseño visual del Mueble */
         .mueble-container {
             margin-top: 30px;
             background-color: #34495e;
-            padding: 20px;
+            padding: 25px;
             border-radius: 8px;
-            border: 8px solid #2c3e50;
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+            border: 10px solid #2c3e50;
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.7);
+            overflow-x: auto; /* Scroll si hay muchos productos */
         }
-
-        .mueble-titulo {
-            color: white;
-            margin-top: 0;
-            margin-bottom: 20px;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-
+        .mueble-titulo { color: white; margin-top: 0; margin-bottom: 25px; text-transform: uppercase; letter-spacing: 2px; }
+        
         .charola {
             display: flex;
-            justify-content: space-evenly;
+            justify-content: flex-start; /* Alinear productos al inicio */
             align-items: flex-end;
             background-color: transparent;
-            border-bottom: 12px solid var(--shelf-color);
-            height: 120px; /* Altura de la charola */
-            margin-bottom: 20px;
-            padding-bottom: 5px;
-            box-shadow: 0 4px 2px -2px rgba(0,0,0,0.4);
+            border-bottom: 15px solid var(--shelf-color);
+            min-height: 150px; /* Altura mínima de la charola */
+            margin-bottom: 25px;
+            padding-bottom: 8px;
+            box-shadow: 0 5px 3px -2px rgba(0,0,0,0.5);
+            gap: 15px; /* Espacio entre productos */
+            padding-left: 15px;
+            padding-right: 15px;
         }
+        .charola:last-child { margin-bottom: 0; }
 
-        .charola:last-child {
-            margin-bottom: 0;
-        }
-
+        /* Espacio del Producto (Slot) */
         .producto-slot {
-            width: 60px;
-            height: 80px;
+            width: 80px;
+            height: 110px;
             background-color: var(--slot-color);
             border: 2px dashed #bdc3c7;
-            border-radius: 4px;
+            border-radius: 5px;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             color: #95a5a6;
-            font-size: 12px;
+            font-size: 11px;
             text-align: center;
-            transition: transform 0.2s, background-color 0.2s;
+            transition: all 0.2s;
             cursor: pointer;
+            overflow: hidden; /* Cortar contenido que sobresalga */
+            position: relative;
+            box-sizing: border-box;
+            padding: 5px;
         }
-
         .producto-slot:hover {
-            transform: scale(1.05);
+            transform: translateY(-5px) scale(1.03);
             background-color: #f1c40f;
             border-color: #f39c12;
             color: #333;
+            box-shadow: 0 5px 10px rgba(0,0,0,0.2);
         }
+
+        /* Estado del Slot cuando TIENE producto */
+        .producto-slot.tiene-producto {
+            border: 1px solid #ddd;
+            background-color: white;
+            justify-content: space-between;
+        }
+        .producto-slot.tiene-producto .slot-vacio-text { display: none; }
+        
+        .slot-imagen {
+            width: 100%;
+            height: 70%;
+            object-fit: contain; /* Ajustar imagen sin deformar */
+            margin-bottom: 5px;
+        }
+        .slot-nombre {
+            width: 100%;
+            font-size: 10px;
+            color: #333;
+            font-weight: bold;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis; /* Puntos suspensivos si el nombre es largo */
+        }
+
+        /* VENTANA MODAL (EDITOR) */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+            display: none; /* Oculto por defecto */
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-overlay.active { display: flex; }
+
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            width: 100%;
+            max-width: 500px;
+            position: relative;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+        }
+        .modal-close {
+            position: absolute;
+            top: 15px; right: 20px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #95a5a6;
+        }
+        .modal-close:hover { color: #e74c3c; }
+
+        /* Vista previa de imagen en el modal */
+        #inputImagen { margin-bottom: 10px; }
+        .preview-container {
+            width: 100%;
+            height: 150px;
+            border: 2px dashed #bdc3c7;
+            border-radius: 5px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 10px;
+            color: #95a5a6;
+            overflow: hidden;
+        }
+        #imagenPreviewImg {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            display: none; /* Oculto hasta que haya imagen */
+        }
+
     </style>
 </head>
 <body>
@@ -164,131 +219,334 @@
     <!-- VISTA 1: MENÚ PRINCIPAL -->
     <div id="vista-menu" class="view active">
         <h2>¿Qué deseas hacer?</h2>
+        <p>Crea la estructura de tu mueble o carga el último diseño guardado.</p>
         <div class="btn-group">
-            <button onclick="mostrarVista('vista-crear')">Crear Mueble</button>
-            <button onclick="cargarMueble()" class="btn-outline">Cargar Mueble</button>
+            <button onclick="mostrarVista('vista-crear')">Crear Mueble Nuevo</button>
+            <button onclick="cargarMueble()" class="btn-outline">Cargar Último Mueble</button>
         </div>
     </div>
 
     <!-- VISTA 2: FORMULARIO CREAR MUEBLE -->
     <div id="vista-crear" class="view">
-        <h2>Configuración del Mueble</h2>
+        <h2>Configuración de la Estructura</h2>
         
         <div class="form-group">
             <label for="nombreMueble">Nombre del Mueble:</label>
-            <input type="text" id="nombreMueble" placeholder="Ej. Anaquel de Bebidas" required>
+            <input type="text" id="nombreMueble" placeholder="Ej. Pasillo 3 - Bebidas" required>
         </div>
         
         <div class="form-group">
-            <label for="numCharolas">Cantidad de Charolas (Niveles):</label>
+            <label for="numCharolas">Cantidad de Charolas (Niveles vertical):</label>
             <input type="number" id="numCharolas" min="1" max="10" placeholder="Ej. 4" required>
         </div>
         
         <div class="form-group">
-            <label for="numProductos">Cantidad de productos por charola:</label>
-            <input type="number" id="numProductos" min="1" max="20" placeholder="Ej. 5" required>
+            <label for="numProductos">Cantidad de espacios por charola (Horizontal):</label>
+            <input type="number" id="numProductos" min="1" max="20" placeholder="Ej. 6" required>
         </div>
 
         <div class="btn-group">
             <button onclick="mostrarVista('vista-menu')" class="btn-outline">Cancelar</button>
-            <button onclick="crearMueble()">Generar Visualmente</button>
+            <button onclick="crearEstructuraMueble()" class="btn-success">Generar Mueble Vacío</button>
         </div>
     </div>
 
-    <!-- VISTA 3: PLANOGRAMA VISUAL -->
+    <!-- VISTA 3: PLANOGRAMA VISUAL (INTERACTIVO) -->
     <div id="vista-planograma" class="view">
-        <h2 id="titulo-visual">Planograma</h2>
+        <h2 id="titulo-visual">Planograma Interactiva</h2>
+        <p>Haz clic en cualquier espacio vacío (<span style="color:#f39c12;font-weight:bold;">[]</span>) para editar el producto.</p>
         
         <div class="btn-group" style="margin-bottom: 20px;">
             <button onclick="mostrarVista('vista-menu')" class="btn-outline">Volver al Menú</button>
-            <button onclick="mostrarVista('vista-crear')">Crear Nuevo</button>
+            <button onclick="mostrarVista('vista-crear')">Crear Nuevo Mueble</button>
         </div>
 
         <div id="contenedor-mueble" class="mueble-container">
-            <!-- Las charolas y productos se generarán aquí con JavaScript -->
+            <!-- Las charolas y productos se generarán aquí -->
+        </div>
+    </div>
+
+    <!-- MODAL: EDITOR DE PRODUCTO -->
+    <div id="modal-editor" class="modal-overlay">
+        <div class="modal-content">
+            <span class="modal-close" onclick="cerrarModal()">&times;</span>
+            <h3 id="modal-titulo">Editar Espacio</h3>
+            
+            <!-- Campo Imagen -->
+            <div class="form-group">
+                <label>Imagen del Producto:</label>
+                <input type="file" id="inputImagen" accept="image/*" onchange="previsualizarImagen(this)">
+                <div class="preview-container">
+                    <span id="previewText">Vista previa</span>
+                    <img id="imagenPreviewImg" src="" alt="Previsualización">
+                </div>
+            </div>
+
+            <!-- Campo Nombre -->
+            <div class="form-group">
+                <label for="prodNombre">Nombre del Producto:</label>
+                <input type="text" id="prodNombre" placeholder="Ej. Coca-Cola 600ml">
+            </div>
+
+            <!-- Campo Código de Barras -->
+            <div class="form-group">
+                <label for="prodCodigo">Código de Barras (Opcional):</label>
+                <input type="text" id="prodCodigo" placeholder="Ej. 750123456789">
+            </div>
+
+            <div class="btn-group">
+                <button onclick="cerrarModal()" class="btn-outline">Cancelar</button>
+                <button onclick="guardarProducto()" class="btn-success">Guardar Producto</button>
+            </div>
         </div>
     </div>
 
     <script>
-        // Función para alternar entre las pantallas
+        // --- VARIABLES GLOBALES ---
+        // Estructura de datos que guardará todo: { nombre: '', filas: [ [ {prod}, {vacío} ], [...] ] }
+        let planogramaData = null;
+        let slotActual = null; // Guardará { fila, columna } del slot que se está editando
+
+        // --- GESTIÓN DE VISTAS Y CARGA ---
+
         function mostrarVista(idVista) {
-            // Ocultar todas las vistas
-            document.querySelectorAll('.view').forEach(vista => {
-                vista.classList.remove('active');
-            });
-            // Mostrar la vista solicitada
+            document.querySelectorAll('.view').forEach(vista => vista.classList.remove('active'));
             document.getElementById(idVista).classList.add('active');
+            
+            // Limpiar formulario si vamos a crear
+            if(idVista === 'vista-crear') {
+                document.getElementById('nombreMueble').value = '';
+                document.getElementById('numCharolas').value = '';
+                document.getElementById('numProductos').value = '';
+            }
         }
 
-        // Función principal para crear el mueble desde el formulario
-        function crearMueble() {
-            const nombre = document.getElementById('nombreMueble').value;
-            const charolas = parseInt(document.getElementById('numCharolas').value);
-            const productos = parseInt(document.getElementById('numProductos').value);
+        // Carga datos desde LocalStorage y dibuja
+        function cargarMueble() {
+            const datosGuardados = localStorage.getItem('planogramaInteractivo');
+            
+            if (datosGuardados) {
+                planogramaData = JSON.parse(datosGuardados);
+                dibujarMuebleCompleto();
+            } else {
+                alert("No hay ningún planograma guardado. Crea uno nuevo.");
+                mostrarVista('vista-crear');
+            }
+        }
 
-            // Validaciones básicas
-            if (!nombre || isNaN(charolas) || isNaN(productos) || charolas <= 0 || productos <= 0) {
-                alert("Por favor, completa todos los campos con valores válidos mayores a 0.");
+        // --- CREACIÓN DE LA ESTRUCTURA INICIAL ---
+
+        function crearEstructuraMueble() {
+            const nombre = document.getElementById('nombreMueble').value;
+            const numCharolas = parseInt(document.getElementById('numCharolas').value);
+            const numProductos = parseInt(document.getElementById('numProductos').value);
+
+            if (!nombre || isNaN(numCharolas) || isNaN(numProductos) || numCharolas <= 0 || numProductos <= 0) {
+                alert("Por favor, completa todos los campos con valores válidos.");
                 return;
             }
 
-            // Guardar datos en el almacenamiento local del navegador
-            const datosMueble = {
+            // Inicializar la estructura de datos vacía
+            planogramaData = {
                 nombre: nombre,
-                charolas: charolas,
-                productos: productos
+                estructura: [] // Matriz de charolas x productos
             };
-            localStorage.setItem('ultimoPlanograma', JSON.stringify(datosMueble));
 
-            // Dibujar el mueble
-            dibujarMueble(nombre, charolas, productos);
-        }
-
-        // Función para cargar un mueble guardado previamente
-        function cargarMueble() {
-            const datosGuardados = localStorage.getItem('ultimoPlanograma');
-            
-            if (datosGuardados) {
-                const datos = JSON.parse(datosGuardados);
-                dibujarMueble(datos.nombre, datos.charolas, datos.productos);
-            } else {
-                alert("No hay ningún mueble guardado. Por favor, crea uno nuevo.");
+            for (let i = 0; i < numCharolas; i++) {
+                let charola = [];
+                for (let j = 0; j < numProductos; j++) {
+                    // Cada slot empieza nulo (vacío)
+                    charola.push(null); 
+                }
+                planogramaData.estructura.push(charola);
             }
+
+            // Guardar estructura base y dibujar
+            guardarEnLocalStorage();
+            dibujarMuebleCompleto();
         }
 
-        // Función que genera el HTML visual del mueble
-        function dibujarMueble(nombre, charolas, productos) {
-            document.getElementById('titulo-visual').textContent = `Mueble: ${nombre}`;
+        // --- RENDERIZADO VISUAL DEL MUEBLE ---
+
+        function dibujarMuebleCompleto() {
+            if(!planogramaData) return;
+
+            document.getElementById('titulo-visual').textContent = `Mueble: ${planogramaData.nombre}`;
             const contenedor = document.getElementById('contenedor-mueble');
+            contenedor.innerHTML = ''; // Limpiar
             
-            // Limpiar contenedor
-            contenedor.innerHTML = '';
-            
-            // Título interno del mueble
             const tituloInterno = document.createElement('h3');
             tituloInterno.className = 'mueble-titulo';
-            tituloInterno.textContent = nombre;
+            tituloInterno.textContent = planogramaData.nombre;
             contenedor.appendChild(tituloInterno);
 
-            // Generar las charolas (de arriba hacia abajo)
-            for (let i = 0; i < charolas; i++) {
-                const charola = document.createElement('div');
-                charola.className = 'charola';
+            // Recorrer filas (charolas)
+            planogramaData.estructura.forEach((charolaData, indexFila) => {
+                const charolaEl = document.createElement('div');
+                charolaEl.className = 'charola';
 
-                // Generar los espacios (slots) en cada charola
-                for (let j = 0; j < productos; j++) {
-                    const slot = document.createElement('div');
-                    slot.className = 'producto-slot';
-                    slot.innerHTML = 'Espacio<br>Vacío';
-                    charola.appendChild(slot);
-                }
+                // Recorrer columnas (productos) dentro de la charola
+                charolaData.forEach((producto, indexColumna) => {
+                    const slotEl = document.createElement('div');
+                    slotEl.className = 'producto-slot';
+                    // Asignar evento clic para editar
+                    slotEl.onclick = () => abrirEditorProducto(indexFila, indexColumna);
 
-                contenedor.appendChild(charola);
-            }
+                    if (producto) {
+                        // SI TIENE PRODUCTO: Dibujar imagen y nombre
+                        slotEl.classList.add('tiene-producto');
+                        
+                        const imgEl = document.createElement('img');
+                        imgEl.className = 'slot-imagen';
+                        imgEl.src = producto.imagen; // Base64 guardada
+                        imgEl.alt = producto.nombre;
 
-            // Cambiar a la vista del planograma
+                        const nombreEl = document.createElement('div');
+                        nombreEl.className = 'slot-nombre';
+                        nombreEl.textContent = producto.nombre;
+                        nombreEl.title = producto.nombre; // Tooltip con nombre completo
+
+                        slotEl.appendChild(imgEl);
+                        slotEl.appendChild(nombreEl);
+
+                        // Opcional: Mostrar código al pasar el ratón
+                        if(producto.codigo) {
+                             slotEl.title = `${producto.nombre} - CB: ${producto.codigo}`;
+                        }
+
+                    } else {
+                        // ESTÁ VACÍO: Dibujar texto por defecto
+                        const textoVacio = document.createElement('span');
+                        textoVacio.className = 'slot-vacio-text';
+                        textoVacio.innerHTML = `[ ${indexFila + 1}.${indexColumna + 1} ]<br>Vacío`;
+                        slotEl.appendChild(textoVacio);
+                    }
+
+                    charolaEl.appendChild(slotEl);
+                });
+
+                contenedor.appendChild(charolaEl);
+            });
+
             mostrarVista('vista-planograma');
         }
+
+        // --- GESTIÓN DEL MODAL / EDITOR ---
+
+        function abrirEditorProducto(fila, columna) {
+            slotActual = { fila, columna };
+            const productoActual = planogramaData.estructura[fila][columna];
+            
+            document.getElementById('modal-titulo').textContent = `Editar Espacio [${fila + 1}, ${columna + 1}]`;
+            
+            // Limpiar modal
+            document.getElementById('inputImagen').value = '';
+            document.getElementById('prodNombre').value = '';
+            document.getElementById('prodCodigo').value = '';
+            const previewImg = document.getElementById('imagenPreviewImg');
+            const previewText = document.getElementById('previewText');
+            previewImg.src = '';
+            previewImg.style.display = 'none';
+            previewText.style.display = 'block';
+
+            // Si ya hay un producto, cargar sus datos en el modal
+            if (productoActual) {
+                document.getElementById('prodNombre').value = productoActual.nombre;
+                document.getElementById('prodCodigo').value = productoActual.codigo || '';
+                if(productoActual.imagen) {
+                    previewImg.src = productoActual.imagen;
+                    previewImg.style.display = 'block';
+                    previewText.style.display = 'none';
+                }
+            }
+
+            document.getElementById('modal-editor').classList.add('active');
+        }
+
+        function cerrarModal() {
+            document.getElementById('modal-editor').classList.remove('active');
+            slotActual = null;
+        }
+
+        // Lógica para previsualizar la imagen seleccionada y convertirla a Base64
+        let imagenBase64Actual = null; // Variable temporal
+
+        function previsualizarImagen(input) {
+            const previewImg = document.getElementById('imagenPreviewImg');
+            const previewText = document.getElementById('previewText');
+            imagenBase64Actual = null; // Reset temporal
+
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+
+                reader.onload = function(e) {
+                    previewImg.src = e.target.result;
+                    previewImg.style.display = 'block';
+                    previewText.style.display = 'none';
+                    imagenBase64Actual = e.target.result; // Aquí está la cadena Base64
+                }
+
+                reader.readAsDataURL(input.files[0]); // Convertir imagen a datos URL
+            } else {
+                // Si cancela la selección, mantener la imagen anterior si existía
+                const productoActual = planogramaData.estructura[slotActual.fila][slotActual.columna];
+                if(!productoActual) {
+                    previewImg.src = '';
+                    previewImg.style.display = 'none';
+                    previewText.style.display = 'block';
+                }
+            }
+        }
+
+        // --- GUARDADO DE DATOS ---
+
+        function guardarProducto() {
+            if (!slotActual) return;
+
+            const nombre = document.getElementById('prodNombre').value;
+            const codigo = document.getElementById('prodCodigo').value;
+            
+            // Validación: Al menos el nombre es obligatorio si se va a guardar
+            if (!nombre) {
+                alert("Por favor, ponle un nombre al producto.");
+                return;
+            }
+
+            // Obtener la imagen. Prioridad: 1. Nueva seleccionada, 2. La que ya tenía, 3. Nada (error)
+            const productoExistente = planogramaData.estructura[slotActual.fila][slotActual.columna];
+            let imagenFinal = imagenBase64Actual;
+
+            if (!imagenFinal && productoExistente) {
+                imagenFinal = productoExistente.imagen; // Mantener la vieja si no se subió nueva
+            }
+
+            if (!imagenFinal) {
+                alert("Por favor, selecciona una imagen para el producto.");
+                return;
+            }
+
+            // Crear objeto de producto
+            const nuevoProducto = {
+                nombre: nombre,
+                codigo: codigo,
+                imagen: imagenFinal // Cadena Base64
+            };
+
+            // Actualizar la estructura de datos global
+            planogramaData.estructura[slotActual.fila][slotActual.columna] = nuevoProducto;
+
+            // Guardar todo y redibujar
+            guardarEnLocalStorage();
+            dibujarMuebleCompleto();
+            cerrarModal();
+        }
+
+        function guardarEnLocalStorage() {
+            if (planogramaData) {
+                localStorage.setItem('planogramaInteractivo', JSON.stringify(planogramaData));
+            }
+        }
+
     </script>
 </body>
 </html>
