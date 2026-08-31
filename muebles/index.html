@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestor de Planogramas - Editor y Guardado</title>
+    <title>Gestor de Planogramas - Buscador</title>
     <style>
         :root {
             --primary-color: #2c3e50;
             --secondary-color: #3498db;
             --success-color: #27ae60;
             --warning-color: #f39c12;
+            --highlight-color: #e74c3c;
             --bg-color: #ecf0f1;
             --shelf-color: #7f8c8d;
             --slot-color: #ffffff;
@@ -27,7 +28,7 @@
             color: var(--text-color);
         }
 
-        h1 { color: var(--primary-color); margin-bottom: 10px; }
+        h1 { color: var(--primary-color); margin-bottom: 10px; text-align: center; }
 
         /* Contenedores de vistas */
         .view {
@@ -55,6 +56,9 @@
             border-radius: 5px;
             cursor: pointer;
             transition: background-color 0.3s, transform 0.1s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
         button:hover { background-color: #2980b9; }
         button:active { transform: scale(0.97); }
@@ -69,7 +73,7 @@
         button.btn-warning { background-color: var(--warning-color); color: white; }
         button.btn-warning:hover { background-color: #d68910; }
 
-        /* Formulario */
+        /* Formulario y Buscador */
         .form-group { margin-bottom: 20px; text-align: left; }
         label { display: block; margin-bottom: 8px; font-weight: bold; color: var(--primary-color); }
         input[type="text"], input[type="number"] {
@@ -81,9 +85,24 @@
             font-size: 16px;
         }
 
+        .search-container {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            align-items: center;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border: 1px solid #e0e0e0;
+        }
+        
+        .search-container input { margin-bottom: 0; max-width: 400px; }
+        #resultadoBusqueda { font-size: 15px; margin-bottom: 20px; min-height: 24px; }
+
         /* Diseño visual del Mueble */
         .mueble-container {
-            margin-top: 30px;
+            margin-top: 10px;
             background-color: #34495e;
             padding: 25px;
             border-radius: 8px;
@@ -123,7 +142,7 @@
             color: #95a5a6;
             font-size: 11px;
             text-align: center;
-            transition: all 0.2s;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
             cursor: pointer;
             overflow: hidden;
             position: relative;
@@ -136,6 +155,7 @@
             border-color: #f39c12;
             color: #333;
             box-shadow: 0 5px 10px rgba(0,0,0,0.2);
+            z-index: 5;
         }
 
         .producto-slot.tiene-producto {
@@ -144,6 +164,14 @@
             justify-content: space-between;
         }
         .producto-slot.tiene-producto .slot-vacio-text { display: none; }
+        
+        /* Clase para cuando se encuentra en el buscador */
+        .producto-slot.resaltado {
+            border: 4px solid var(--highlight-color) !important;
+            box-shadow: 0 0 20px rgba(231, 76, 60, 0.9) !important;
+            transform: scale(1.1) translateY(-5px);
+            z-index: 10;
+        }
         
         .slot-imagen {
             width: 100%;
@@ -221,11 +249,11 @@
         <h2>¿Qué deseas hacer?</h2>
         <p>Crea la estructura de tu mueble, carga el último guardado o importa un archivo.</p>
         <div class="btn-group">
-            <button onclick="mostrarVista('vista-crear')">Crear Mueble Nuevo</button>
-            <button onclick="cargarMueble()" class="btn-outline">Cargar Último Mueble</button>
+            <button onclick="mostrarVista('vista-crear')">➕ Crear Mueble Nuevo</button>
+            <button onclick="cargarMueble()" class="btn-outline">🔄 Cargar Último Mueble</button>
             
             <!-- Botón y campo oculto para importar archivo -->
-            <button onclick="document.getElementById('inputImportar').click()" class="btn-warning">Importar Archivo .json</button>
+            <button onclick="document.getElementById('inputImportar').click()" class="btn-warning">📂 Importar Archivo .json</button>
             <input type="file" id="inputImportar" accept=".json" style="display: none;" onchange="importarDesdeArchivo(event)">
         </div>
     </div>
@@ -251,22 +279,31 @@
 
         <div class="btn-group">
             <button onclick="mostrarVista('vista-menu')" class="btn-outline">Cancelar</button>
-            <button onclick="crearEstructuraMueble()" class="btn-success">Generar Mueble Vacío</button>
+            <button onclick="crearEstructuraMueble()" class="btn-success">✅ Generar Mueble Vacío</button>
         </div>
     </div>
 
-    <!-- VISTA 3: PLANOGRAMA VISUAL (INTERACTIVO) -->
+    <!-- VISTA 3: PLANOGRAMA VISUAL (INTERACTIVO Y CON BUSCADOR) -->
     <div id="vista-planograma" class="view">
-        <h2 id="titulo-visual">Planograma Interactiva</h2>
-        <p>Haz clic en cualquier espacio vacío para editar el producto.</p>
+        <h2 id="titulo-visual">Planograma Interactivo</h2>
         
         <div class="btn-group" style="margin-bottom: 20px;">
-            <button onclick="mostrarVista('vista-menu')" class="btn-outline">Volver al Menú</button>
-            <button onclick="mostrarVista('vista-crear')">Crear Nuevo Mueble</button>
-            <!-- Botón para exportar archivo -->
+            <button onclick="mostrarVista('vista-menu')" class="btn-outline">⬅️ Volver al Menú</button>
+            <button onclick="mostrarVista('vista-crear')">➕ Crear Nuevo</button>
             <button onclick="exportarAArchivo()" class="btn-warning">💾 Guardar en Archivo</button>
         </div>
 
+        <!-- ZONA DE BUSCADOR -->
+        <div class="search-container">
+            <input type="text" id="inputBuscar" placeholder="🔍 Buscar por nombre o código..." onkeyup="if(event.key === 'Enter') buscarProducto()">
+            <button onclick="buscarProducto()" class="btn-success">Buscar</button>
+            <button onclick="limpiarBusqueda(true)" class="btn-outline">Limpiar</button>
+        </div>
+        <div id="resultadoBusqueda"></div>
+
+        <p style="font-size: 14px; margin-bottom:10px;">Haz clic en cualquier espacio vacío para editar el producto.</p>
+
+        <!-- MUEBLE GENERADO -->
         <div id="contenedor-mueble" class="mueble-container">
             <!-- Las charolas y productos se generarán aquí -->
         </div>
@@ -338,25 +375,18 @@
         }
 
         // --- EXPORTAR E IMPORTAR COMO ARCHIVO .JSON ---
-
         function exportarAArchivo() {
             if (!planogramaData) {
                 alert("No hay datos para exportar.");
                 return;
             }
-
-            // Convertimos nuestro objeto de datos a texto JSON
             const datosTexto = JSON.stringify(planogramaData, null, 2);
-            
-            // Creamos un archivo virtual (Blob)
             const archivoBlob = new Blob([datosTexto], { type: 'application/json' });
             const urlArchivo = URL.createObjectURL(archivoBlob);
             
-            // Creamos un enlace oculto para forzar la descarga
             const enlaceDescarga = document.createElement('a');
             enlaceDescarga.href = urlArchivo;
             
-            // Limpiamos el nombre del mueble para que sea un nombre de archivo válido
             const nombreSeguro = planogramaData.nombre.replace(/[^a-z0-9]/gi, '_').toLowerCase();
             enlaceDescarga.download = `planograma_${nombreSeguro}.json`;
             
@@ -370,7 +400,6 @@
         function importarDesdeArchivo(event) {
             const archivo = event.target.files[0];
             if (!archivo) return;
-
             const lector = new FileReader();
             
             lector.onload = function(e) {
@@ -378,28 +407,22 @@
                     const contenido = e.target.result;
                     const datosNuevos = JSON.parse(contenido);
                     
-                    // Validación simple para asegurarnos que es el formato correcto
                     if (datosNuevos && datosNuevos.nombre && datosNuevos.estructura) {
                         planogramaData = datosNuevos;
-                        guardarEnLocalStorage(); // Guardamos también en la memoria local
+                        guardarEnLocalStorage(); 
                         dibujarMuebleCompleto();
-                        
-                        // Reseteamos el input file por si quieren volver a cargar el mismo archivo
                         event.target.value = '';
                     } else {
                         alert("El archivo no parece ser un planograma válido.");
                     }
                 } catch (error) {
-                    alert("Error al leer el archivo. Asegúrate de que sea un archivo JSON válido creado por esta aplicación.");
+                    alert("Error al leer el archivo. Asegúrate de que sea un archivo JSON válido.");
                 }
             };
-            
-            // Leemos el archivo como texto
             lector.readAsText(archivo);
         }
 
         // --- CREACIÓN Y RENDERIZADO VISUAL ---
-
         function crearEstructuraMueble() {
             const nombre = document.getElementById('nombreMueble').value;
             const numCharolas = parseInt(document.getElementById('numCharolas').value);
@@ -430,6 +453,8 @@
         function dibujarMuebleCompleto() {
             if(!planogramaData) return;
 
+            limpiarBusqueda(true); // Limpiar el buscador cada que se dibuja el mueble
+
             document.getElementById('titulo-visual').textContent = `Mueble: ${planogramaData.nombre}`;
             const contenedor = document.getElementById('contenedor-mueble');
             contenedor.innerHTML = ''; 
@@ -446,6 +471,10 @@
                 charolaData.forEach((producto, indexColumna) => {
                     const slotEl = document.createElement('div');
                     slotEl.className = 'producto-slot';
+                    
+                    // Asignamos un ID único a cada espacio para encontrarlo fácil con el buscador
+                    slotEl.id = `slot-${indexFila}-${indexColumna}`;
+                    
                     slotEl.onclick = () => abrirEditorProducto(indexFila, indexColumna);
 
                     if (producto) {
@@ -481,13 +510,65 @@
             mostrarVista('vista-planograma');
         }
 
-        // --- GESTIÓN DEL MODAL / EDITOR ---
+        // --- FUNCIONES DEL BUSCADOR ---
+        function buscarProducto() {
+            const query = document.getElementById('inputBuscar').value.trim().toLowerCase();
+            const divResultado = document.getElementById('resultadoBusqueda');
+            
+            // Limpiar estilos resaltados anteriores pero mantener el texto en el input
+            limpiarBusqueda(false); 
 
+            if (!query) {
+                divResultado.innerHTML = `<span style="color: var(--primary-color);">Escribe un nombre o código para buscar.</span>`;
+                return;
+            }
+
+            let encontrados = [];
+
+            // Recorrer toda la matriz buscando coincidencias
+            planogramaData.estructura.forEach((charolaData, indexFila) => {
+                charolaData.forEach((producto, indexColumna) => {
+                    if (producto) {
+                        const nombreMatch = producto.nombre.toLowerCase().includes(query);
+                        const codigoMatch = producto.codigo && producto.codigo.toLowerCase().includes(query);
+
+                        if (nombreMatch || codigoMatch) {
+                            // Guardar texto de ubicación (Sumamos 1 para que empiece a contar en 1 y no en 0)
+                            encontrados.push(`<strong>Charola ${indexFila + 1}</strong>, Posición <strong>${indexColumna + 1}</strong>`);
+                            
+                            // Resaltar visualmente
+                            const slotDOM = document.getElementById(`slot-${indexFila}-${indexColumna}`);
+                            if(slotDOM) slotDOM.classList.add('resaltado');
+                        }
+                    }
+                });
+            });
+
+            // Mostrar el resultado en pantalla
+            if (encontrados.length > 0) {
+                divResultado.innerHTML = `<span style="color: green;">✅ <strong>¡Encontrado!</strong> Se ubicó en:</span><br>${encontrados.join('<br>')}`;
+            } else {
+                divResultado.innerHTML = `<span style="color: red;">❌ Producto no encontrado.</span>`;
+            }
+        }
+
+        function limpiarBusqueda(borrarTexto = true) {
+            if (borrarTexto) {
+                document.getElementById('inputBuscar').value = '';
+            }
+            document.getElementById('resultadoBusqueda').innerHTML = '';
+            
+            // Quitar clase resaltado de todos los slots
+            const todosResaltados = document.querySelectorAll('.producto-slot.resaltado');
+            todosResaltados.forEach(el => el.classList.remove('resaltado'));
+        }
+
+        // --- GESTIÓN DEL MODAL / EDITOR ---
         function abrirEditorProducto(fila, columna) {
             slotActual = { fila, columna };
             const productoActual = planogramaData.estructura[fila][columna];
             
-            document.getElementById('modal-titulo').textContent = `Editar Espacio [${fila + 1}, ${columna + 1}]`;
+            document.getElementById('modal-titulo').textContent = `Editar Espacio [Charola ${fila + 1}, Posición ${columna + 1}]`;
             
             document.getElementById('inputImagen').value = '';
             document.getElementById('prodNombre').value = '';
@@ -524,14 +605,12 @@
 
             if (input.files && input.files[0]) {
                 const reader = new FileReader();
-
                 reader.onload = function(e) {
                     previewImg.src = e.target.result;
                     previewImg.style.display = 'block';
                     previewText.style.display = 'none';
                     imagenBase64Actual = e.target.result; 
                 }
-
                 reader.readAsDataURL(input.files[0]); 
             } else {
                 const productoActual = planogramaData.estructura[slotActual.fila][slotActual.columna];
