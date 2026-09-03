@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Victoria 2 Mod Creator</title>
+    <title>The Victoria 2 Mod Creator</title>
     
     <script src="https://cdn.jsdelivr.net/npm/tga-js@1.0.7/dist/tga.min.js" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js" crossorigin="anonymous"></script>
@@ -20,10 +20,10 @@
             --success-hover: #9b59b6;
             --danger: #c0392b;
             --danger-hover: #e74c3c;
-            --border: #3f3f4e;
-            --gold: #ffd700;
             --blue: #2980b9;
             --blue-hover: #3498db;
+            --border: #3f3f4e;
+            --gold: #ffd700;
         }
 
         * {
@@ -118,7 +118,7 @@
 
         .btn-danger { background-color: var(--danger); }
         .btn-danger:hover { background-color: var(--danger-hover); }
-        
+
         .btn-blue { background-color: var(--blue); }
         .btn-blue:hover { background-color: var(--blue-hover); }
 
@@ -296,7 +296,7 @@
                 <input type="file" id="dirProvinces" webkitdirectory directory multiple>
             </div>
 
-            <button id="btnCrear" class="btn-blue">Indexar Archivos</button>
+            <button id="btnCrear" style="background-color: var(--blue);">Indexar Archivos</button>
         </div>
 
         <!-- Área de Trabajo -->
@@ -331,13 +331,19 @@
                         
                         <!-- PANEL DE ACCIONES DE BALCANIZACIÓN -->
                         <div style="display: flex; flex-direction: column; gap: 1rem;">
+                            
+                            <!-- TARJETA: TRIPLE DIVISIÓN -->
+                            <div class="card" style="border-color: var(--blue);">
+                                <h3 style="color: var(--blue);">Guerra de Secesión (Dividir en 3)</h3>
+                                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.8rem;">
+                                    Divide el país seleccionado en 3 bloques territoriales. El país original conserva su capital y un tercio del territorio, emergiendo 2 nuevas naciones con cores cruzados para la guerra.
+                                </p>
+                                <button id="btnTripleSplit" class="btn-blue">Fragmentar en 3 Naciones</button>
+                            </div>
+
                             <!-- TARJETA: BALCANIZAR PROVINCIA (Singular) -->
                             <div class="card" style="border-color: var(--success);">
                                 <h3 style="color: var(--success);">Independizar una Provincia</h3>
-                                <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.8rem;">
-                                    Separa una provincia del país actualmente visible.
-                                </p>
-
                                 <div class="input-group" style="margin-bottom: 0.6rem;">
                                     <label>Nombre</label>
                                     <input type="text" id="newNationName" placeholder="Ej. Río Grande">
@@ -359,11 +365,11 @@
                             <div class="card" style="border-color: var(--danger);">
                                 <h3 style="color: var(--danger);">¡Guerra Civil Continental!</h3>
                                 <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.8rem;">
-                                    Fragmenta en micro-naciones a <strong>TODOS</strong> los países que hayas marcado con una palomita en la lista de la izquierda. 
-                                    <br><br><span style="color:#e74c3c">🔥 Sistema de Guerra:</span> Tienen 50% de probabilidad de generar reclamos territoriales cruzados (cores aleatorios) sobre sus vecinos para forzar guerras automáticas.
+                                    Fragmenta en micro-naciones a <strong>TODOS</strong> los países que hayas marcado con una palomita en la lista de la izquierda, generando reclamos cruzados aleatorios.
                                 </p>
                                 <button id="btnTotalChaos" class="btn-danger">¡Destruir Selección y Generar Guerras!</button>
                             </div>
+
                         </div>
                     </div>
                 </div>
@@ -636,7 +642,6 @@
                 let div = document.createElement('div');
                 div.className = 'country-item';
                 
-                // Agregamos el Checkbox para selección múltiple
                 let chk = document.createElement('input');
                 chk.type = 'checkbox';
                 chk.className = 'chk-balkan';
@@ -649,7 +654,6 @@
                 div.appendChild(chk);
                 div.appendChild(span);
                 
-                // Click en el texto abre el panel, pero no afecta al checkbox
                 span.onclick = async function(e) {
                     document.querySelectorAll('.country-item').forEach(el => el.classList.remove('active'));
                     div.classList.add('active');
@@ -737,7 +741,181 @@
         // LÓGICA DE BALCANIZACIÓN
         // -------------------------------------------------------------
 
-        // 1. BALCANIZAR UNA SOLA PROVINCIA (Singular - Panel Derecho)
+        // 0. GUERRA DE SECESIÓN (TRIPLE SPLIT)
+        document.getElementById('btnTripleSplit').addEventListener('click', async function() {
+            if (!currentSelectedTag) {
+                alert("Primero selecciona un país de la lista (haz clic en su nombre).");
+                return;
+            }
+
+            const provsStr = provinceOwnership[currentSelectedTag] || [];
+            const capitalId = countryData[currentSelectedTag]?.capital;
+
+            if (provsStr.length < 3) {
+                alert("El país debe tener al menos 3 provincias para dividirse en 3 bloques.");
+                return;
+            }
+
+            if (!confirm(`¿Estás seguro de dividir ${currentSelectedTag} en 3 naciones geográficas?`)) return;
+
+            // Extraer y ordenar IDs numéricamente para agrupar geográficamente
+            let allProvIds = provsStr.map(p => extractProvId(p)).filter(id => id);
+            allProvIds.sort((a, b) => parseInt(a) - parseInt(b));
+
+            // Dividir array en 3 partes iguales (aprox)
+            let chunks = [[], [], []];
+            let currentChunk = 0;
+            let targetSize = Math.ceil(allProvIds.length / 3);
+            
+            for(let i=0; i<allProvIds.length; i++){
+                chunks[currentChunk].push(allProvIds[i]);
+                if(chunks[currentChunk].length >= targetSize && currentChunk < 2) {
+                    currentChunk++;
+                    targetSize = Math.ceil((allProvIds.length - i - 1) / (3 - currentChunk));
+                }
+            }
+
+            // Identificar qué bloque tiene la capital original
+            let origChunkIndex = chunks.findIndex(chunk => chunk.includes(capitalId));
+            if (origChunkIndex === -1) origChunkIndex = Math.floor(chunks.length / 2); 
+
+            let origChunk = chunks[origChunkIndex];
+            let newChunks = chunks.filter((_, index) => index !== origChunkIndex);
+
+            const baseHistoryFile = historyFilesMap[currentSelectedTag];
+            const baseCommonFile = commonFilesMap[currentSelectedTag];
+
+            if (!baseHistoryFile || !baseCommonFile) {
+                alert("Faltan archivos base del país original.");
+                return;
+            }
+
+            const zip = new JSZip();
+            let addedCountriesTxtLines = "";
+            let fullLocContent = "";
+            let generatedTags = [currentSelectedTag]; // Lista de los 3 tags para los cores
+
+            let newNationsManifest = [];
+
+            // Preparar las 2 naciones nuevas
+            for(let chunk of newChunks) {
+                if(chunk.length === 0) continue;
+                let newTag = getNextFreeTag();
+                if (!newTag) break;
+                
+                countryData[newTag] = { capital: chunk[0], gov: 'Desconocido' };
+                generatedTags.push(newTag);
+
+                let pStr = provsStr.find(p => p.startsWith(chunk[0]));
+                let provCleanName = pStr && pStr.includes('-') ? pStr.split('-').slice(1).join('-').trim() : `State${chunk[0]}`;
+                provCleanName = provCleanName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '');
+
+                const randPrefix = prefijosNacion[Math.floor(Math.random() * prefijosNacion.length)];
+                const nationName = `${randPrefix} ${provCleanName}`;
+                const nationAdj = `${provCleanName}nse`;
+
+                newNationsManifest.push({
+                    tag: newTag,
+                    chunk: chunk,
+                    provCleanName: provCleanName,
+                    nationName: nationName,
+                    nationAdj: nationAdj,
+                    capital: chunk[0]
+                });
+            }
+
+            // Generar archivos de países para las 2 naciones nuevas
+            for (let nation of newNationsManifest) {
+                let historyText = await baseHistoryFile.text();
+                let commonText = await baseCommonFile.text();
+
+                const randGov = tiposGobierno[Math.floor(Math.random() * tiposGobierno.length)];
+                const randIdeo = ideologias[Math.floor(Math.random() * ideologias.length)];
+                const partyName = getPartyNameByIdeology(commonText, randIdeo);
+
+                historyText = historyText.replace(/capital\s*=\s*\d+/i, `capital = ${nation.capital}`);
+                historyText = historyText.replace(/oob\s*=\s*"[^"]+"/gi, '# Ejército borrado');
+                historyText = historyText.replace(/government\s*=\s*[a-zA-Z_]+/i, `government = ${randGov}`);
+                if (partyName) {
+                    historyText = historyText.replace(/ruling_party\s*=\s*[^\r\n]+/i, `ruling_party = "${partyName}"`);
+                }
+
+                const r = Math.floor(Math.random() * 200) + 55;
+                const g = Math.floor(Math.random() * 200) + 55;
+                const b = Math.floor(Math.random() * 200) + 55;
+                commonText = commonText.replace(/color\s*=\s*\{[^}]+\}/i, `color = { ${r} ${g} ${b} }`);
+
+                zip.file(`common/countries/${nation.provCleanName}.txt`, commonText);
+                zip.file(`history/countries/${nation.tag} - ${nation.provCleanName}.txt`, historyText);
+
+                fullLocContent += `${nation.tag};${nation.nationName};${nation.nationName};${nation.nationName};;${nation.nationName};;;;;;;;;x;;;;\n`;
+                fullLocContent += `${nation.tag}_ADJ;${nation.nationAdj};${nation.nationAdj};${nation.nationAdj};;${nation.nationAdj};;;;;;;;;x;;;;\n`;
+                addedCountriesTxtLines += `${nation.tag} = "countries/${nation.provCleanName}.txt"\n`;
+
+                const flagBuffer = generateRandomTGAData();
+                zip.file(`gfx/flags/${nation.tag}.tga`, flagBuffer);
+                const ideologiesGame = ['_communist', '_fascist', '_monarchy', '_republic'];
+                ideologiesGame.forEach(ideo => {
+                    zip.file(`gfx/flags/${nation.tag}${ideo}.tga`, flagBuffer);
+                });
+            }
+
+            // Procesar los archivos de las provincias para los 3 bloques (Original + 2 Nuevos)
+            let allBlocksObj = [
+                { tag: currentSelectedTag, provs: origChunk, isOriginal: true },
+                ...newNationsManifest.map(n => ({ tag: n.tag, provs: n.chunk, isOriginal: false }))
+            ];
+
+            for (let block of allBlocksObj) {
+                for (let pId of block.provs) {
+                    const provTargetFile = provFilesMap[pId];
+                    if (!provTargetFile) continue;
+
+                    let provText = await provTargetFile.text();
+
+                    // Transferir propiedad si es una nación nueva
+                    if (!block.isOriginal) {
+                        provText = provText.replace(/owner\s*=\s*"?[A-Z0-9]{3}"?/gi, `owner = ${block.tag}`);
+                        provText = provText.replace(/controller\s*=\s*"?[A-Z0-9]{3}"?/gi, `controller = ${block.tag}`);
+                        provText += `\nadd_core = ${block.tag}\n`;
+                    }
+
+                    // 40% de probabilidad de añadir Cores cruzados (Incitador de Guerra)
+                    if (Math.random() < 0.40) {
+                        // Elige un rival al azar de entre los otros bloques
+                        let enemies = generatedTags.filter(t => t !== block.tag);
+                        let randomEnemy = enemies[Math.floor(Math.random() * enemies.length)];
+                        // Si el enemigo no tiene core ya en la provincia, lo inyectamos
+                        if(!provText.includes(`add_core = ${randomEnemy}`)) {
+                            provText += `add_core = ${randomEnemy} # Core para forzar guerra de reunificacion\n`;
+                        }
+                    }
+
+                    const provSubfolder = getProvinceSubfolder(provTargetFile);
+                    zip.file(`history/provinces/${provSubfolder}${provTargetFile.name}`, provText);
+                }
+            }
+
+            if (newNationsManifest.length > 0) {
+                zip.file(`localisation/00_Secesion_${currentSelectedTag}_loc.csv`, fullLocContent);
+                originalCountriesTxtRaw += `\n` + addedCountriesTxtLines;
+                zip.file(`common/countries.txt`, originalCountriesTxtRaw);
+
+                zip.generateAsync({type:"blob"}).then(content => {
+                    const url = URL.createObjectURL(content);
+                    const a = document.createElement("a");
+                    a.href = url;
+                    a.download = `Victoria2_SecesionTriple_${currentSelectedTag}.zip`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    alert(`¡Guerra de Secesión desatada! ${currentSelectedTag} se ha fragmentado en 3 pedazos y están listos para matarse.`);
+                });
+            }
+        });
+
+        // 1. BALCANIZAR UNA SOLA PROVINCIA
         document.getElementById('btnDownloadMod').addEventListener('click', async function() {
             if (!currentSelectedTag) {
                 alert("Primero selecciona un país de la lista (haz clic en su nombre).");
@@ -820,9 +998,8 @@
             });
         });
 
-        // 2. BALCANIZAR TOTALMENTE MÚLTIPLES PAÍSES + CORES DE GUERRA
+        // 2. BALCANIZAR TOTALMENTE MÚLTIPLES PAÍSES + CORES CRUZADOS DE GUERRA
         document.getElementById('btnTotalChaos').addEventListener('click', async function() {
-            // Recolectar todos los tags marcados en los checkboxes
             const checkedBoxes = document.querySelectorAll('.chk-balkan:checked');
             const tagsToBalkanize = Array.from(checkedBoxes).map(cb => cb.dataset.tag);
 
@@ -833,7 +1010,6 @@
 
             let allProvincesToIndependize = [];
 
-            // Recolectar todas las provincias de todos los países marcados (excepto sus capitales)
             for (let tag of tagsToBalkanize) {
                 const provs = provinceOwnership[tag] || [];
                 const capId = countryData[tag]?.capital;
@@ -855,16 +1031,15 @@
                 return;
             }
 
-            if (!confirm(`¡ADVERTENCIA DE CAOS!\nSe crearán ${allProvincesToIndependize.length} naciones nuevas destruyendo los ${tagsToBalkanize.length} países marcados. Se añadirán cores cruzados para provocar guerras inmediatas.\n¿Estás seguro?`)) {
+            if (!confirm(`¡ADVERTENCIA!\nSe crearán ${allProvincesToIndependize.length} naciones nuevas destruyendo los ${tagsToBalkanize.length} países marcados. Se añadirán cores cruzados (Casus Belli automáticos) entre ellos.\n¿Estás seguro?`)) {
                 return;
             }
 
             const zip = new JSZip();
             let addedCountriesTxtLines = "";
             let fullLocContent = "";
-            let newNationsManifest = []; // Guardará los datos de las nuevas naciones
+            let newNationsManifest = []; 
 
-            // FASE 1: Asignar TAGs y estructurar datos para saber quiénes existen (y poder cruzarlos)
             for (let item of allProvincesToIndependize) {
                 let newTag = getNextFreeTag();
                 if (!newTag) {
@@ -872,7 +1047,6 @@
                     break;
                 }
 
-                // Generar nombres aleatorios
                 let provCleanName = item.provString.includes('-') ? item.provString.split('-').slice(1).join('-').trim() : `State${item.provId}`;
                 provCleanName = provCleanName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '');
                 
@@ -883,14 +1057,12 @@
                 item.nationName = `${randPrefix} ${provCleanName}`;
                 item.nationAdj = `${provCleanName}nse`;
                 
-                // Reservar tag
                 countryData[newTag] = { capital: item.provId, gov: 'Desconocido' };
                 newNationsManifest.push(item);
             }
 
             const allGeneratedTags = newNationsManifest.map(n => n.newTag);
 
-            // FASE 2: Generar y modificar archivos
             for (let nation of newNationsManifest) {
                 const baseHistoryFile = historyFilesMap[nation.baseTag];
                 const baseCommonFile = commonFilesMap[nation.baseTag];
@@ -902,7 +1074,6 @@
                 let commonText = await baseCommonFile.text();
                 let provText = await provTargetFile.text();
 
-                // ALEATORIZACIÓN GOBIERNO
                 const randGov = tiposGobierno[Math.floor(Math.random() * tiposGobierno.length)];
                 const randIdeo = ideologias[Math.floor(Math.random() * ideologias.length)];
                 const partyName = getPartyNameByIdeology(commonText, randIdeo);
@@ -914,24 +1085,24 @@
                     historyText = historyText.replace(/ruling_party\s*=\s*[^\r\n]+/i, `ruling_party = "${partyName}"`);
                 }
 
-                // COLOR COMMON
                 const r = Math.floor(Math.random() * 200) + 55;
                 const g = Math.floor(Math.random() * 200) + 55;
                 const b = Math.floor(Math.random() * 200) + 55;
                 commonText = commonText.replace(/color\s*=\s*\{[^}]+\}/i, `color = { ${r} ${g} ${b} }`);
 
-                // PROVINCIA Y CORES CRUZADOS (MECÁNICA DE GUERRA)
                 provText = provText.replace(/owner\s*=\s*"?[A-Z0-9]{3}"?/gi, `owner = ${nation.newTag}`);
                 provText = provText.replace(/controller\s*=\s*"?[A-Z0-9]{3}"?/gi, `controller = ${nation.newTag}`);
                 provText += `\nadd_core = ${nation.newTag}\n`;
 
-                // 50% de probabilidad de tener cores cruzados para provocar guerras
+                // 50% probabilidad de inyectar Cores de guerra
                 if (Math.random() < 0.50 && allGeneratedTags.length > 1) {
-                    const extraCoresCount = Math.floor(Math.random() * 3) + 1; // 1 a 3 cores extra
+                    const extraCoresCount = Math.floor(Math.random() * 3) + 1; 
                     for (let i = 0; i < extraCoresCount; i++) {
                         let randomAttackerTag = allGeneratedTags[Math.floor(Math.random() * allGeneratedTags.length)];
                         if (randomAttackerTag !== nation.newTag) {
-                            provText += `add_core = ${randomAttackerTag} # Core para forzar Casus Belli\n`;
+                            if(!provText.includes(`add_core = ${randomAttackerTag}`)) {
+                                provText += `add_core = ${randomAttackerTag} # Core cruzado para causar guerra\n`;
+                            }
                         }
                     }
                 }
@@ -955,7 +1126,7 @@
             }
 
             if (newNationsManifest.length === 0) {
-                alert("Error al intentar generar los archivos de las naciones.");
+                alert("Error al generar las naciones.");
                 return;
             }
 
@@ -967,12 +1138,12 @@
                 const url = URL.createObjectURL(content);
                 const a = document.createElement("a");
                 a.href = url;
-                a.download = `Victoria2_BattleRoyale_${tagsToBalkanize.length}Paises.zip`;
+                a.download = `Victoria2_GuerraContinental_${tagsToBalkanize.length}Paises.zip`;
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
-                alert(`¡Caos continental desatado! Se crearon ${newNationsManifest.length} naciones enfrentadas entre sí.`);
+                alert(`¡Éxito! Se crearon ${newNationsManifest.length} naciones enfrentadas entre sí.`);
             });
         });
     </script>
