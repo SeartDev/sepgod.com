@@ -744,13 +744,14 @@
         // LÓGICA DE BALCANIZACIÓN
         // -------------------------------------------------------------
 
-        // 0. GUERRA DE SECESIÓN (TRIPLE SPLIT - MÚLTIPLE)
+        // 0. GUERRA DE SECESIÓN (TRIPLE SPLIT) - AHORA CON SELECCIÓN MÚLTIPLE
         document.getElementById('btnTripleSplit').addEventListener('click', async function() {
-            // Leer checkboxes seleccionados
+            
+            // Recolectar todos los tags marcados en los checkboxes
             const checkedBoxes = document.querySelectorAll('.chk-balkan:checked');
             let tagsToProcess = Array.from(checkedBoxes).map(cb => cb.dataset.tag);
 
-            // Si no hay checkboxes, usamos el seleccionado en pantalla como comodín
+            // Si no hay checkboxes marcados, usamos el que esté activo en pantalla
             if (tagsToProcess.length === 0) {
                 if (currentSelectedTag) {
                     tagsToProcess = [currentSelectedTag];
@@ -760,6 +761,7 @@
                 }
             }
 
+            // Filtrar los países que no tienen suficientes provincias (Mínimo 3)
             let validTags = [];
             for (let tag of tagsToProcess) {
                 const provsStr = provinceOwnership[tag] || [];
@@ -782,13 +784,16 @@
             let fullLocContent = "";
             let totalNationsCreated = 0;
 
+            // BUCLE PRINCIPAL: Procesar CADA país seleccionado
             for (let tag of validTags) {
                 const provsStr = provinceOwnership[tag] || [];
                 const capitalId = countryData[tag]?.capital;
 
+                // Extraer y ordenar IDs numéricamente para agrupar geográficamente
                 let allProvIds = provsStr.map(p => extractProvId(p)).filter(id => id);
                 allProvIds.sort((a, b) => parseInt(a) - parseInt(b));
 
+                // Dividir array en 3 partes iguales (aprox)
                 let chunks = [[], [], []];
                 let currentChunk = 0;
                 let targetSize = Math.ceil(allProvIds.length / 3);
@@ -801,6 +806,7 @@
                     }
                 }
 
+                // Identificar qué bloque tiene la capital original
                 let origChunkIndex = chunks.findIndex(chunk => chunk.includes(capitalId));
                 if (origChunkIndex === -1) origChunkIndex = Math.floor(chunks.length / 2); 
 
@@ -813,8 +819,9 @@
                 if (!baseHistoryFile || !baseCommonFile) continue;
 
                 let newNationsManifest = [];
-                let generatedTags = [tag]; 
+                let generatedTags = [tag]; // Lista de los 3 tags (el original y los 2 nuevos) para los cores cruzados
 
+                // Preparar las 2 naciones nuevas de ESTE país
                 for(let chunk of newChunks) {
                     if(chunk.length === 0) continue;
                     let newTag = getNextFreeTag();
@@ -841,6 +848,7 @@
                     });
                 }
 
+                // Generar archivos de países para las 2 naciones nuevas de ESTE país
                 for (let nation of newNationsManifest) {
                     let historyText = await baseHistoryFile.text();
                     let commonText = await baseCommonFile.text();
@@ -878,6 +886,7 @@
                     totalNationsCreated++;
                 }
 
+                // Procesar los archivos de las provincias para los 3 bloques de ESTE país (Original + 2 Nuevos)
                 let allBlocksObj = [
                     { tag: tag, provs: origChunk, isOriginal: true },
                     ...newNationsManifest.map(n => ({ tag: n.tag, provs: n.chunk, isOriginal: false }))
@@ -890,13 +899,14 @@
 
                         let provText = await provTargetFile.text();
 
+                        // Transferir propiedad si es una nación nueva
                         if (!block.isOriginal) {
                             provText = provText.replace(/owner\s*=\s*"?[A-Z0-9]{3}"?/gi, `owner = ${block.tag}`);
                             provText = provText.replace(/controller\s*=\s*"?[A-Z0-9]{3}"?/gi, `controller = ${block.tag}`);
                             provText += `\nadd_core = ${block.tag}\n`;
                         }
 
-                        // Cores cruzados para forzar guerra entre facciones de este país
+                        // 40% de probabilidad de añadir Cores cruzados para fomentar guerras entre las 3 facciones de este país
                         if (Math.random() < 0.40) {
                             let enemies = generatedTags.filter(t => t !== block.tag);
                             if (enemies.length > 0) {
@@ -911,7 +921,7 @@
                         zip.file(`history/provinces/${provSubfolder}${provTargetFile.name}`, provText);
                     }
                 }
-            }
+            } // Fin del bucle por cada país seleccionado
 
             if (totalNationsCreated > 0) {
                 zip.file(`localisation/00_SecesionTriple_loc.csv`, fullLocContent);
@@ -927,7 +937,7 @@
                     a.click();
                     document.body.removeChild(a);
                     URL.revokeObjectURL(url);
-                    alert(`¡Guerras de Secesión desatadas! Se procesaron ${validTags.length} países y emergieron ${totalNationsCreated} nuevas facciones.`);
+                    alert(`¡Guerra de Secesión desatada! Se procesaron ${validTags.length} países y emergieron ${totalNationsCreated} nuevas facciones.`);
                 });
             } else {
                 alert("No se pudo crear ninguna nación. Revisa que los países seleccionados tengan suficientes provincias.");
