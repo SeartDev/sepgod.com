@@ -89,7 +89,7 @@
             line-height: 1.2;
         }
 
-        input[type="file"], input[type="text"], select {
+        input[type="file"], input[type="text"], select, input[type="number"] {
             width: 100%;
             padding: 0.5rem;
             background-color: var(--bg-color);
@@ -262,7 +262,6 @@
     </header>
 
     <div class="container">
-        <!-- Panel de Configuración Optimizado -->
         <div class="config-panel">
             <h2>Directorios del Juego</h2>
             <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1rem;">
@@ -304,7 +303,6 @@
             <button id="btnCrear" class="btn-blue">Indexar Archivos</button>
         </div>
 
-        <!-- Área de Trabajo -->
         <div class="workspace">
             <div class="empty-state" id="emptyState">
                 <h2>Esperando datos...</h2>
@@ -313,7 +311,6 @@
 
             <div class="dashboard" id="dashboard">
                 <div class="country-list" id="countryList">
-                    <!-- Los países se cargarán aquí con checkboxes -->
                 </div>
                 
                 <div class="details-panel" id="detailsPanel">
@@ -334,19 +331,16 @@
                             <ul id="provList" style="margin-top: 15px; padding-left: 20px; color: var(--text-muted); font-size: 0.9rem;"></ul>
                         </div>
                         
-                        <!-- PANEL DE ACCIONES -->
                         <div style="display: flex; flex-direction: column; gap: 1rem;">
                             
-                            <!-- TARJETA: TRIPLE DIVISIÓN -->
                             <div class="card" style="border-color: var(--blue);">
                                 <h3 style="color: var(--blue);">Guerra de Secesión</h3>
                                 <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.8rem;">
-                                    Divide <strong>TODOS</strong> los países marcados en 3 bloques territoriales. Se generarán facciones con cores cruzados listos para guerras civiles.
+                                    Divide <strong>TODOS</strong> los países marcados en 3 bloques territoriales.
                                 </p>
                                 <button id="btnTripleSplit" class="btn-blue">Fragmentar Seleccionados (Div. 3)</button>
                             </div>
 
-                            <!-- TARJETA: BALCANIZAR PROVINCIA -->
                             <div class="card" style="border-color: var(--success);">
                                 <h3 style="color: var(--success);">Independizar una Provincia</h3>
                                 <div class="input-group" style="margin-bottom: 0.6rem;">
@@ -366,7 +360,6 @@
                                 <button id="btnDownloadMod" class="btn-success" style="margin-top:0;">Balcanizar Provincia</button>
                             </div>
 
-                            <!-- TARJETA: BALCANIZAR MASIVO -->
                             <div class="card" style="border-color: var(--danger);">
                                 <h3 style="color: var(--danger);">¡Guerra Civil Continental!</h3>
                                 <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.8rem;">
@@ -375,12 +368,17 @@
                                 <button id="btnTotalChaos" class="btn-danger">¡Destruir Selección y Generar Guerras!</button>
                             </div>
                             
-                            <!-- NUEVA TARJETA: MUNDO NUEVO -->
+                            <!-- NUEVA TARJETA: MUNDO NUEVO POR REGIONES -->
                             <div class="card" style="border-color: var(--warning); grid-column: span 1;">
-                                <h3 style="color: var(--warning);">🌍 Crear Nuevo Mundo Aleatorio</h3>
+                                <h3 style="color: var(--warning);">🌍 Generar Nuevo Mundo</h3>
                                 <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.8rem;">
-                                    Aniquila el mapa actual. Genera ~250 naciones completamente nuevas desde cero. Las nuevas fronteras heredarán la <strong>Cultura Principal y Aceptada</strong> de las provincias que absorban para mantener el realismo demográfico.
+                                    Controla cuántos países se generarán en cada región del planeta. <strong>Asigna 0 para dejar la región vacía y colonizable.</strong>
                                 </p>
+                                
+                                <div id="newWorldRegions" style="max-height: 220px; overflow-y: auto; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 4px; margin-bottom: 15px; border: 1px solid var(--border);">
+                                    <span style="color:var(--text-muted); font-size:0.8rem;">(Indexa los archivos primero para ver las regiones)</span>
+                                </div>
+
                                 <button id="btnNewWorld" class="btn-warning">¡Generar Planeta Aleatorio!</button>
                             </div>
 
@@ -405,10 +403,9 @@
         let historyFilesMap = {}; 
         let provFilesMap = {}; 
         
-        // Mapeo cultural: ProvId -> Original Owner Tag
         let provToOwnerMap = {};
+        let regionProvinces = {}; // Guardará las provincias clasificadas por su subcarpeta
 
-        // Listas para la generación procedimental
         const prefijosNacion = [
             "República de", "Imperio de", "Principado de", "Reino de", "Ducado de",
             "Gran Ducado de", "Confederación de", "Federación de", "Unión de",
@@ -419,9 +416,6 @@
         const tiposGobierno = ['presidential_dictatorship', 'absolute_monarchy', 'democracy'];
         const ideologias = ['reactionary', 'liberal', 'conservative'];
 
-        // -------------------------------------------------------------
-        // SISTEMA PROCEDURAL DE BANDERAS TGA 
-        // -------------------------------------------------------------
         function generateRandomTGAData() {
             const tempCanvas = document.createElement('canvas');
             tempCanvas.width = 93;
@@ -499,9 +493,6 @@
             return tgaFile.buffer;
         }
 
-        // -------------------------------------------------------------
-        // FUNCIONES AUXILIARES
-        // -------------------------------------------------------------
         function extractProvId(provString) {
             const match = provString.match(/^(\d+)/);
             return match ? match[1] : null;
@@ -547,9 +538,6 @@
             return null;
         }
 
-        // -------------------------------------------------------------
-        // CARGA E INDEXACIÓN DE ARCHIVOS
-        // -------------------------------------------------------------
         document.getElementById('btnCrear').addEventListener('click', async function() {
             const countriesTxtInput = document.getElementById('fileCountriesTxt').files;
             const commonDirInput = document.getElementById('dirCountries').files;
@@ -564,7 +552,7 @@
             }
 
             const emptyState = document.getElementById('emptyState');
-            emptyState.innerHTML = "<h2>Indexando archivos...</h2><p>Mapeando datos...</p>";
+            emptyState.innerHTML = "<h2>Indexando archivos...</h2><p>Mapeando datos de forma rápida...</p>";
 
             currentSelectedTag = null;
             provinceOwnership = {}; 
@@ -576,6 +564,7 @@
             historyFilesMap = {};
             provFilesMap = {};
             provToOwnerMap = {};
+            regionProvinces = {};
 
             if (locFileInput.length > 0) {
                 const text = await locFileInput[0].text();
@@ -628,7 +617,6 @@
                 const matchGov = text.match(/government\s*=\s*([a-zA-Z_]+)/i);
                 if (matchGov) countryData[tag].gov = matchGov[1].replace(/_/g, ' '); 
 
-                // Extraer cultura original para el Nuevo Mundo
                 const matchCulture = text.match(/primary_culture\s*=\s*([a-zA-Z_]+)/i);
                 if (matchCulture) countryData[tag].culture = matchCulture[1];
             }
@@ -642,6 +630,12 @@
                     let pId = provIdMatch[1];
                     provFilesMap[pId] = file;
 
+                    // Mapeo Regional para el Nuevo Mundo
+                    let subfolder = getProvinceSubfolder(file);
+                    let regionName = subfolder ? subfolder.replace(/\/$/, '') : 'Base';
+                    if (!regionProvinces[regionName]) regionProvinces[regionName] = [];
+                    regionProvinces[regionName].push(pId);
+
                     const matchOwner = text.match(/owner\s*=\s*"?([A-Z0-9]{3})"?/i);
                     if (matchOwner) {
                         const tag = matchOwner[1].toUpperCase(); 
@@ -651,6 +645,23 @@
                         provinceOwnership[tag].push(provName);
                     }
                 }
+            }
+
+            // CREAR INTERFAZ DINÁMICA DE REGIONES
+            const newWorldContainer = document.getElementById('newWorldRegions');
+            newWorldContainer.innerHTML = '';
+            for(let region in regionProvinces) {
+                let count = regionProvinces[region].length;
+                // Sugerencia: 1 país por cada 15 provincias aprox
+                let suggestedCount = Math.max(1, Math.floor(count / 15));
+                newWorldContainer.innerHTML += `
+                    <div style="display:flex; justify-content:space-between; align-items: center; margin-bottom:6px; font-size:0.9rem;">
+                        <label style="color:var(--text-main); text-transform:capitalize; margin:0; cursor:default;">
+                            ${region.replace(/\//g, ' > ')} <span style="color:var(--text-muted); font-size: 0.8rem;">(${count} provs)</span>
+                        </label>
+                        <input type="number" class="region-input" data-region="${region}" value="${suggestedCount}" min="0" max="${count}" style="width:70px; padding:4px; text-align:center;">
+                    </div>
+                `;
             }
 
             emptyState.style.display = 'none';
@@ -764,10 +775,8 @@
         }
 
         // -------------------------------------------------------------
-        // LÓGICA DE BALCANIZACIÓN Y NUEVO MUNDO
+        // MÓDULO: GUERRA DE SECESIÓN (TRIPLE SPLIT - MÚLTIPLE)
         // -------------------------------------------------------------
-
-        // 0. GUERRA DE SECESIÓN (TRIPLE SPLIT - MÚLTIPLE)
         document.getElementById('btnTripleSplit').addEventListener('click', async function() {
             const checkedBoxes = document.querySelectorAll('.chk-balkan:checked');
             let tagsToProcess = Array.from(checkedBoxes).map(cb => cb.dataset.tag);
@@ -786,13 +795,11 @@
                 const provsStr = provinceOwnership[tag] || [];
                 if (provsStr.length >= 3) {
                     validTags.push(tag);
-                } else {
-                    console.warn(`El país ${tag} tiene menos de 3 provincias y será omitido.`);
                 }
             }
 
             if (validTags.length === 0) {
-                alert("Ninguno de los países seleccionados tiene suficientes provincias (mínimo 3) para dividirse en 3 bloques.");
+                alert("Ninguno de los países seleccionados tiene suficientes provincias (mínimo 3) para dividirse.");
                 return;
             }
 
@@ -954,10 +961,10 @@
             }
         });
 
-        // 1. BALCANIZAR UNA SOLA PROVINCIA
+        // MÓDULO: BALCANIZAR PROVINCIA (Singular)
         document.getElementById('btnDownloadMod').addEventListener('click', async function() {
             if (!currentSelectedTag) {
-                alert("Primero selecciona un país de la lista (haz clic en su nombre).");
+                alert("Primero selecciona un país de la lista.");
                 return;
             }
             
@@ -1037,7 +1044,7 @@
             });
         });
 
-        // 2. BALCANIZAR TOTALMENTE MÚLTIPLES PAÍSES
+        // MÓDULO: BALCANIZAR TOTALMENTE
         document.getElementById('btnTotalChaos').addEventListener('click', async function() {
             const checkedBoxes = document.querySelectorAll('.chk-balkan:checked');
             let tagsToBalkanize = Array.from(checkedBoxes).map(cb => cb.dataset.tag);
@@ -1074,7 +1081,7 @@
                 return;
             }
 
-            if (!confirm(`¡ADVERTENCIA!\nSe crearán ${allProvincesToIndependize.length} naciones nuevas destruyendo los ${tagsToBalkanize.length} países marcados. Se añadirán cores cruzados (Casus Belli automáticos) entre ellos.\n¿Estás seguro?`)) {
+            if (!confirm(`¡ADVERTENCIA!\nSe crearán ${allProvincesToIndependize.length} naciones nuevas destruyendo los ${tagsToBalkanize.length} países marcados.\n¿Estás seguro?`)) {
                 return;
             }
 
@@ -1085,10 +1092,7 @@
 
             for (let item of allProvincesToIndependize) {
                 let newTag = getNextFreeTag();
-                if (!newTag) {
-                    alert("Aviso: Se agotaron los TAGs disponibles. Se procesará hasta donde se pudo.");
-                    break;
-                }
+                if (!newTag) break;
 
                 let provCleanName = item.provString.includes('-') ? item.provString.split('-').slice(1).join('-').trim() : `State${item.provId}`;
                 provCleanName = provCleanName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '');
@@ -1168,7 +1172,7 @@
             }
 
             if (newNationsManifest.length === 0) {
-                alert("Error al intentar generar los archivos de las naciones.");
+                alert("Error al generar las naciones.");
                 return;
             }
 
@@ -1189,163 +1193,179 @@
             });
         });
 
-        // 3. NUEVO MUNDO ALEATORIO (Shattered World)
+        // -------------------------------------------------------------
+        // MÓDULO: CREAR NUEVO MUNDO POR REGIONES (Aleatorizado Geográficamente)
+        // -------------------------------------------------------------
         document.getElementById('btnNewWorld').addEventListener('click', async function() {
-            const numCountries = 250; // Objetivo de naciones a crear
-            
-            if (!confirm(`¿Crear un mundo completamente nuevo? Esto borrará del mapa a todos los países actuales (quedando con 0 provincias) y generará ~${numCountries} nuevas naciones procedimentales heredando las culturas originales. ¡Puede tardar un poco!`)) return;
+            if(Object.keys(regionProvinces).length === 0) return alert("Por favor, indexa los archivos de Victoria 2 primero.");
+
+            // Leer los inputs de la interfaz para saber cuántos países crear por región
+            let regionTargets = {};
+            let totalRequestedNations = 0;
+            document.querySelectorAll('.region-input').forEach(input => {
+                let val = parseInt(input.value) || 0;
+                regionTargets[input.dataset.region] = val;
+                totalRequestedNations += val;
+            });
+
+            if(totalRequestedNations === 0) {
+                if(!confirm("Has asignado 0 naciones a todas las regiones. Esto vaciará todo el mapa mundial volviéndolo 100% colonizable. ¿Estás seguro?")) return;
+            } else {
+                if (!confirm(`Se va a aniquilar a todas las naciones originales y se generarán ${totalRequestedNations} nuevos países heredando las culturas locales. ¡Puede tardar unos segundos!`)) return;
+            }
 
             const zip = new JSZip();
             let addedCountriesTxtLines = "";
             let fullLocContent = "";
-
-            // Recopilar TODAS las provincias que tienen un archivo válido
-            let allProvIds = Object.keys(provFilesMap).map(Number).filter(id => !isNaN(id));
-            allProvIds.sort((a,b) => a - b);
-
-            if(allProvIds.length === 0) {
-                alert("No se encontraron provincias para repartir.");
-                return;
-            }
-
-            // Seleccionar semillas (Capitales) al azar
-            let seeds = [];
-            let tempProvs = [...allProvIds];
-            for(let i=0; i<numCountries; i++) {
-                if(tempProvs.length === 0) break;
-                let randIdx = Math.floor(Math.random() * tempProvs.length);
-                seeds.push(tempProvs[randIdx]);
-                tempProvs.splice(randIdx, 1);
-            }
-
-            // Agrupar provincias por la semilla matemáticamente más cercana
-            let countryClusters = {}; 
-            seeds.forEach(s => countryClusters[s] = []);
-
-            allProvIds.forEach(pId => {
-                let closestSeed = seeds[0];
-                let minDiff = Infinity;
-                for(let seed of seeds) {
-                    let diff = Math.abs(pId - seed);
-                    if (diff < minDiff) {
-                        minDiff = diff;
-                        closestSeed = seed;
-                    }
-                }
-                countryClusters[closestSeed].push(pId);
-            });
-
-            // Generar las nuevas naciones
             let nationsCreated = 0;
 
-            // Para usar archivos base de referencia (ej. para clonar tecnologías y partidos)
             const fallbackHistoryFile = Object.values(historyFilesMap)[0];
             const fallbackCommonFile = Object.values(commonFilesMap)[0];
 
-            for(let seed of seeds) {
-                let chunk = countryClusters[seed];
-                if(chunk.length === 0) continue;
+            for(let region in regionProvinces) {
+                let targetNum = regionTargets[region];
+                let provsInRegion = regionProvinces[region];
 
-                let newTag = getNextFreeTag();
-                if(!newTag) break;
-
-                // Extraer el nombre de la provincia semilla para dárselo a la nación
-                let capProvFile = provFilesMap[seed];
-                let capProvNameStr = capProvFile.name.replace('.txt','');
-                let provCleanName = capProvNameStr.includes('-') ? capProvNameStr.split('-').slice(1).join('-').trim() : `State${seed}`;
-                provCleanName = provCleanName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '');
-
-                const randPrefix = prefijosNacion[Math.floor(Math.random() * prefijosNacion.length)];
-                const nationName = `${randPrefix} ${provCleanName}`;
-                const nationAdj = `${provCleanName}nse`;
-
-                // Análisis Cultural de la región
-                let cultureCounts = {};
-                chunk.forEach(p => {
-                    let origOwner = provToOwnerMap[p];
-                    if(origOwner && countryData[origOwner] && countryData[origOwner].culture) {
-                        let cult = countryData[origOwner].culture;
-                        cultureCounts[cult] = (cultureCounts[cult] || 0) + 1;
+                // Si se asigna 0 países, la región queda desolada (ideal para África colonizable)
+                if(targetNum === 0) {
+                    for(let pId of provsInRegion) {
+                        let pFile = provFilesMap[pId];
+                        if(!pFile) continue;
+                        let pText = await pFile.text();
+                        pText = pText.replace(/owner\s*=\s*"?[A-Z0-9]{3}"?/gi, '');
+                        pText = pText.replace(/controller\s*=\s*"?[A-Z0-9]{3}"?/gi, '');
+                        pText = pText.replace(/add_core\s*=\s*"?[A-Z0-9]{3}"?/gi, '');
+                        
+                        const provSubfolder = getProvinceSubfolder(pFile);
+                        zip.file(`history/provinces/${provSubfolder}${pFile.name}`, pText);
                     }
-                });
-                
-                let sortedCultures = Object.keys(cultureCounts).sort((a,b) => cultureCounts[b] - cultureCounts[a]);
-                let primaryCulture = sortedCultures.length > 0 ? sortedCultures[0] : 'french'; 
-                let acceptedCultures = sortedCultures.slice(1, 4); // Hasta 3 culturas aceptadas
-
-                countryData[newTag] = { capital: seed, gov: 'Desconocido' };
-
-                // Buscar un archivo base del dueño original de esta capital para heredar techs y estructura
-                let origSeedOwner = provToOwnerMap[seed];
-                let baseHistoryFile = historyFilesMap[origSeedOwner] || fallbackHistoryFile;
-                let baseCommonFile = commonFilesMap[origSeedOwner] || fallbackCommonFile;
-
-                let historyText = await baseHistoryFile.text();
-                let commonText = await baseCommonFile.text();
-
-                const randGov = tiposGobierno[Math.floor(Math.random() * tiposGobierno.length)];
-                const randIdeo = ideologias[Math.floor(Math.random() * ideologias.length)];
-                const partyName = getPartyNameByIdeology(commonText, randIdeo);
-
-                historyText = historyText.replace(/capital\s*=\s*\d+/i, `capital = ${seed}`);
-                historyText = historyText.replace(/oob\s*=\s*"[^"]+"/gi, '# Ejército borrado');
-                historyText = historyText.replace(/government\s*=\s*[a-zA-Z_]+/i, `government = ${randGov}`);
-                
-                // Sobrescribir cultura
-                historyText = historyText.replace(/primary_culture\s*=\s*[a-zA-Z_]+/i, `primary_culture = ${primaryCulture}`);
-                // Borrar culturas aceptadas viejas
-                historyText = historyText.replace(/culture\s*=\s*[a-zA-Z_]+\r?\n/gi, '');
-                // Insertar nuevas
-                let acceptedStr = "";
-                acceptedCultures.forEach(c => { acceptedStr += `culture = ${c}\n`; });
-                if(acceptedStr) historyText += `\n# Culturas Minoritarias Absorbidas\n${acceptedStr}`;
-
-                if (partyName) {
-                    historyText = historyText.replace(/ruling_party\s*=\s*[^\r\n]+/i, `ruling_party = "${partyName}"`);
+                    continue;
                 }
 
-                const r = Math.floor(Math.random() * 200) + 55;
-                const g = Math.floor(Math.random() * 200) + 55;
-                const b = Math.floor(Math.random() * 200) + 55;
-                commonText = commonText.replace(/color\s*=\s*\{[^}]+\}/i, `color = { ${r} ${g} ${b} }`);
+                targetNum = Math.min(targetNum, provsInRegion.length);
 
-                zip.file(`common/countries/${provCleanName}.txt`, commonText);
-                zip.file(`history/countries/${newTag} - ${provCleanName}.txt`, historyText);
+                // Elegir Capitales "Semilla" al azar dentro de la región
+                let seeds = [];
+                let tempProvs = [...provsInRegion];
+                for(let i=0; i<targetNum; i++) {
+                    let randIdx = Math.floor(Math.random() * tempProvs.length);
+                    seeds.push(tempProvs[randIdx]);
+                    tempProvs.splice(randIdx, 1);
+                }
 
-                fullLocContent += `${newTag};${nationName};${nationName};${nationName};;${nationName};;;;;;;;;x;;;;\n`;
-                fullLocContent += `${newTag}_ADJ;${nationAdj};${nationAdj};${nationAdj};;${nationAdj};;;;;;;;;x;;;;\n`;
-                addedCountriesTxtLines += `${newTag} = "countries/${provCleanName}.txt"\n`;
-
-                const flagBuffer = generateRandomTGAData();
-                zip.file(`gfx/flags/${newTag}.tga`, flagBuffer);
-                const ideologiesGame = ['_communist', '_fascist', '_monarchy', '_republic'];
-                ideologiesGame.forEach(ideo => {
-                    zip.file(`gfx/flags/${newTag}${ideo}.tga`, flagBuffer);
+                // Agrupar el resto de provincias a su semilla más cercana matemáticamente
+                let countryClusters = {}; 
+                seeds.forEach(s => countryClusters[s] = []);
+                provsInRegion.forEach(pId => {
+                    let closestSeed = seeds[0];
+                    let minDiff = Infinity;
+                    for(let seed of seeds) {
+                        let diff = Math.abs(pId - seed);
+                        if (diff < minDiff) {
+                            minDiff = diff;
+                            closestSeed = seed;
+                        }
+                    }
+                    countryClusters[closestSeed].push(pId);
                 });
 
-                // Reasignar la propiedad en los archivos de provincia
-                for(let pId of chunk) {
-                    let pFile = provFilesMap[pId];
-                    if(!pFile) continue;
-                    let pText = await pFile.text();
+                // Generar Naciones para la Región Actual
+                for(let seed of seeds) {
+                    let chunk = countryClusters[seed];
+                    if(chunk.length === 0) continue;
+
+                    let newTag = getNextFreeTag();
+                    if(!newTag) break; 
+
+                    let capProvFile = provFilesMap[seed];
+                    let capProvNameStr = capProvFile.name.replace('.txt','');
+                    let provCleanName = capProvNameStr.includes('-') ? capProvNameStr.split('-').slice(1).join('-').trim() : `State${seed}`;
+                    provCleanName = provCleanName.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '');
+
+                    const randPrefix = prefijosNacion[Math.floor(Math.random() * prefijosNacion.length)];
+                    const nationName = `${randPrefix} ${provCleanName}`;
+                    const nationAdj = `${provCleanName}nse`;
+
+                    // Cálculo demográfico (Cultura)
+                    let cultureCounts = {};
+                    chunk.forEach(p => {
+                        let origOwner = provToOwnerMap[p];
+                        if(origOwner && countryData[origOwner] && countryData[origOwner].culture) {
+                            let cult = countryData[origOwner].culture;
+                            cultureCounts[cult] = (cultureCounts[cult] || 0) + 1;
+                        }
+                    });
                     
-                    // Borramos a los dueños y cores antiguos para que no spawneen
-                    pText = pText.replace(/owner\s*=\s*"?[A-Z0-9]{3}"?/gi, '');
-                    pText = pText.replace(/controller\s*=\s*"?[A-Z0-9]{3}"?/gi, '');
-                    pText = pText.replace(/add_core\s*=\s*"?[A-Z0-9]{3}"?/gi, '');
+                    let sortedCultures = Object.keys(cultureCounts).sort((a,b) => cultureCounts[b] - cultureCounts[a]);
+                    let primaryCulture = sortedCultures.length > 0 ? sortedCultures[0] : 'french'; 
+                    let acceptedCultures = sortedCultures.slice(1, 4); 
 
-                    pText += `\nowner = ${newTag}\ncontroller = ${newTag}\nadd_core = ${newTag}\n`;
+                    countryData[newTag] = { capital: seed, gov: 'Desconocido' };
 
-                    const provSubfolder = getProvinceSubfolder(pFile);
-                    zip.file(`history/provinces/${provSubfolder}${pFile.name}`, pText);
+                    let origSeedOwner = provToOwnerMap[seed];
+                    let baseHistoryFile = historyFilesMap[origSeedOwner] || fallbackHistoryFile;
+                    let baseCommonFile = commonFilesMap[origSeedOwner] || fallbackCommonFile;
+
+                    let historyText = await baseHistoryFile.text();
+                    let commonText = await baseCommonFile.text();
+
+                    const randGov = tiposGobierno[Math.floor(Math.random() * tiposGobierno.length)];
+                    const randIdeo = ideologias[Math.floor(Math.random() * ideologias.length)];
+                    const partyName = getPartyNameByIdeology(commonText, randIdeo);
+
+                    historyText = historyText.replace(/capital\s*=\s*\d+/i, `capital = ${seed}`);
+                    historyText = historyText.replace(/oob\s*=\s*"[^"]+"/gi, '# Ejército borrado');
+                    historyText = historyText.replace(/government\s*=\s*[a-zA-Z_]+/i, `government = ${randGov}`);
+                    
+                    historyText = historyText.replace(/primary_culture\s*=\s*[a-zA-Z_]+/i, `primary_culture = ${primaryCulture}`);
+                    historyText = historyText.replace(/culture\s*=\s*[a-zA-Z_]+\r?\n/gi, '');
+                    let acceptedStr = "";
+                    acceptedCultures.forEach(c => { acceptedStr += `culture = ${c}\n`; });
+                    if(acceptedStr) historyText += `\n# Culturas Absorbidas\n${acceptedStr}`;
+
+                    if (partyName) {
+                        historyText = historyText.replace(/ruling_party\s*=\s*[^\r\n]+/i, `ruling_party = "${partyName}"`);
+                    }
+
+                    const r = Math.floor(Math.random() * 200) + 55;
+                    const g = Math.floor(Math.random() * 200) + 55;
+                    const b = Math.floor(Math.random() * 200) + 55;
+                    commonText = commonText.replace(/color\s*=\s*\{[^}]+\}/i, `color = { ${r} ${g} ${b} }`);
+
+                    zip.file(`common/countries/${provCleanName}.txt`, commonText);
+                    zip.file(`history/countries/${newTag} - ${provCleanName}.txt`, historyText);
+
+                    fullLocContent += `${newTag};${nationName};${nationName};${nationName};;${nationName};;;;;;;;;x;;;;\n`;
+                    fullLocContent += `${newTag}_ADJ;${nationAdj};${nationAdj};${nationAdj};;${nationAdj};;;;;;;;;x;;;;\n`;
+                    addedCountriesTxtLines += `${newTag} = "countries/${provCleanName}.txt"\n`;
+
+                    const flagBuffer = generateRandomTGAData();
+                    zip.file(`gfx/flags/${newTag}.tga`, flagBuffer);
+                    const ideologiesGame = ['_communist', '_fascist', '_monarchy', '_republic'];
+                    ideologiesGame.forEach(ideo => {
+                        zip.file(`gfx/flags/${newTag}${ideo}.tga`, flagBuffer);
+                    });
+
+                    // Limpiar dueños y asignar nuevo TAG a todo el bloque geográfico
+                    for(let pId of chunk) {
+                        let pFile = provFilesMap[pId];
+                        if(!pFile) continue;
+                        let pText = await pFile.text();
+                        
+                        pText = pText.replace(/owner\s*=\s*"?[A-Z0-9]{3}"?/gi, '');
+                        pText = pText.replace(/controller\s*=\s*"?[A-Z0-9]{3}"?/gi, '');
+                        pText = pText.replace(/add_core\s*=\s*"?[A-Z0-9]{3}"?/gi, '');
+
+                        pText += `\nowner = ${newTag}\ncontroller = ${newTag}\nadd_core = ${newTag}\n`;
+
+                        const provSubfolder = getProvinceSubfolder(pFile);
+                        zip.file(`history/provinces/${provSubfolder}${pFile.name}`, pText);
+                    }
+                    nationsCreated++;
                 }
-                nationsCreated++;
             }
 
             zip.file(`localisation/00_NewWorld_loc.csv`, fullLocContent);
-            
-            // Adjuntamos al archivo base los nuevos países.
-            // Los tags viejos siguen ahí, pero como les quitamos todas sus provincias, no aparecerán en el mapa.
             let newCountriesTxt = originalCountriesTxtRaw + `\n# --- NACIONES DEL NUEVO MUNDO --- \n` + addedCountriesTxtLines;
             zip.file(`common/countries.txt`, newCountriesTxt);
 
@@ -1353,12 +1373,12 @@
                 const url = URL.createObjectURL(content);
                 const a = document.createElement("a");
                 a.href = url;
-                a.download = `Victoria2_NuevoMundo_${nationsCreated}Paises.zip`;
+                a.download = `Victoria2_NuevoMundoRegional_${nationsCreated}Paises.zip`;
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
-                alert(`¡Génesis Completado! Se han creado ${nationsCreated} naciones reemplazando a las originales.`);
+                alert(`¡Nuevo Mundo Creado! Se generaron ${nationsCreated} naciones basándose en las regiones seleccionadas.`);
             });
         });
 
