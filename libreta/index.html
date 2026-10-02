@@ -100,7 +100,7 @@
         .page-wrapper {
             width: 50%; height: 100%; position: absolute; top: 0;
             background-color: #fdfaf6; overflow: hidden;
-            display: flex; flex-direction: column; cursor: text; /* Muestra que toda la hoja es escribible */
+            display: flex; flex-direction: column; cursor: text; 
         }
         .page-wrapper.left { left: 0; border-radius: 10px 0 0 10px; box-shadow: inset -10px 0 20px rgba(0,0,0,0.1); }
         .page-wrapper.right { right: 0; border-radius: 0 10px 10px 0; box-shadow: inset 10px 0 20px rgba(0,0,0,0.1); }
@@ -134,11 +134,11 @@
             max-width: 60ch; 
             width: 100%;
             margin: 0 auto;
-            min-height: calc(100% - 60px); /* Ocupa el resto de la hoja */
+            min-height: calc(100% - 60px); 
             background-image: linear-gradient(#ccc 1px, transparent 1px); 
             background-size: 100% 25px;
             background-position: 0 4px;
-            overflow: visible; /* Permite a las imágenes flotar libremente */
+            overflow: visible; 
         }
         
         /* Margen Rojo */
@@ -170,14 +170,12 @@
         }
 
         /* --- EFECTO DE DOBLADO (CURL) DINÁMICO --- */
-        /* Zona invisible para detectar el mouse en las esquinas */
         .corner-hitbox {
             position: absolute; bottom: 0; width: 100px; height: 100px; z-index: 80; cursor: pointer;
         }
         .corner-hitbox.next { right: 0; }
         .corner-hitbox.prev { left: 0; }
 
-        /* El doblez oculto por defecto */
         .curl {
             position: absolute; bottom: 0; width: 0; height: 0; z-index: 50;
             transition: all 0.2s ease-out; pointer-events: none;
@@ -185,7 +183,6 @@
         .curl-next { right: 0; border-bottom: 0px solid #ddd; border-left: 0px solid transparent; }
         .curl-prev { left: 0; border-bottom: 0px solid #ddd; border-right: 0px solid transparent; }
         
-        /* Aparece SOLO al pasar el mouse por la hitbox de la esquina */
         .corner-hitbox.next:hover ~ .curl-next { 
             border-bottom: 70px solid #ddd; border-left: 70px solid transparent; 
             box-shadow: -5px -5px 10px rgba(0,0,0,0.2); 
@@ -227,7 +224,6 @@
 </head>
 <body>
 
-    <!-- Modal Inicial -->
     <div id="startup-modal">
         <div class="startup-box">
             <h2>Configura tu Libreta</h2>
@@ -240,7 +236,6 @@
         </div>
     </div>
 
-    <!-- Contenedor Principal -->
     <div id="app-container">
         <div class="toolbar">
             <button class="btn btn-color color-black active" onclick="setPenColor('#2c3e50', this)" title="Pluma Negra"></button>
@@ -274,7 +269,7 @@
                     </div>
                     <div id="content-left" class="page-content" contenteditable="true" oninput="saveContent()"></div>
                     <div class="page-num" id="num-left"></div>
-                    <!-- Zonas Interactivas de Doblez -->
+                    
                     <div class="corner-hitbox prev" onclick="turnPrev()" title="Página anterior"></div>
                     <div class="curl curl-prev" id="curl-left"></div>
                 </div>
@@ -286,7 +281,7 @@
                     </div>
                     <div id="content-right" class="page-content" contenteditable="true" oninput="saveContent()"></div>
                     <div class="page-num" id="num-right"></div>
-                    <!-- Zonas Interactivas de Doblez -->
+                    
                     <div class="corner-hitbox next" onclick="turnNext()" title="Página siguiente"></div>
                     <div class="curl curl-next" id="curl-right"></div>
                 </div>
@@ -300,7 +295,7 @@
             config: { name: "Mi Libreta", color: "#2c3e50" },
             pages: []
         };
-        let currentIndex = -2; // -2 = Portada, 0 = Primeras hojas editables
+        let currentIndex = -2; 
         let isFlipping = false;
 
         const appContainer = document.getElementById('app-container');
@@ -355,7 +350,6 @@
             }
         }
 
-        // --- GUARDADO TEMPORAL EN MEMORIA ---
         function saveContent() {
             if(isFlipping) return;
             let dataIndexLeft = currentIndex - 1;
@@ -370,30 +364,23 @@
             }
         }
 
-        // --- RENDERIZADO VISUAL ---
         function updateView() {
-            // PORTADA CERRADA
             if (currentIndex === -2) {
                 wrapLeft.style.visibility = 'hidden';
-                
                 wrapRight.className = 'page-wrapper right cover-front';
                 contentRight.contentEditable = 'false';
                 contentRight.innerHTML = `<h1>${notebook.config.name}</h1>`;
-                
                 headerRight.style.display = 'none';
                 numRight.style.display = 'none';
-                
                 return;
             }
 
-            // ABRIR LIBRETA
             wrapLeft.style.visibility = 'visible';
             headerRight.style.display = 'flex';
             numRight.style.display = 'block';
             contentRight.contentEditable = 'true';
             wrapRight.className = 'page-wrapper right';
 
-            // PÁGINA IZQUIERDA
             if (currentIndex === 0) {
                 wrapLeft.className = 'page-wrapper left cover-inside';
                 contentLeft.contentEditable = 'false';
@@ -412,14 +399,12 @@
                 numLeft.innerText = currentIndex;
             }
 
-            // PÁGINA DERECHA
             let pRight = notebook.pages[currentIndex] || {html:"", date:""};
             contentRight.innerHTML = pRight.html;
             dateRight.value = pRight.date;
             numRight.innerText = currentIndex + 1;
         }
 
-        // --- COLOR DE PLUMA ---
         function setPenColor(color, btn) {
             document.querySelectorAll('.btn-color').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
@@ -431,7 +416,7 @@
             }
         }
 
-        // --- INSERTAR Y ARRASTRAR IMÁGENES ---
+        // --- INSERTAR Y MOVER IMÁGENES ENTRE PÁGINAS ---
         function insertImage(event) {
             if(currentIndex === -2) return alert("Abre la libreta primero para insertar imágenes.");
             const file = event.target.files[0];
@@ -446,12 +431,10 @@
                 div.style.top = '10px';
                 div.innerHTML = `<img src="${e.target.result}" alt="img"><div class="resize-handle-area"></div>`;
                 
-                // Forzar pegado en la hoja correcta si no hay foco
+                // Si no hay foco claro, forzamos a la derecha para no fallar
                 let target = contentRight;
                 if (document.activeElement === contentLeft && currentIndex > 0) {
                     target = contentLeft;
-                } else if (document.activeElement === contentRight) {
-                    target = contentRight;
                 }
                 
                 target.appendChild(div);
@@ -468,6 +451,7 @@
             const wrapper = e.target.closest('.draggable-img');
             if (wrapper && !e.target.classList.contains('resize-handle-area')) {
                 draggingObj = wrapper;
+                draggingObj.style.zIndex = "100"; 
                 const rect = draggingObj.getBoundingClientRect();
                 offsetX = e.clientX - rect.left;
                 offsetY = e.clientY - rect.top;
@@ -476,14 +460,36 @@
 
         document.addEventListener('mousemove', (e) => {
             if (draggingObj) {
+                const bookRect = book.getBoundingClientRect();
+                const bookCenter = bookRect.left + bookRect.width / 2;
+                
+                // Determinar dinámicamente sobre qué página está el cursor
+                let targetParent = (e.clientX < bookCenter) ? contentLeft : contentRight;
+                
+                // No permitir cruzar a la izquierda si estamos en la pasta dura interior
+                if (currentIndex === 0) targetParent = contentRight;
+
+                // Si cruza el centro, reparentarlo instantáneamente
+                if (targetParent !== draggingObj.parentElement) {
+                    targetParent.appendChild(draggingObj);
+                }
+
                 const parentRect = draggingObj.parentElement.getBoundingClientRect();
                 let newLeft = e.clientX - parentRect.left - offsetX;
                 let newTop = e.clientY - parentRect.top - offsetY;
 
-                if(newLeft < 0) newLeft = 0;
-                if(newTop < 0) newTop = 0;
-                if(newLeft + draggingObj.offsetWidth > parentRect.width) newLeft = parentRect.width - draggingObj.offsetWidth;
-                if(newTop + draggingObj.offsetHeight > parentRect.height) newTop = parentRect.height - draggingObj.offsetHeight;
+                // Límites exteriores de la libreta completa
+                if (targetParent === contentLeft && newLeft < 0) newLeft = 0; 
+                if (targetParent === contentRight && currentIndex === 0 && newLeft < 0) newLeft = 0; 
+                
+                if (targetParent === contentRight && newLeft + draggingObj.offsetWidth > parentRect.width) {
+                    newLeft = parentRect.width - draggingObj.offsetWidth; 
+                }
+
+                if (newTop < 0) newTop = 0; 
+                if (newTop + draggingObj.offsetHeight > parentRect.height) {
+                    newTop = parentRect.height - draggingObj.offsetHeight; 
+                }
 
                 draggingObj.style.left = newLeft + 'px';
                 draggingObj.style.top = newTop + 'px';
@@ -491,7 +497,11 @@
         });
 
         document.addEventListener('mouseup', () => {
-            if (draggingObj) { draggingObj = null; saveContent(); }
+            if (draggingObj) { 
+                draggingObj.style.zIndex = "40"; 
+                draggingObj = null; 
+                saveContent(); 
+            }
         });
 
         // --- ANIMACIONES 3D FLIP ---
@@ -606,6 +616,14 @@
             };
             reader.readAsText(file);
             event.target.value = '';
+        }
+
+        // Crear los anillos al iniciar
+        const spineObj = document.getElementById('spine');
+        for(let i=0; i<16; i++){
+            const ring = document.createElement('div');
+            ring.className = 'spiral-ring';
+            spineObj.appendChild(ring);
         }
     </script>
 </body>
