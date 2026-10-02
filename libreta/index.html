@@ -20,7 +20,7 @@
             overflow-x: hidden;
         }
 
-        /* --- PANTALLA DE INICIO (MODAL) --- */
+        /* --- PANTALLA DE INICIO --- */
         #startup-modal {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
             background: rgba(0,0,0,0.85); z-index: 9999;
@@ -46,7 +46,7 @@
         }
         .btn-start:hover { background: #2ecc71; }
 
-        /* --- INTERFAZ PRINCIPAL --- */
+        /* --- BARRA DE HERRAMIENTAS --- */
         #app-container { display: none; flex-direction: column; align-items: center; width: 100%; }
 
         .toolbar {
@@ -60,7 +60,6 @@
             display: flex; align-items: center; gap: 5px;
         }
         .btn:hover { transform: translateY(-2px); box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
 
         .btn-color { width: 30px; height: 30px; border-radius: 50%; padding: 0; border: 2px solid transparent;}
         .btn-color.active { border-color: #f39c12; transform: scale(1.1); box-shadow: 0 0 8px #f39c12; }
@@ -75,7 +74,12 @@
         .divider { width: 1px; height: 30px; background: #ccc; margin: 0 5px; }
 
         /* --- LIBRETA 3D --- */
-        .book-container { perspective: 1500px; width: 1000px; height: 650px; position: relative; }
+        .book-container { 
+            perspective: 1500px; 
+            width: 1100px; /* Suficiente espacio para los 60 caracteres */
+            height: 820px; /* Altura calculada para 30 renglones exactos + cabeceras */
+            position: relative; 
+        }
         .book {
             display: flex; width: 100%; height: 100%; position: relative;
             box-shadow: 0 20px 40px rgba(0,0,0,0.6); border-radius: 10px; background: #222;
@@ -116,21 +120,39 @@
         .page-wrapper.left .page-num { left: 20px; }
         .page-wrapper.right .page-num { right: 20px; }
 
-        /* Contenido Editable Rayado */
+        /* --- REGLAS DE 30 RENGLONES x 60 CARACTERES --- */
         .page-content {
-            flex: 1; padding: 10px 40px 30px 40px; outline: none; position: relative;
-            font-family: 'Caveat', cursive; font-size: 26px; line-height: 32px; color: #2c3e50;
-            background-image: linear-gradient(#e1e1e1 .1em, transparent .1em); background-size: 100% 32px;
-            overflow: hidden; /* Restringe imágenes a la página */
+            /* Fuente monoespaciada para asegurar tamaño de carácter exacto (ch) */
+            font-family: 'Consolas', 'Courier New', monospace; 
+            font-size: 20px; 
+            line-height: 25px; /* 30 renglones = 750px de espacio vertical */
+            color: #2c3e50;
+            
+            /* Ajuste del contenedor de texto */
+            flex: 1; 
+            padding: 5px 0 15px 0; 
+            outline: none; 
+            position: relative;
+            word-break: break-word;
+            
+            /* Limitamos exactamente a 60 caracteres de ancho */
+            max-width: 60ch; 
+            margin: 0 auto; /* Centrar el bloque de texto en la hoja */
+
+            overflow: hidden;
+            
+            /* Dibujo de las líneas adaptado al interlineado de 25px */
+            background-image: linear-gradient(#ccc 1px, transparent 1px); 
+            background-size: 100% 25px;
+            background-position: 0 4px; /* Alineación del texto con la línea */
         }
-        /* Margen Rojo Izquierdo/Derecho */
-        .page-wrapper.left .page-content {
-            padding-right: 50px; padding-left: 20px;
-            background-image: linear-gradient(270deg, transparent 49px, #ff9999 49px, #ff9999 51px, transparent 51px), linear-gradient(#e1e1e1 .1em, transparent .1em);
+        
+        /* Margen Rojo Izquierdo/Derecho pintado en el wrapper exterior para no afectar el contenedor de 60ch */
+        .page-wrapper.left {
+            background-image: linear-gradient(270deg, transparent 49px, #ff9999 49px, #ff9999 51px, transparent 51px);
         }
-        .page-wrapper.right .page-content {
-            padding-left: 50px; padding-right: 20px;
-            background-image: linear-gradient(90deg, transparent 49px, #ff9999 49px, #ff9999 51px, transparent 51px), linear-gradient(#e1e1e1 .1em, transparent .1em);
+        .page-wrapper.right {
+            background-image: linear-gradient(90deg, transparent 49px, #ff9999 49px, #ff9999 51px, transparent 51px);
         }
 
         /* --- DISEÑO DE PORTADAS --- */
@@ -143,6 +165,7 @@
             font-family: 'Playfair Display', serif; font-size: 3.5rem; color: #fff;
             text-align: center; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
             border: 4px solid #fff; padding: 20px; border-radius: 10px; background: rgba(0,0,0,0.1);
+            word-break: break-word;
         }
         .cover-inside {
             background-image: repeating-linear-gradient(45deg, rgba(0,0,0,0.05) 25%, transparent 25%, transparent 75%, rgba(0,0,0,0.05) 75%, rgba(0,0,0,0.05)),
@@ -157,13 +180,13 @@
             transition: all 0.3s ease; cursor: pointer;
         }
         .curl-next {
-            right: 0; border-bottom: 45px solid #d5d5d5; border-left: 45px solid transparent;
+            right: 0; border-bottom: 50px solid #d5d5d5; border-left: 50px solid transparent;
             box-shadow: -4px -4px 8px rgba(0,0,0,0.15);
         }
         .page-wrapper.right:hover .curl-next { border-bottom-width: 80px; border-left-width: 80px; }
         
         .curl-prev {
-            left: 0; border-bottom: 45px solid #d5d5d5; border-right: 45px solid transparent;
+            left: 0; border-bottom: 50px solid #d5d5d5; border-right: 50px solid transparent;
             box-shadow: 4px -4px 8px rgba(0,0,0,0.15);
         }
         .page-wrapper.left:hover .curl-prev { border-bottom-width: 80px; border-right-width: 80px; }
@@ -172,7 +195,7 @@
         .draggable-img {
             position: absolute; z-index: 40; border: 2px dashed rgba(0,0,0,0.4);
             background: rgba(255,255,255,0.5); resize: both; overflow: hidden;
-            min-width: 80px; min-height: 80px; max-width: 95%; max-height: 95%; cursor: move;
+            min-width: 80px; min-height: 80px; max-width: 100%; max-height: 100%; cursor: move;
         }
         .draggable-img img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
         .page-content:not(:focus-within) .draggable-img { border-color: transparent; background: transparent; }
@@ -184,7 +207,7 @@
         /* --- ANIMACIÓN 3D FLIP --- */
         .flip-page {
             position: absolute; top: 0; right: 0; width: 50%; height: 100%;
-            transform-origin: left center; transition: transform 1s cubic-bezier(0.645, 0.045, 0.355, 1);
+            transform-origin: left center; transition: transform 0.8s cubic-bezier(0.645, 0.045, 0.355, 1);
             transform-style: preserve-3d; z-index: 200; pointer-events: none;
         }
         .flip-page .front, .flip-page .back {
@@ -196,7 +219,6 @@
             transform: rotateY(180deg); border-radius: 10px 0 0 10px;
             box-shadow: inset -10px 0 20px rgba(0,0,0,0.05);
         }
-
     </style>
 </head>
 <body>
@@ -205,12 +227,12 @@
     <div id="startup-modal">
         <div class="startup-box">
             <h2>Configura tu Libreta</h2>
-            <input type="text" id="setupName" placeholder="Título de la Libreta" value="Mi Diario">
+            <input type="text" id="setupName" placeholder="Título de la Libreta" value="Mi Libreta">
             <div class="color-picker">
                 <label><b>Color de Pasta:</b></label>
-                <input type="color" id="setupColor" value="#8e44ad">
+                <input type="color" id="setupColor" value="#2c3e50">
             </div>
-            <button class="btn-start" onclick="startApp()">Crear Libreta</button>
+            <button class="btn-start" onclick="startApp()">Empezar a Escribir</button>
         </div>
     </div>
 
@@ -266,15 +288,11 @@
 
     <script>
         // --- ESTADO DE LA APLICACIÓN ---
-        // notebook.pages indexado desde 0.
-        // currentIndex = -2 (Portada Cerrada)
-        // currentIndex = 0 (Contraportada + Pag 1)
-        // currentIndex = 2 (Pag 2 + Pag 3)...
         let notebook = {
-            config: { name: "Mi Diario", color: "#8e44ad" },
+            config: { name: "Mi Libreta", color: "#2c3e50" },
             pages: []
         };
-        let currentIndex = -2; 
+        let currentIndex = -2; // -2 = Portada, 0 = Primeras hojas editables
         let isFlipping = false;
 
         const appContainer = document.getElementById('app-container');
@@ -295,22 +313,14 @@
         const headerRight = document.getElementById('header-right');
         const curlRight = document.getElementById('curl-right');
 
-        // Generar anillos
-        const spine = document.getElementById('spine');
-        for(let i=0; i<16; i++){
-            const ring = document.createElement('div');
-            ring.className = 'spiral-ring';
-            spine.appendChild(ring);
-        }
-
         // --- INICIALIZACIÓN ---
         function startApp() {
-            notebook.config.name = document.getElementById('setupName').value || "Mi Diario";
+            notebook.config.name = document.getElementById('setupName').value || "Mi Libreta";
             notebook.config.color = document.getElementById('setupColor').value;
             document.documentElement.style.setProperty('--cover-color', notebook.config.color);
             
-            // Llenar con 10 páginas vacías por defecto
-            for(let i=0; i<10; i++) notebook.pages.push({html: "", date: ""});
+            // Llenar con páginas iniciales
+            for(let i=0; i<4; i++) notebook.pages.push({html: "", date: ""});
             
             modal.style.display = 'none';
             appContainer.style.display = 'flex';
@@ -326,16 +336,14 @@
             }
         }
 
-        // --- GUARDADO DE TEXTO EN TIEMPO REAL ---
+        // --- GUARDADO TEMPORAL EN MEMORIA ---
         function saveContent() {
             if(isFlipping) return;
-            // Página Izquierda
             let dataIndexLeft = currentIndex - 1;
             if (dataIndexLeft >= 0 && notebook.pages[dataIndexLeft]) {
                 notebook.pages[dataIndexLeft].html = contentLeft.innerHTML;
                 notebook.pages[dataIndexLeft].date = dateLeft.value;
             }
-            // Página Derecha
             let dataIndexRight = currentIndex;
             if (dataIndexRight >= 0 && notebook.pages[dataIndexRight]) {
                 notebook.pages[dataIndexRight].html = contentRight.innerHTML;
@@ -343,7 +351,7 @@
             }
         }
 
-        // --- RENDERIZADO VISUAL ---
+        // --- RENDERIZADO VISUAL SEGÚN EL ÍNDICE ---
         function updateView() {
             // PORTADA CERRADA
             if (currentIndex === -2) {
@@ -355,8 +363,7 @@
                 
                 headerRight.style.display = 'none';
                 numRight.style.display = 'none';
-                curlRight.style.display = 'block'; // Permitir abrir
-                
+                curlRight.style.display = 'block'; 
                 return;
             }
 
@@ -365,22 +372,22 @@
             headerRight.style.display = 'flex';
             numRight.style.display = 'block';
             contentRight.contentEditable = 'true';
+            wrapRight.className = 'page-wrapper right';
 
             // PÁGINA IZQUIERDA
             if (currentIndex === 0) {
-                // Contraportada
                 wrapLeft.className = 'page-wrapper left cover-inside';
                 contentLeft.contentEditable = 'false';
                 contentLeft.innerHTML = '';
                 headerLeft.style.display = 'none';
                 numLeft.style.display = 'none';
-                curlLeft.style.display = 'block';
+                curlLeft.style.display = 'block'; // Volver a portada
             } else {
-                // Página normal izquierda
                 wrapLeft.className = 'page-wrapper left';
                 contentLeft.contentEditable = 'true';
                 headerLeft.style.display = 'flex';
                 numLeft.style.display = 'block';
+                curlLeft.style.display = 'block';
                 
                 let pLeft = notebook.pages[currentIndex - 1] || {html:"", date:""};
                 contentLeft.innerHTML = pLeft.html;
@@ -389,7 +396,6 @@
             }
 
             // PÁGINA DERECHA
-            wrapRight.className = 'page-wrapper right';
             let pRight = notebook.pages[currentIndex] || {html:"", date:""};
             contentRight.innerHTML = pRight.html;
             dateRight.value = pRight.date;
@@ -410,7 +416,7 @@
 
         // --- INSERTAR Y ARRASTRAR IMÁGENES ---
         function insertImage(event) {
-            if(currentIndex === -2) return alert("Abre la libreta primero.");
+            if(currentIndex === -2) return alert("Abre la libreta primero para insertar imágenes.");
             const file = event.target.files[0];
             if (!file) return;
 
@@ -419,15 +425,11 @@
                 const div = document.createElement('div');
                 div.className = 'draggable-img';
                 div.contentEditable = 'false';
-                div.style.left = '50px';
-                div.style.top = '50px';
-                div.innerHTML = `
-                    <img src="${e.target.result}" alt="img">
-                    <div class="resize-handle-area"></div>
-                `;
+                div.style.left = '10px';
+                div.style.top = '10px';
+                div.innerHTML = `<img src="${e.target.result}" alt="img"><div class="resize-handle-area"></div>`;
                 
                 let target = (document.activeElement === contentLeft) ? contentLeft : contentRight;
-                // Si la portada interna está activa, forzar a la derecha
                 if (target === contentLeft && currentIndex === 0) target = contentRight;
                 
                 target.appendChild(div);
@@ -437,21 +439,14 @@
             event.target.value = ''; 
         }
 
-        // Lógica Global de Drag and Drop
         let draggingObj = null;
         let offsetX, offsetY;
 
         document.addEventListener('mousedown', (e) => {
             const wrapper = e.target.closest('.draggable-img');
-            if (wrapper) {
-                // No iniciar arrastre si hace clic en la zona de redimensionar (esquina inferior derecha)
-                if (e.target.classList.contains('resize-handle-area')) return;
-
+            if (wrapper && !e.target.classList.contains('resize-handle-area')) {
                 draggingObj = wrapper;
                 const rect = draggingObj.getBoundingClientRect();
-                const parentRect = draggingObj.parentElement.getBoundingClientRect();
-                
-                // Offset respecto al elemento contenedor
                 offsetX = e.clientX - rect.left;
                 offsetY = e.clientY - rect.top;
             }
@@ -460,11 +455,9 @@
         document.addEventListener('mousemove', (e) => {
             if (draggingObj) {
                 const parentRect = draggingObj.parentElement.getBoundingClientRect();
-                
                 let newLeft = e.clientX - parentRect.left - offsetX;
                 let newTop = e.clientY - parentRect.top - offsetY;
 
-                // Restringir dentro de la página
                 if(newLeft < 0) newLeft = 0;
                 if(newTop < 0) newTop = 0;
                 if(newLeft + draggingObj.offsetWidth > parentRect.width) newLeft = parentRect.width - draggingObj.offsetWidth;
@@ -476,55 +469,44 @@
         });
 
         document.addEventListener('mouseup', () => {
-            if (draggingObj) {
-                draggingObj = null;
-                saveContent(); // Guarda la nueva posición
-            }
+            if (draggingObj) { draggingObj = null; saveContent(); }
         });
 
-
-        // --- ANIMACIONES 3D FLIP ---
+        // --- ANIMACIONES 3D FLIP INTEGRADAS Y REPARADAS ---
         function turnNext() {
             if (isFlipping) return;
             isFlipping = true;
             saveContent();
-
             ensurePagesExist(currentIndex + 2);
 
             const flipper = document.createElement('div');
             flipper.className = 'flip-page';
             
-            // Clonamos visualmente el estado actual derecho y el futuro izquierdo
+            // FRENTE DE LA HOJA AL GIRAR (Página Derecha Actual)
             const frontHTML = wrapRight.outerHTML;
             
-            // Preparamos temporalmente el futuro izquierdo
-            let nextLeftData = notebook.pages[currentIndex + 1];
-            let backHTML = `
-                <div class="page-wrapper left" style="width:100%;">
-                    <div class="page-header"><input type="text" class="page-date" value="${nextLeftData.date}" disabled></div>
-                    <div class="page-content">${nextLeftData.html}</div>
-                    <div class="page-num" style="left:20px;">${currentIndex + 2}</div>
-                </div>
-            `;
+            // ESPALDA DE LA HOJA AL GIRAR (Nueva Página Izquierda)
+            let backHTML = "";
+            if (currentIndex === -2) {
+                backHTML = `<div class="page-wrapper left cover-inside" style="width:100%; height:100%;"></div>`;
+            } else {
+                let nextLeftData = notebook.pages[currentIndex + 1] || {date:"", html:""};
+                backHTML = `
+                    <div class="page-wrapper left" style="width:100%; height:100%;">
+                        <div class="page-header" style="justify-content:flex-start;"><input type="text" class="page-date" value="${nextLeftData.date}" disabled></div>
+                        <div class="page-content">${nextLeftData.html}</div>
+                        <div class="page-num" style="left:20px;">${currentIndex + 2}</div>
+                    </div>`;
+            }
             
-            flipper.innerHTML = `
-                <div class="front">${frontHTML}</div>
-                <div class="back">${backHTML}</div>
-            `;
-            
+            flipper.innerHTML = `<div class="front">${frontHTML}</div><div class="back">${backHTML}</div>`;
             book.appendChild(flipper);
 
-            // Avanzamos el índice subyacente para preparar el fondo
             currentIndex += 2;
-            updateView();
+            updateView(); // Cambia el fondo
 
-            // Animamos
             setTimeout(() => { flipper.style.transform = 'rotateY(-180deg)'; }, 50);
-
-            setTimeout(() => {
-                flipper.remove();
-                isFlipping = false;
-            }, 1050);
+            setTimeout(() => { flipper.remove(); isFlipping = false; }, 850);
         }
 
         function turnPrev() {
@@ -534,44 +516,36 @@
 
             const flipper = document.createElement('div');
             flipper.className = 'flip-page';
-            flipper.style.transform = 'rotateY(-180deg)'; // Inicia doblada a la izquierda
+            flipper.style.transform = 'rotateY(-180deg)';
             
+            // ESPALDA DE LA HOJA AL GIRAR (Página Izquierda Actual)
             const backHTML = wrapLeft.outerHTML;
             
-            let prevRightData = notebook.pages[currentIndex - 2];
+            // FRENTE DE LA HOJA AL GIRAR (Antigua Página Derecha)
             let frontHTML = "";
-            if (currentIndex === 0) { // Si volvemos a la portada
+            if (currentIndex === 0) {
                 frontHTML = `
-                    <div class="page-wrapper right cover-front" style="width:100%;">
+                    <div class="page-wrapper right cover-front" style="width:100%; height:100%; background-color:${notebook.config.color};">
                         <h1>${notebook.config.name}</h1>
-                    </div>
-                `;
+                    </div>`;
             } else {
+                let prevRightData = notebook.pages[currentIndex - 2] || {date:"", html:""};
                 frontHTML = `
-                    <div class="page-wrapper right" style="width:100%;">
+                    <div class="page-wrapper right" style="width:100%; height:100%;">
                         <div class="page-header" style="justify-content:flex-end;"><input type="text" class="page-date" value="${prevRightData.date}" disabled></div>
                         <div class="page-content">${prevRightData.html}</div>
                         <div class="page-num" style="right:20px;">${currentIndex - 1}</div>
-                    </div>
-                `;
+                    </div>`;
             }
 
-            flipper.innerHTML = `
-                <div class="front">${frontHTML}</div>
-                <div class="back">${backHTML}</div>
-            `;
-            
+            flipper.innerHTML = `<div class="front">${frontHTML}</div><div class="back">${backHTML}</div>`;
             book.appendChild(flipper);
 
             currentIndex -= 2;
             updateView();
 
             setTimeout(() => { flipper.style.transform = 'rotateY(0deg)'; }, 50);
-
-            setTimeout(() => {
-                flipper.remove();
-                isFlipping = false;
-            }, 1050);
+            setTimeout(() => { flipper.remove(); isFlipping = false; }, 850);
         }
 
         // --- SISTEMA JSON ---
@@ -615,7 +589,6 @@
             reader.readAsText(file);
             event.target.value = '';
         }
-
     </script>
 </body>
 </html>
