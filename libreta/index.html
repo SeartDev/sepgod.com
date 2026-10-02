@@ -20,31 +20,46 @@
             overflow-x: hidden;
         }
 
-        /* --- PANTALLA DE INICIO --- */
-        #startup-modal {
+        /* --- PANTALLA DE INICIO Y MODALES --- */
+        .modal-overlay {
             position: fixed; top: 0; left: 0; right: 0; bottom: 0;
             background: rgba(0,0,0,0.85); z-index: 9999;
             display: flex; justify-content: center; align-items: center;
         }
-        .startup-box {
+        .modal-box {
             background: #fff; padding: 40px; border-radius: 10px;
             text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            width: 400px;
+            width: 450px; max-height: 80vh; display: flex; flex-direction: column;
         }
-        .startup-box h2 { margin-bottom: 20px; color: #333; }
-        .startup-box input[type="text"] {
+        .modal-box h2 { margin-bottom: 20px; color: #333; }
+        .modal-box input[type="text"] {
             width: 100%; padding: 10px; margin-bottom: 20px;
             border: 1px solid #ccc; border-radius: 5px; font-size: 16px;
         }
-        .startup-box .color-picker {
+        .modal-box .color-picker {
             display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 30px;
         }
-        .startup-box input[type="color"] { width: 50px; height: 50px; border: none; cursor: pointer; }
-        .btn-start {
+        .modal-box input[type="color"] { width: 50px; height: 50px; border: none; cursor: pointer; }
+        .btn-action {
             background: #27ae60; color: white; border: none; padding: 12px 25px;
             font-size: 18px; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%;
         }
-        .btn-start:hover { background: #2ecc71; }
+        .btn-action:hover { background: #2ecc71; }
+        .btn-close {
+            background: #e74c3c; margin-top: 10px;
+        }
+        .btn-close:hover { background: #c0392b; }
+
+        /* Lista del Índice */
+        .index-list {
+            list-style: none; text-align: left; overflow-y: auto; flex: 1; padding-right: 10px;
+        }
+        .index-list li {
+            padding: 10px; border-bottom: 1px solid #eee; cursor: pointer;
+            display: flex; justify-content: space-between; align-items: center; transition: background 0.2s;
+        }
+        .index-list li:hover { background: #f9f9f9; }
+        .index-list li strong { color: #2980b9; }
 
         /* --- BARRA DE HERRAMIENTAS --- */
         #app-container { display: none; flex-direction: column; align-items: center; width: 100%; }
@@ -67,6 +82,7 @@
         .color-blue { background-color: #2980b9; }
         .color-red { background-color: #c0392b; }
         
+        .btn-tool { background-color: #34495e; color: white; }
         .btn-image { background-color: #27ae60; color: white; }
         .btn-save { background-color: #8e44ad; color: white; }
         .btn-load { background-color: #f39c12; color: white; }
@@ -105,13 +121,14 @@
         .page-wrapper.left { left: 0; border-radius: 10px 0 0 10px; box-shadow: inset -10px 0 20px rgba(0,0,0,0.1); }
         .page-wrapper.right { right: 0; border-radius: 0 10px 10px 0; box-shadow: inset 10px 0 20px rgba(0,0,0,0.1); }
 
-        /* Encabezado (Fecha) y Pie (Número) */
-        .page-header { height: 50px; padding: 10px 30px; display: flex; align-items: center; justify-content: flex-end; z-index: 10;}
-        .page-wrapper.left .page-header { justify-content: flex-start; }
-        .page-date {
+        /* Encabezado (Título y Fecha) */
+        .page-header { height: 50px; padding: 10px 30px; display: flex; align-items: center; justify-content: space-between; z-index: 10;}
+        .page-title, .page-date {
             border: none; background: transparent; border-bottom: 1px dashed #bdc3c7;
-            font-family: 'Caveat', cursive; font-size: 22px; color: #2c3e50; width: 150px; outline: none; text-align: center;
+            font-family: 'Caveat', cursive; font-size: 22px; color: #2c3e50; outline: none;
         }
+        .page-title { width: 60%; text-align: left; }
+        .page-date { width: 35%; text-align: right; }
         
         .page-num {
             position: absolute; bottom: 15px; font-family: sans-serif; font-size: 14px;
@@ -224,22 +241,48 @@
 </head>
 <body>
 
-    <!-- Modal Inicial -->
-    <div id="startup-modal">
-        <div class="startup-box">
+    <!-- Modales de la Aplicación -->
+    <div id="startup-modal" class="modal-overlay">
+        <div class="modal-box">
             <h2>Configura tu Libreta</h2>
             <input type="text" id="setupName" placeholder="Título de la Libreta" value="Mi Libreta">
             <div class="color-picker">
                 <label><b>Color de Pasta:</b></label>
                 <input type="color" id="setupColor" value="#2c3e50">
             </div>
-            <button class="btn-start" onclick="startApp()">Empezar a Escribir</button>
+            <button class="btn-action" onclick="startApp()">Empezar a Escribir</button>
+        </div>
+    </div>
+
+    <div id="search-modal" class="modal-overlay" style="display:none;">
+        <div class="modal-box">
+            <h2>Buscar Palabra</h2>
+            <input type="text" id="searchInput" placeholder="Escribe lo que deseas buscar...">
+            <button class="btn-action" onclick="executeSearch()">Buscar</button>
+            <button class="btn-action btn-close" onclick="closeModals()">Cancelar</button>
+        </div>
+    </div>
+
+    <div id="index-modal" class="modal-overlay" style="display:none;">
+        <div class="modal-box">
+            <h2>Índice Temático</h2>
+            <p style="font-size:14px; color:#777; margin-bottom:15px;">Listado de títulos y subtemas detectados:</p>
+            <ul class="index-list" id="indexList">
+                <!-- Se inyectan los temas automáticamente -->
+            </ul>
+            <button class="btn-action btn-close" onclick="closeModals()">Cerrar</button>
         </div>
     </div>
 
     <!-- Contenedor Principal -->
     <div id="app-container">
         <div class="toolbar">
+            <!-- Botones de Utilidad Nuevos -->
+            <button class="btn btn-tool" onclick="openSearchModal()">&#128269; Buscar Palabra</button>
+            <button class="btn btn-tool" onclick="openIndexModal()">&#128209; Índice</button>
+
+            <div class="divider"></div>
+
             <button class="btn btn-color color-black active" onclick="setPenColor('#2c3e50', this)" title="Pluma Negra"></button>
             <button class="btn btn-color color-blue" onclick="setPenColor('#2980b9', this)" title="Pluma Azul"></button>
             <button class="btn btn-color color-red" onclick="setPenColor('#c0392b', this)" title="Pluma Roja"></button>
@@ -267,6 +310,7 @@
                 <!-- Página Izquierda -->
                 <div id="page-left-wrap" class="page-wrapper left">
                     <div class="page-header" id="header-left">
+                        <input type="text" class="page-title" id="title-left" placeholder="Tema..." onchange="saveContent()">
                         <input type="text" class="page-date" id="date-left" placeholder="Fecha..." onchange="saveContent()">
                     </div>
                     <div id="content-left" class="page-content" contenteditable="true" oninput="saveContent()"></div>
@@ -279,6 +323,7 @@
                 <!-- Página Derecha -->
                 <div id="page-right-wrap" class="page-wrapper right">
                     <div class="page-header" id="header-right">
+                        <input type="text" class="page-title" id="title-right" placeholder="Tema..." onchange="saveContent()">
                         <input type="text" class="page-date" id="date-right" placeholder="Fecha..." onchange="saveContent()">
                     </div>
                     <div id="content-right" class="page-content" contenteditable="true" oninput="saveContent()"></div>
@@ -301,31 +346,103 @@
         let isFlipping = false;
 
         const appContainer = document.getElementById('app-container');
-        const modal = document.getElementById('startup-modal');
+        const startupModal = document.getElementById('startup-modal');
+        const searchModal = document.getElementById('search-modal');
+        const indexModal = document.getElementById('index-modal');
         const book = document.getElementById('book');
         
         const wrapLeft = document.getElementById('page-left-wrap');
         const contentLeft = document.getElementById('content-left');
+        const titleLeft = document.getElementById('title-left');
         const dateLeft = document.getElementById('date-left');
         const numLeft = document.getElementById('num-left');
         const headerLeft = document.getElementById('header-left');
 
         const wrapRight = document.getElementById('page-right-wrap');
         const contentRight = document.getElementById('content-right');
+        const titleRight = document.getElementById('title-right');
         const dateRight = document.getElementById('date-right');
         const numRight = document.getElementById('num-right');
         const headerRight = document.getElementById('header-right');
 
-        // --- SISTEMA DE FOCO MAGNÉTICO (Evita que el cursor se bloquee por las imágenes) ---
+        // --- MANEJO DE MODALES ---
+        function closeModals() {
+            searchModal.style.display = 'none';
+            indexModal.style.display = 'none';
+            document.getElementById('searchInput').value = '';
+        }
+
+        function openSearchModal() {
+            saveContent();
+            searchModal.style.display = 'flex';
+            setTimeout(() => document.getElementById('searchInput').focus(), 100);
+        }
+
+        function openIndexModal() {
+            saveContent();
+            const list = document.getElementById('indexList');
+            list.innerHTML = '';
+            let hasEntries = false;
+            
+            for(let i=0; i<notebook.pages.length; i++) {
+                const page = notebook.pages[i];
+                if(page.title && page.title.trim() !== "") {
+                    hasEntries = true;
+                    const li = document.createElement('li');
+                    li.innerHTML = `<span>${page.title}</span> <strong>Pág. ${i + 1}</strong>`;
+                    li.onclick = () => {
+                        jumpToPage(i);
+                    };
+                    list.appendChild(li);
+                }
+            }
+            
+            if(!hasEntries) {
+                list.innerHTML = '<li><span style="color:#7f8c8d;">Aún no has escrito ningún título en tus páginas.</span></li>';
+            }
+            indexModal.style.display = 'flex';
+        }
+
+        function executeSearch() {
+            saveContent();
+            const term = document.getElementById('searchInput').value.toLowerCase().trim();
+            if(!term) return;
+
+            for(let i=0; i<notebook.pages.length; i++) {
+                const page = notebook.pages[i];
+                // Convertimos el HTML a texto plano para no buscar en etiquetas (ej. <div>)
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = page.html || "";
+                const textContent = tempDiv.textContent.toLowerCase();
+                const titleContent = (page.title || "").toLowerCase();
+                const dateContent = (page.date || "").toLowerCase();
+
+                if (textContent.includes(term) || titleContent.includes(term) || dateContent.includes(term)) {
+                    jumpToPage(i);
+                    return;
+                }
+            }
+            alert("No se encontró la palabra en la libreta.");
+        }
+
+        function jumpToPage(targetPageIndex) {
+            // Calcula cuál es el índice de visualización (currentIndex siempre es par)
+            let targetViewIndex = (targetPageIndex % 2 !== 0) ? targetPageIndex + 1 : targetPageIndex;
+            
+            if (currentIndex !== targetViewIndex) {
+                currentIndex = targetViewIndex;
+                updateView();
+            }
+            closeModals();
+        }
+
+        // --- SISTEMA DE FOCO MAGNÉTICO ---
         document.querySelectorAll('.page-wrapper').forEach(wrap => {
             wrap.addEventListener('click', (e) => {
-                // Si el usuario hace clic en el fondo blanco o en el margen...
                 if (e.target.classList.contains('page-wrapper') || e.target.classList.contains('page-content')) {
                     const editor = wrap.querySelector('.page-content');
                     if(editor && editor.contentEditable === 'true') {
                         editor.focus();
-                        
-                        // Forzar el cursor al final de lo escrito para que pueda seguir redactando
                         try {
                             const range = document.createRange();
                             range.selectNodeContents(editor);
@@ -345,9 +462,9 @@
             notebook.config.color = document.getElementById('setupColor').value;
             document.documentElement.style.setProperty('--cover-color', notebook.config.color);
             
-            for(let i=0; i<4; i++) notebook.pages.push({html: "", date: ""});
+            for(let i=0; i<4; i++) notebook.pages.push({html: "", date: "", title: ""});
             
-            modal.style.display = 'none';
+            startupModal.style.display = 'none';
             appContainer.style.display = 'flex';
             
             updateView();
@@ -357,7 +474,7 @@
 
         function ensurePagesExist(targetIndex) {
             while (targetIndex + 2 > notebook.pages.length) {
-                notebook.pages.push({html: "", date: ""});
+                notebook.pages.push({html: "", date: "", title: ""});
             }
         }
 
@@ -366,11 +483,13 @@
             let dataIndexLeft = currentIndex - 1;
             if (dataIndexLeft >= 0 && notebook.pages[dataIndexLeft]) {
                 notebook.pages[dataIndexLeft].html = contentLeft.innerHTML;
+                notebook.pages[dataIndexLeft].title = titleLeft.value;
                 notebook.pages[dataIndexLeft].date = dateLeft.value;
             }
             let dataIndexRight = currentIndex;
             if (dataIndexRight >= 0 && notebook.pages[dataIndexRight]) {
                 notebook.pages[dataIndexRight].html = contentRight.innerHTML;
+                notebook.pages[dataIndexRight].title = titleRight.value;
                 notebook.pages[dataIndexRight].date = dateRight.value;
             }
         }
@@ -404,15 +523,17 @@
                 headerLeft.style.display = 'flex';
                 numLeft.style.display = 'block';
                 
-                let pLeft = notebook.pages[currentIndex - 1] || {html:"", date:""};
+                let pLeft = notebook.pages[currentIndex - 1] || {html:"", date:"", title:""};
                 contentLeft.innerHTML = pLeft.html;
-                dateLeft.value = pLeft.date;
+                titleLeft.value = pLeft.title || "";
+                dateLeft.value = pLeft.date || "";
                 numLeft.innerText = currentIndex;
             }
 
-            let pRight = notebook.pages[currentIndex] || {html:"", date:""};
+            let pRight = notebook.pages[currentIndex] || {html:"", date:"", title:""};
             contentRight.innerHTML = pRight.html;
-            dateRight.value = pRight.date;
+            titleRight.value = pRight.title || "";
+            dateRight.value = pRight.date || "";
             numRight.innerText = currentIndex + 1;
         }
 
@@ -435,7 +556,6 @@
 
             const reader = new FileReader();
             reader.onload = function(e) {
-                // Inyectamos un espacio en blanco para garantizar que el cursor pueda seguir operando
                 const imgHTML = `&nbsp;<div class="draggable-img" contenteditable="false" style="left:20px; top:20px;"><img src="${e.target.result}" alt="img"><div class="resize-handle-area"></div></div>&nbsp;`;
                 
                 let target = contentRight;
@@ -444,9 +564,7 @@
                 }
                 
                 target.focus();
-                // Utilizamos el comando nativo para que el navegador no corrompa el flujo del texto
                 document.execCommand('insertHTML', false, imgHTML);
-                
                 saveContent();
             }
             reader.readAsDataURL(file);
@@ -473,7 +591,6 @@
                 const bookCenter = bookRect.left + bookRect.width / 2;
                 
                 let targetParent = (e.clientX < bookCenter) ? contentLeft : contentRight;
-                
                 if (currentIndex === 0) targetParent = contentRight;
 
                 if (targetParent !== draggingObj.parentElement) {
@@ -525,11 +642,14 @@
             if (currentIndex === -2) {
                 backHTML = `<div class="page-wrapper left cover-inside" style="width:100%; height:100%;"></div>`;
             } else {
-                let nextLeftData = notebook.pages[currentIndex + 1] || {date:"", html:""};
+                let nextLeftData = notebook.pages[currentIndex + 1] || {title:"", date:"", html:""};
                 backHTML = `
                     <div class="page-wrapper left" style="width:100%; height:100%;">
-                        <div class="page-header" style="justify-content:flex-start;"><input type="text" class="page-date" value="${nextLeftData.date}" disabled></div>
-                        <div class="page-content">${nextLeftData.html}</div>
+                        <div class="page-header" style="justify-content:space-between;">
+                            <input type="text" class="page-title" value="${nextLeftData.title || ''}" disabled>
+                            <input type="text" class="page-date" value="${nextLeftData.date || ''}" disabled>
+                        </div>
+                        <div class="page-content">${nextLeftData.html || ''}</div>
                         <div class="page-num" style="left:20px;">${currentIndex + 2}</div>
                     </div>`;
             }
@@ -562,11 +682,14 @@
                         <h1>${notebook.config.name}</h1>
                     </div>`;
             } else {
-                let prevRightData = notebook.pages[currentIndex - 2] || {date:"", html:""};
+                let prevRightData = notebook.pages[currentIndex - 2] || {title:"", date:"", html:""};
                 frontHTML = `
                     <div class="page-wrapper right" style="width:100%; height:100%;">
-                        <div class="page-header" style="justify-content:flex-end;"><input type="text" class="page-date" value="${prevRightData.date}" disabled></div>
-                        <div class="page-content">${prevRightData.html}</div>
+                        <div class="page-header" style="justify-content:space-between;">
+                            <input type="text" class="page-title" value="${prevRightData.title || ''}" disabled>
+                            <input type="text" class="page-date" value="${prevRightData.date || ''}" disabled>
+                        </div>
+                        <div class="page-content">${prevRightData.html || ''}</div>
                         <div class="page-num" style="right:20px;">${currentIndex - 1}</div>
                     </div>`;
             }
@@ -610,7 +733,7 @@
                         document.documentElement.style.setProperty('--cover-color', notebook.config.color);
                         currentIndex = -2; 
                         appContainer.style.display = 'flex';
-                        modal.style.display = 'none';
+                        startupModal.style.display = 'none';
                         updateView();
                     } else {
                         alert("El archivo no es una libreta válida.");
