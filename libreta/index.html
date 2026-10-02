@@ -3,429 +3,587 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Libreta Digital Realista</title>
-    <!-- Fuente que simula escritura a mano -->
-    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&display=swap" rel="stylesheet">
+    <title>Libreta Digital Avanzada</title>
+    <link href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;700&family=Playfair+Display:ital,wght@1,700&display=swap" rel="stylesheet">
     <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
 
         body {
-            background-color: #3b2f2f;
-            background-image: radial-gradient(circle, #5c4a4a, #2a1f1f);
+            background-color: #2b2b2b;
+            background-image: radial-gradient(circle, #4a4a4a, #1a1a1a);
             font-family: sans-serif;
             display: flex;
             flex-direction: column;
             align-items: center;
             min-height: 100vh;
             padding: 20px;
+            overflow-x: hidden;
         }
 
-        /* Barra de Herramientas */
+        /* --- PANTALLA DE INICIO (MODAL) --- */
+        #startup-modal {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.85); z-index: 9999;
+            display: flex; justify-content: center; align-items: center;
+        }
+        .startup-box {
+            background: #fff; padding: 40px; border-radius: 10px;
+            text-align: center; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            width: 400px;
+        }
+        .startup-box h2 { margin-bottom: 20px; color: #333; }
+        .startup-box input[type="text"] {
+            width: 100%; padding: 10px; margin-bottom: 20px;
+            border: 1px solid #ccc; border-radius: 5px; font-size: 16px;
+        }
+        .startup-box .color-picker {
+            display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 30px;
+        }
+        .startup-box input[type="color"] { width: 50px; height: 50px; border: none; cursor: pointer; }
+        .btn-start {
+            background: #27ae60; color: white; border: none; padding: 12px 25px;
+            font-size: 18px; border-radius: 5px; cursor: pointer; font-weight: bold; width: 100%;
+        }
+        .btn-start:hover { background: #2ecc71; }
+
+        /* --- INTERFAZ PRINCIPAL --- */
+        #app-container { display: none; flex-direction: column; align-items: center; width: 100%; }
+
         .toolbar {
-            background: #ffffff;
-            padding: 10px 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-            display: flex;
-            gap: 15px;
-            margin-bottom: 30px;
-            align-items: center;
-            z-index: 10;
-            flex-wrap: wrap;
-            justify-content: center;
+            background: #ffffff; padding: 10px 20px; border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3); display: flex; gap: 15px;
+            margin-bottom: 30px; align-items: center; z-index: 10; flex-wrap: wrap; justify-content: center;
         }
-
         .btn {
-            padding: 8px 15px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 14px;
-            transition: transform 0.2s, box-shadow 0.2s;
-            display: flex;
-            align-items: center;
-            gap: 5px;
+            padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer;
+            font-weight: bold; font-size: 14px; transition: transform 0.2s, box-shadow 0.2s;
+            display: flex; align-items: center; gap: 5px;
         }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }
-
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
-        }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
 
         .btn-color { width: 30px; height: 30px; border-radius: 50%; padding: 0; border: 2px solid transparent;}
         .btn-color.active { border-color: #f39c12; transform: scale(1.1); box-shadow: 0 0 8px #f39c12; }
-        
         .color-black { background-color: #2c3e50; }
         .color-blue { background-color: #2980b9; }
         .color-red { background-color: #c0392b; }
         
         .btn-image { background-color: #27ae60; color: white; }
-        .btn-nav { background-color: #ecf0f1; color: #333; }
         .btn-save { background-color: #8e44ad; color: white; }
         .btn-load { background-color: #f39c12; color: white; }
-
         input[type="file"] { display: none; }
+        .divider { width: 1px; height: 30px; background: #ccc; margin: 0 5px; }
 
-        .divider {
-            width: 1px;
-            height: 30px;
-            background: #ccc;
-            margin: 0 5px;
-        }
-
-        /* Contenedor del Libro 3D */
-        .book-container {
-            perspective: 1500px;
-            width: 900px;
-            height: 600px;
-            position: relative;
-        }
-
+        /* --- LIBRETA 3D --- */
+        .book-container { perspective: 1500px; width: 1000px; height: 650px; position: relative; }
         .book {
-            display: flex;
-            width: 100%;
-            height: 100%;
-            position: relative;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
-            border-radius: 10px;
-            background: #fff;
+            display: flex; width: 100%; height: 100%; position: relative;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6); border-radius: 10px; background: #222;
         }
-
-        /* Espiral de la libreta */
+        
         .spine {
-            position: absolute;
-            left: 50%;
-            top: 0;
-            bottom: 0;
-            width: 40px;
-            transform: translateX(-50%);
-            background: linear-gradient(to right, rgba(0,0,0,0.1), rgba(0,0,0,0.2), rgba(0,0,0,0.1));
-            z-index: 10;
-            pointer-events: none;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-evenly;
-            align-items: center;
+            position: absolute; left: 50%; top: 0; bottom: 0; width: 40px; transform: translateX(-50%);
+            background: linear-gradient(to right, rgba(0,0,0,0.4), rgba(0,0,0,0.6), rgba(0,0,0,0.4));
+            z-index: 100; pointer-events: none; display: flex; flex-direction: column;
+            justify-content: space-evenly; align-items: center;
         }
-
         .spiral-ring {
-            width: 30px;
-            height: 10px;
-            background: linear-gradient(to bottom, #dcdcdc, #888, #dcdcdc);
-            border-radius: 5px;
-            box-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            width: 35px; height: 12px; background: linear-gradient(to bottom, #f0f0f0, #888, #f0f0f0);
+            border-radius: 6px; box-shadow: 2px 2px 5px rgba(0,0,0,0.7);
         }
 
-        /* Páginas base */
-        .page {
-            width: 50%;
-            height: 100%;
-            background-color: #fdfaf6;
-            background-image: 
-                linear-gradient(90deg, transparent 79px, #abced4 79px, #abced4 81px, transparent 81px),
-                linear-gradient(#e1e1e1 .1em, transparent .1em);
-            background-size: 100% 32px;
-            padding: 40px 50px 40px 90px;
-            outline: none;
-            overflow: hidden;
-            font-family: 'Caveat', cursive;
-            font-size: 26px;
-            line-height: 32px;
-            color: #2c3e50;
-            position: absolute;
-            top: 0;
+        /* Envoltorios de Páginas */
+        .page-wrapper {
+            width: 50%; height: 100%; position: absolute; top: 0;
+            background-color: #fdfaf6; overflow: hidden;
+            display: flex; flex-direction: column;
+        }
+        .page-wrapper.left { left: 0; border-radius: 10px 0 0 10px; box-shadow: inset -10px 0 20px rgba(0,0,0,0.1); }
+        .page-wrapper.right { right: 0; border-radius: 0 10px 10px 0; box-shadow: inset 10px 0 20px rgba(0,0,0,0.1); }
+
+        /* Encabezado (Fecha) y Pie (Número) */
+        .page-header { height: 50px; padding: 10px 30px; display: flex; align-items: center; justify-content: flex-end; }
+        .page-wrapper.left .page-header { justify-content: flex-start; }
+        .page-date {
+            border: none; background: transparent; border-bottom: 1px dashed #bdc3c7;
+            font-family: 'Caveat', cursive; font-size: 22px; color: #2c3e50; width: 150px; outline: none; text-align: center;
+        }
+        
+        .page-num {
+            position: absolute; bottom: 15px; font-family: sans-serif; font-size: 14px;
+            color: #7f8c8d; font-weight: bold; pointer-events: none;
+        }
+        .page-wrapper.left .page-num { left: 20px; }
+        .page-wrapper.right .page-num { right: 20px; }
+
+        /* Contenido Editable Rayado */
+        .page-content {
+            flex: 1; padding: 10px 40px 30px 40px; outline: none; position: relative;
+            font-family: 'Caveat', cursive; font-size: 26px; line-height: 32px; color: #2c3e50;
+            background-image: linear-gradient(#e1e1e1 .1em, transparent .1em); background-size: 100% 32px;
+            overflow: hidden; /* Restringe imágenes a la página */
+        }
+        /* Margen Rojo Izquierdo/Derecho */
+        .page-wrapper.left .page-content {
+            padding-right: 50px; padding-left: 20px;
+            background-image: linear-gradient(270deg, transparent 49px, #ff9999 49px, #ff9999 51px, transparent 51px), linear-gradient(#e1e1e1 .1em, transparent .1em);
+        }
+        .page-wrapper.right .page-content {
+            padding-left: 50px; padding-right: 20px;
+            background-image: linear-gradient(90deg, transparent 49px, #ff9999 49px, #ff9999 51px, transparent 51px), linear-gradient(#e1e1e1 .1em, transparent .1em);
         }
 
-        .page.left {
-            left: 0;
-            border-radius: 10px 0 0 10px;
-            box-shadow: inset -10px 0 20px rgba(0,0,0,0.05);
-            padding: 40px 50px 40px 50px;
-            background-image: 
-                linear-gradient(270deg, transparent 79px, #abced4 79px, #abced4 81px, transparent 81px),
-                linear-gradient(#e1e1e1 .1em, transparent .1em);
+        /* --- DISEÑO DE PORTADAS --- */
+        .cover-front, .cover-back { background-image: none !important; background-color: var(--cover-color); }
+        .cover-front {
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+            box-shadow: inset 15px 0 30px rgba(0,0,0,0.3) !important; padding: 40px;
+        }
+        .cover-front h1 {
+            font-family: 'Playfair Display', serif; font-size: 3.5rem; color: #fff;
+            text-align: center; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            border: 4px solid #fff; padding: 20px; border-radius: 10px; background: rgba(0,0,0,0.1);
+        }
+        .cover-inside {
+            background-image: repeating-linear-gradient(45deg, rgba(0,0,0,0.05) 25%, transparent 25%, transparent 75%, rgba(0,0,0,0.05) 75%, rgba(0,0,0,0.05)),
+                              repeating-linear-gradient(45deg, rgba(0,0,0,0.05) 25%, #fdfaf6 25%, #fdfaf6 75%, rgba(0,0,0,0.05) 75%, rgba(0,0,0,0.05)) !important;
+            background-position: 0 0, 15px 15px !important; background-size: 30px 30px !important;
+            box-shadow: inset -15px 0 30px rgba(0,0,0,0.1) !important;
         }
 
-        .page.right {
-            right: 0;
-            border-radius: 0 10px 10px 0;
-            box-shadow: inset 10px 0 20px rgba(0,0,0,0.05);
+        /* --- EFECTO DE DOBLADO (CURL) --- */
+        .curl {
+            position: absolute; bottom: 0; width: 0; height: 0; z-index: 50;
+            transition: all 0.3s ease; cursor: pointer;
+        }
+        .curl-next {
+            right: 0; border-bottom: 45px solid #d5d5d5; border-left: 45px solid transparent;
+            box-shadow: -4px -4px 8px rgba(0,0,0,0.15);
+        }
+        .page-wrapper.right:hover .curl-next { border-bottom-width: 80px; border-left-width: 80px; }
+        
+        .curl-prev {
+            left: 0; border-bottom: 45px solid #d5d5d5; border-right: 45px solid transparent;
+            box-shadow: 4px -4px 8px rgba(0,0,0,0.15);
+        }
+        .page-wrapper.left:hover .curl-prev { border-bottom-width: 80px; border-right-width: 80px; }
+
+        /* --- IMÁGENES ARRASTRABLES --- */
+        .draggable-img {
+            position: absolute; z-index: 40; border: 2px dashed rgba(0,0,0,0.4);
+            background: rgba(255,255,255,0.5); resize: both; overflow: hidden;
+            min-width: 80px; min-height: 80px; max-width: 95%; max-height: 95%; cursor: move;
+        }
+        .draggable-img img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
+        .page-content:not(:focus-within) .draggable-img { border-color: transparent; background: transparent; }
+        .resize-handle-area {
+            position: absolute; right: 0; bottom: 0; width: 25px; height: 25px;
+            cursor: se-resize; background: transparent; z-index: 45;
         }
 
-        /* Capa de Animación (Page Flip) */
+        /* --- ANIMACIÓN 3D FLIP --- */
         .flip-page {
-            position: absolute;
-            top: 0;
-            right: 0;
-            width: 50%;
-            height: 100%;
-            transform-origin: left center;
-            transition: transform 1s cubic-bezier(0.645, 0.045, 0.355, 1);
-            transform-style: preserve-3d;
-            z-index: 20;
-            pointer-events: none;
+            position: absolute; top: 0; right: 0; width: 50%; height: 100%;
+            transform-origin: left center; transition: transform 1s cubic-bezier(0.645, 0.045, 0.355, 1);
+            transform-style: preserve-3d; z-index: 200; pointer-events: none;
         }
-
         .flip-page .front, .flip-page .back {
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            backface-visibility: hidden;
-            background-color: #fdfaf6;
-            background-size: 100% 32px;
-            font-family: 'Caveat', cursive;
-            font-size: 26px;
-            line-height: 32px;
-            color: #2c3e50;
-            overflow: hidden;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            backface-visibility: hidden; background-color: #fdfaf6; overflow: hidden;
         }
-
-        .flip-page .front {
-            padding: 40px 50px 40px 90px;
-            background-image: 
-                linear-gradient(90deg, transparent 79px, #abced4 79px, #abced4 81px, transparent 81px),
-                linear-gradient(#e1e1e1 .1em, transparent .1em);
-            border-radius: 0 10px 10px 0;
-            box-shadow: inset 10px 0 20px rgba(0,0,0,0.05);
-        }
-
+        .flip-page .front { border-radius: 0 10px 10px 0; box-shadow: inset 10px 0 20px rgba(0,0,0,0.05); }
         .flip-page .back {
-            transform: rotateY(180deg);
-            padding: 40px 50px 40px 50px;
-            background-image: 
-                linear-gradient(270deg, transparent 79px, #abced4 79px, #abced4 81px, transparent 81px),
-                linear-gradient(#e1e1e1 .1em, transparent .1em);
-            border-radius: 10px 0 0 10px;
+            transform: rotateY(180deg); border-radius: 10px 0 0 10px;
             box-shadow: inset -10px 0 20px rgba(0,0,0,0.05);
-        }
-
-        /* Soporte para Imágenes incrustadas */
-        .img-wrapper {
-            display: inline-block;
-            resize: both;
-            overflow: hidden;
-            border: 2px dashed #bdc3c7;
-            background: rgba(255,255,255,0.8);
-            margin: 5px;
-            min-width: 100px;
-            min-height: 100px;
-            max-width: 90%;
-            position: relative;
-            vertical-align: top;
-        }
-        
-        .img-wrapper img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            pointer-events: none;
-        }
-        
-        .page:not(:focus) .img-wrapper {
-            border-color: transparent;
         }
 
     </style>
 </head>
 <body>
 
-    <div class="toolbar">
-        <button class="btn btn-nav" id="btnPrev" onclick="turnPrev()">&#8592; Ant.</button>
-        
-        <div class="divider"></div>
-        
-        <button class="btn btn-color color-black active" onclick="setPenColor('#2c3e50', this)" title="Pluma Negra"></button>
-        <button class="btn btn-color color-blue" onclick="setPenColor('#2980b9', this)" title="Pluma Azul"></button>
-        <button class="btn btn-color color-red" onclick="setPenColor('#c0392b', this)" title="Pluma Roja"></button>
-        
-        <div class="divider"></div>
-
-        <label class="btn btn-image">
-            &#128247; Imagen
-            <input type="file" id="imageInput" accept="image/png, image/jpeg, image/webp" onchange="insertImage(event)">
-        </label>
-        
-        <div class="divider"></div>
-
-        <button class="btn btn-nav" id="btnNext" onclick="turnNext()">Sig. &#8594;</button>
-
-        <div class="divider"></div>
-
-        <!-- Botones de Guardado y Carga -->
-        <button class="btn btn-save" onclick="exportNotebook()">&#128190; Guardar</button>
-        <label class="btn btn-load">
-            &#128194; Cargar
-            <input type="file" id="loadInput" accept=".json" onchange="importNotebook(event)">
-        </label>
+    <!-- Modal Inicial -->
+    <div id="startup-modal">
+        <div class="startup-box">
+            <h2>Configura tu Libreta</h2>
+            <input type="text" id="setupName" placeholder="Título de la Libreta" value="Mi Diario">
+            <div class="color-picker">
+                <label><b>Color de Pasta:</b></label>
+                <input type="color" id="setupColor" value="#8e44ad">
+            </div>
+            <button class="btn-start" onclick="startApp()">Crear Libreta</button>
+        </div>
     </div>
 
-    <div class="book-container">
-        <div class="book" id="book">
-            <div class="spine" id="spine"></div>
-            <div id="page-left" class="page left" contenteditable="true" oninput="saveCurrentData()"></div>
-            <div id="page-right" class="page right" contenteditable="true" oninput="saveCurrentData()"></div>
+    <!-- Contenedor Principal -->
+    <div id="app-container">
+        <div class="toolbar">
+            <button class="btn btn-color color-black active" onclick="setPenColor('#2c3e50', this)" title="Pluma Negra"></button>
+            <button class="btn btn-color color-blue" onclick="setPenColor('#2980b9', this)" title="Pluma Azul"></button>
+            <button class="btn btn-color color-red" onclick="setPenColor('#c0392b', this)" title="Pluma Roja"></button>
+            
+            <div class="divider"></div>
+
+            <label class="btn btn-image">
+                &#128247; Añadir Imagen
+                <input type="file" id="imageInput" accept="image/png, image/jpeg, image/webp" onchange="insertImage(event)">
+            </label>
+            
+            <div class="divider"></div>
+
+            <button class="btn btn-save" onclick="exportNotebook()">&#128190; Guardar Libreta</button>
+            <label class="btn btn-load">
+                &#128194; Cargar Libreta
+                <input type="file" id="loadInput" accept=".json" onchange="importNotebook(event)">
+            </label>
+        </div>
+
+        <div class="book-container">
+            <div class="book" id="book">
+                <div class="spine" id="spine"></div>
+                
+                <!-- Página Izquierda -->
+                <div id="page-left-wrap" class="page-wrapper left">
+                    <div class="page-header" id="header-left">
+                        <input type="text" class="page-date" id="date-left" placeholder="Fecha..." onchange="saveContent()">
+                    </div>
+                    <div id="content-left" class="page-content" contenteditable="true" oninput="saveContent()"></div>
+                    <div class="page-num" id="num-left"></div>
+                    <div class="curl curl-prev" id="curl-left" onclick="turnPrev()" title="Página anterior"></div>
+                </div>
+
+                <!-- Página Derecha -->
+                <div id="page-right-wrap" class="page-wrapper right">
+                    <div class="page-header" id="header-right">
+                        <input type="text" class="page-date" id="date-right" placeholder="Fecha..." onchange="saveContent()">
+                    </div>
+                    <div id="content-right" class="page-content" contenteditable="true" oninput="saveContent()"></div>
+                    <div class="page-num" id="num-right"></div>
+                    <div class="curl curl-next" id="curl-right" onclick="turnNext()" title="Página siguiente"></div>
+                </div>
+            </div>
         </div>
     </div>
 
     <script>
-        let notebookData = ["", "", "", ""];
-        let currentIndex = 0; 
+        // --- ESTADO DE LA APLICACIÓN ---
+        // notebook.pages indexado desde 0.
+        // currentIndex = -2 (Portada Cerrada)
+        // currentIndex = 0 (Contraportada + Pag 1)
+        // currentIndex = 2 (Pag 2 + Pag 3)...
+        let notebook = {
+            config: { name: "Mi Diario", color: "#8e44ad" },
+            pages: []
+        };
+        let currentIndex = -2; 
         let isFlipping = false;
 
-        const pageLeft = document.getElementById('page-left');
-        const pageRight = document.getElementById('page-right');
+        const appContainer = document.getElementById('app-container');
+        const modal = document.getElementById('startup-modal');
         const book = document.getElementById('book');
-        const btnPrev = document.getElementById('btnPrev');
+        
+        const wrapLeft = document.getElementById('page-left-wrap');
+        const contentLeft = document.getElementById('content-left');
+        const dateLeft = document.getElementById('date-left');
+        const numLeft = document.getElementById('num-left');
+        const headerLeft = document.getElementById('header-left');
+        const curlLeft = document.getElementById('curl-left');
 
-        // Generar anillos de la espiral
+        const wrapRight = document.getElementById('page-right-wrap');
+        const contentRight = document.getElementById('content-right');
+        const dateRight = document.getElementById('date-right');
+        const numRight = document.getElementById('num-right');
+        const headerRight = document.getElementById('header-right');
+        const curlRight = document.getElementById('curl-right');
+
+        // Generar anillos
         const spine = document.getElementById('spine');
-        for(let i=0; i<15; i++){
+        for(let i=0; i<16; i++){
             const ring = document.createElement('div');
             ring.className = 'spiral-ring';
             spine.appendChild(ring);
         }
 
-        function init() {
+        // --- INICIALIZACIÓN ---
+        function startApp() {
+            notebook.config.name = document.getElementById('setupName').value || "Mi Diario";
+            notebook.config.color = document.getElementById('setupColor').value;
+            document.documentElement.style.setProperty('--cover-color', notebook.config.color);
+            
+            // Llenar con 10 páginas vacías por defecto
+            for(let i=0; i<10; i++) notebook.pages.push({html: "", date: ""});
+            
+            modal.style.display = 'none';
+            appContainer.style.display = 'flex';
+            
             updateView();
             document.execCommand('styleWithCSS', false, true);
             document.execCommand('foreColor', false, '#2c3e50');
         }
 
-        function saveCurrentData() {
-            notebookData[currentIndex] = pageLeft.innerHTML;
-            notebookData[currentIndex + 1] = pageRight.innerHTML;
-        }
-
-        function updateView() {
-            pageLeft.innerHTML = notebookData[currentIndex] || "";
-            pageRight.innerHTML = notebookData[currentIndex + 1] || "";
-            btnPrev.disabled = (currentIndex === 0);
-        }
-
-        function setPenColor(color, btnElement) {
-            document.querySelectorAll('.btn-color').forEach(btn => btn.classList.remove('active'));
-            btnElement.classList.add('active');
-
-            document.execCommand('styleWithCSS', false, true);
-            document.execCommand('foreColor', false, color);
-            
-            if (document.activeElement !== pageLeft && document.activeElement !== pageRight) {
-                pageRight.focus();
+        function ensurePagesExist(targetIndex) {
+            while (targetIndex + 2 > notebook.pages.length) {
+                notebook.pages.push({html: "", date: ""});
             }
         }
 
+        // --- GUARDADO DE TEXTO EN TIEMPO REAL ---
+        function saveContent() {
+            if(isFlipping) return;
+            // Página Izquierda
+            let dataIndexLeft = currentIndex - 1;
+            if (dataIndexLeft >= 0 && notebook.pages[dataIndexLeft]) {
+                notebook.pages[dataIndexLeft].html = contentLeft.innerHTML;
+                notebook.pages[dataIndexLeft].date = dateLeft.value;
+            }
+            // Página Derecha
+            let dataIndexRight = currentIndex;
+            if (dataIndexRight >= 0 && notebook.pages[dataIndexRight]) {
+                notebook.pages[dataIndexRight].html = contentRight.innerHTML;
+                notebook.pages[dataIndexRight].date = dateRight.value;
+            }
+        }
+
+        // --- RENDERIZADO VISUAL ---
+        function updateView() {
+            // PORTADA CERRADA
+            if (currentIndex === -2) {
+                wrapLeft.style.visibility = 'hidden';
+                
+                wrapRight.className = 'page-wrapper right cover-front';
+                contentRight.contentEditable = 'false';
+                contentRight.innerHTML = `<h1>${notebook.config.name}</h1>`;
+                
+                headerRight.style.display = 'none';
+                numRight.style.display = 'none';
+                curlRight.style.display = 'block'; // Permitir abrir
+                
+                return;
+            }
+
+            // ABRIR LIBRETA
+            wrapLeft.style.visibility = 'visible';
+            headerRight.style.display = 'flex';
+            numRight.style.display = 'block';
+            contentRight.contentEditable = 'true';
+
+            // PÁGINA IZQUIERDA
+            if (currentIndex === 0) {
+                // Contraportada
+                wrapLeft.className = 'page-wrapper left cover-inside';
+                contentLeft.contentEditable = 'false';
+                contentLeft.innerHTML = '';
+                headerLeft.style.display = 'none';
+                numLeft.style.display = 'none';
+                curlLeft.style.display = 'block';
+            } else {
+                // Página normal izquierda
+                wrapLeft.className = 'page-wrapper left';
+                contentLeft.contentEditable = 'true';
+                headerLeft.style.display = 'flex';
+                numLeft.style.display = 'block';
+                
+                let pLeft = notebook.pages[currentIndex - 1] || {html:"", date:""};
+                contentLeft.innerHTML = pLeft.html;
+                dateLeft.value = pLeft.date;
+                numLeft.innerText = currentIndex;
+            }
+
+            // PÁGINA DERECHA
+            wrapRight.className = 'page-wrapper right';
+            let pRight = notebook.pages[currentIndex] || {html:"", date:""};
+            contentRight.innerHTML = pRight.html;
+            dateRight.value = pRight.date;
+            numRight.innerText = currentIndex + 1;
+        }
+
+        // --- COLOR DE PLUMA ---
+        function setPenColor(color, btn) {
+            document.querySelectorAll('.btn-color').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            document.execCommand('styleWithCSS', false, true);
+            document.execCommand('foreColor', false, color);
+            
+            if (document.activeElement !== contentLeft && document.activeElement !== contentRight) {
+                if(currentIndex >= 0) contentRight.focus();
+            }
+        }
+
+        // --- INSERTAR Y ARRASTRAR IMÁGENES ---
         function insertImage(event) {
+            if(currentIndex === -2) return alert("Abre la libreta primero.");
             const file = event.target.files[0];
             if (!file) return;
 
             const reader = new FileReader();
             reader.onload = function(e) {
-                const imgHTML = `
-                    &nbsp;
-                    <div class="img-wrapper" contenteditable="false">
-                        <img src="${e.target.result}" alt="img">
-                    </div>
-                    &nbsp;
+                const div = document.createElement('div');
+                div.className = 'draggable-img';
+                div.contentEditable = 'false';
+                div.style.left = '50px';
+                div.style.top = '50px';
+                div.innerHTML = `
+                    <img src="${e.target.result}" alt="img">
+                    <div class="resize-handle-area"></div>
                 `;
                 
-                if (document.activeElement !== pageLeft && document.activeElement !== pageRight) {
-                    pageRight.focus();
-                }
+                let target = (document.activeElement === contentLeft) ? contentLeft : contentRight;
+                // Si la portada interna está activa, forzar a la derecha
+                if (target === contentLeft && currentIndex === 0) target = contentRight;
                 
-                document.execCommand('insertHTML', false, imgHTML);
-                saveCurrentData();
+                target.appendChild(div);
+                saveContent();
             }
             reader.readAsDataURL(file);
             event.target.value = ''; 
         }
 
+        // Lógica Global de Drag and Drop
+        let draggingObj = null;
+        let offsetX, offsetY;
+
+        document.addEventListener('mousedown', (e) => {
+            const wrapper = e.target.closest('.draggable-img');
+            if (wrapper) {
+                // No iniciar arrastre si hace clic en la zona de redimensionar (esquina inferior derecha)
+                if (e.target.classList.contains('resize-handle-area')) return;
+
+                draggingObj = wrapper;
+                const rect = draggingObj.getBoundingClientRect();
+                const parentRect = draggingObj.parentElement.getBoundingClientRect();
+                
+                // Offset respecto al elemento contenedor
+                offsetX = e.clientX - rect.left;
+                offsetY = e.clientY - rect.top;
+            }
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (draggingObj) {
+                const parentRect = draggingObj.parentElement.getBoundingClientRect();
+                
+                let newLeft = e.clientX - parentRect.left - offsetX;
+                let newTop = e.clientY - parentRect.top - offsetY;
+
+                // Restringir dentro de la página
+                if(newLeft < 0) newLeft = 0;
+                if(newTop < 0) newTop = 0;
+                if(newLeft + draggingObj.offsetWidth > parentRect.width) newLeft = parentRect.width - draggingObj.offsetWidth;
+                if(newTop + draggingObj.offsetHeight > parentRect.height) newTop = parentRect.height - draggingObj.offsetHeight;
+
+                draggingObj.style.left = newLeft + 'px';
+                draggingObj.style.top = newTop + 'px';
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (draggingObj) {
+                draggingObj = null;
+                saveContent(); // Guarda la nueva posición
+            }
+        });
+
+
+        // --- ANIMACIONES 3D FLIP ---
         function turnNext() {
             if (isFlipping) return;
             isFlipping = true;
-            saveCurrentData();
+            saveContent();
 
-            if (currentIndex + 2 >= notebookData.length) {
-                notebookData.push("", "");
-            }
+            ensurePagesExist(currentIndex + 2);
 
             const flipper = document.createElement('div');
             flipper.className = 'flip-page';
             
+            // Clonamos visualmente el estado actual derecho y el futuro izquierdo
+            const frontHTML = wrapRight.outerHTML;
+            
+            // Preparamos temporalmente el futuro izquierdo
+            let nextLeftData = notebook.pages[currentIndex + 1];
+            let backHTML = `
+                <div class="page-wrapper left" style="width:100%;">
+                    <div class="page-header"><input type="text" class="page-date" value="${nextLeftData.date}" disabled></div>
+                    <div class="page-content">${nextLeftData.html}</div>
+                    <div class="page-num" style="left:20px;">${currentIndex + 2}</div>
+                </div>
+            `;
+            
             flipper.innerHTML = `
-                <div class="front">${notebookData[currentIndex + 1] || ""}</div>
-                <div class="back">${notebookData[currentIndex + 2] || ""}</div>
+                <div class="front">${frontHTML}</div>
+                <div class="back">${backHTML}</div>
             `;
             
             book.appendChild(flipper);
-            pageRight.innerHTML = notebookData[currentIndex + 3] || "";
 
-            setTimeout(() => {
-                flipper.style.transform = 'rotateY(-180deg)';
-            }, 50);
+            // Avanzamos el índice subyacente para preparar el fondo
+            currentIndex += 2;
+            updateView();
+
+            // Animamos
+            setTimeout(() => { flipper.style.transform = 'rotateY(-180deg)'; }, 50);
 
             setTimeout(() => {
                 flipper.remove();
-                currentIndex += 2;
-                updateView();
                 isFlipping = false;
             }, 1050);
         }
 
         function turnPrev() {
-            if (isFlipping || currentIndex === 0) return;
+            if (isFlipping || currentIndex === -2) return;
             isFlipping = true;
-            saveCurrentData();
+            saveContent();
 
             const flipper = document.createElement('div');
             flipper.className = 'flip-page';
+            flipper.style.transform = 'rotateY(-180deg)'; // Inicia doblada a la izquierda
             
-            flipper.style.transform = 'rotateY(-180deg)';
+            const backHTML = wrapLeft.outerHTML;
+            
+            let prevRightData = notebook.pages[currentIndex - 2];
+            let frontHTML = "";
+            if (currentIndex === 0) { // Si volvemos a la portada
+                frontHTML = `
+                    <div class="page-wrapper right cover-front" style="width:100%;">
+                        <h1>${notebook.config.name}</h1>
+                    </div>
+                `;
+            } else {
+                frontHTML = `
+                    <div class="page-wrapper right" style="width:100%;">
+                        <div class="page-header" style="justify-content:flex-end;"><input type="text" class="page-date" value="${prevRightData.date}" disabled></div>
+                        <div class="page-content">${prevRightData.html}</div>
+                        <div class="page-num" style="right:20px;">${currentIndex - 1}</div>
+                    </div>
+                `;
+            }
+
             flipper.innerHTML = `
-                <div class="front">${notebookData[currentIndex - 1] || ""}</div>
-                <div class="back">${notebookData[currentIndex] || ""}</div>
+                <div class="front">${frontHTML}</div>
+                <div class="back">${backHTML}</div>
             `;
             
             book.appendChild(flipper);
-            pageLeft.innerHTML = notebookData[currentIndex - 2] || "";
 
-            setTimeout(() => {
-                flipper.style.transform = 'rotateY(0deg)';
-            }, 50);
+            currentIndex -= 2;
+            updateView();
+
+            setTimeout(() => { flipper.style.transform = 'rotateY(0deg)'; }, 50);
 
             setTimeout(() => {
                 flipper.remove();
-                currentIndex -= 2;
-                updateView();
                 isFlipping = false;
             }, 1050);
         }
 
-        // --- SISTEMA DE GUARDADO Y CARGA JSON ---
-
+        // --- SISTEMA JSON ---
         function exportNotebook() {
-            // Asegurarse de guardar la página que se está editando actualmente antes de exportar
-            saveCurrentData();
-            
-            const dataStr = JSON.stringify(notebookData);
+            saveContent();
+            const dataStr = JSON.stringify(notebook);
             const blob = new Blob([dataStr], { type: "application/json" });
             const url = URL.createObjectURL(blob);
             
             const a = document.createElement('a');
             a.href = url;
-            // Nombra el archivo con la fecha de hoy
-            a.download = `MiLibreta_${new Date().toISOString().slice(0,10)}.json`;
+            a.download = `${notebook.config.name.replace(/\s+/g, '_')}_${new Date().toISOString().slice(0,10)}.json`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
@@ -439,31 +597,24 @@
             const reader = new FileReader();
             reader.onload = function(e) {
                 try {
-                    const importedData = JSON.parse(e.target.result);
-                    
-                    if (Array.isArray(importedData)) {
-                        notebookData = importedData;
-                        
-                        // Asegurar que al menos tenga 4 páginas para evitar errores visuales
-                        while (notebookData.length < 4) {
-                            notebookData.push("", "");
-                        }
-                        
-                        // Devolver a la primera página y renderizar
-                        currentIndex = 0;
+                    const data = JSON.parse(e.target.result);
+                    if (data.config && data.pages) {
+                        notebook = data;
+                        document.documentElement.style.setProperty('--cover-color', notebook.config.color);
+                        currentIndex = -2; // Devuelve a la portada
+                        appContainer.style.display = 'flex';
+                        modal.style.display = 'none';
                         updateView();
                     } else {
-                        alert("El archivo no tiene el formato correcto de una libreta.");
+                        alert("El archivo no es una libreta válida.");
                     }
-                } catch (error) {
-                    alert("Error al leer el archivo JSON.");
+                } catch (err) {
+                    alert("Error leyendo el archivo.");
                 }
             };
             reader.readAsText(file);
-            event.target.value = ''; // Resetear el input file
+            event.target.value = '';
         }
-
-        init();
 
     </script>
 </body>
