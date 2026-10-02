@@ -76,8 +76,8 @@
         /* --- LIBRETA 3D --- */
         .book-container { 
             perspective: 1500px; 
-            width: 1100px; /* Suficiente espacio para los 60 caracteres */
-            height: 820px; /* Altura calculada para 30 renglones exactos + cabeceras */
+            width: 1100px; 
+            height: 820px; 
             position: relative; 
         }
         .book {
@@ -100,13 +100,13 @@
         .page-wrapper {
             width: 50%; height: 100%; position: absolute; top: 0;
             background-color: #fdfaf6; overflow: hidden;
-            display: flex; flex-direction: column;
+            display: flex; flex-direction: column; cursor: text; /* Muestra que toda la hoja es escribible */
         }
         .page-wrapper.left { left: 0; border-radius: 10px 0 0 10px; box-shadow: inset -10px 0 20px rgba(0,0,0,0.1); }
         .page-wrapper.right { right: 0; border-radius: 0 10px 10px 0; box-shadow: inset 10px 0 20px rgba(0,0,0,0.1); }
 
         /* Encabezado (Fecha) y Pie (Número) */
-        .page-header { height: 50px; padding: 10px 30px; display: flex; align-items: center; justify-content: flex-end; }
+        .page-header { height: 50px; padding: 10px 30px; display: flex; align-items: center; justify-content: flex-end; z-index: 10;}
         .page-wrapper.left .page-header { justify-content: flex-start; }
         .page-date {
             border: none; background: transparent; border-bottom: 1px dashed #bdc3c7;
@@ -115,39 +115,33 @@
         
         .page-num {
             position: absolute; bottom: 15px; font-family: sans-serif; font-size: 14px;
-            color: #7f8c8d; font-weight: bold; pointer-events: none;
+            color: #7f8c8d; font-weight: bold; pointer-events: none; z-index: 70;
         }
-        .page-wrapper.left .page-num { left: 20px; }
-        .page-wrapper.right .page-num { right: 20px; }
+        .page-wrapper.left .page-num { left: 25px; }
+        .page-wrapper.right .page-num { right: 25px; }
 
-        /* --- REGLAS DE 30 RENGLONES x 60 CARACTERES --- */
+        /* --- REGLAS DE TEXTO (30x60) --- */
         .page-content {
-            /* Fuente monoespaciada para asegurar tamaño de carácter exacto (ch) */
             font-family: 'Consolas', 'Courier New', monospace; 
             font-size: 20px; 
-            line-height: 25px; /* 30 renglones = 750px de espacio vertical */
+            line-height: 25px; 
             color: #2c3e50;
-            
-            /* Ajuste del contenedor de texto */
             flex: 1; 
             padding: 5px 0 15px 0; 
             outline: none; 
             position: relative;
             word-break: break-word;
-            
-            /* Limitamos exactamente a 60 caracteres de ancho */
             max-width: 60ch; 
-            margin: 0 auto; /* Centrar el bloque de texto en la hoja */
-
-            overflow: hidden;
-            
-            /* Dibujo de las líneas adaptado al interlineado de 25px */
+            width: 100%;
+            margin: 0 auto;
+            min-height: calc(100% - 60px); /* Ocupa el resto de la hoja */
             background-image: linear-gradient(#ccc 1px, transparent 1px); 
             background-size: 100% 25px;
-            background-position: 0 4px; /* Alineación del texto con la línea */
+            background-position: 0 4px;
+            overflow: visible; /* Permite a las imágenes flotar libremente */
         }
         
-        /* Margen Rojo Izquierdo/Derecho pintado en el wrapper exterior para no afectar el contenedor de 60ch */
+        /* Margen Rojo */
         .page-wrapper.left {
             background-image: linear-gradient(270deg, transparent 49px, #ff9999 49px, #ff9999 51px, transparent 51px);
         }
@@ -156,7 +150,7 @@
         }
 
         /* --- DISEÑO DE PORTADAS --- */
-        .cover-front, .cover-back { background-image: none !important; background-color: var(--cover-color); }
+        .cover-front, .cover-back { background-image: none !important; background-color: var(--cover-color); cursor: default;}
         .cover-front {
             display: flex; flex-direction: column; justify-content: center; align-items: center;
             box-shadow: inset 15px 0 30px rgba(0,0,0,0.3) !important; padding: 40px;
@@ -172,24 +166,34 @@
                               repeating-linear-gradient(45deg, rgba(0,0,0,0.05) 25%, #fdfaf6 25%, #fdfaf6 75%, rgba(0,0,0,0.05) 75%, rgba(0,0,0,0.05)) !important;
             background-position: 0 0, 15px 15px !important; background-size: 30px 30px !important;
             box-shadow: inset -15px 0 30px rgba(0,0,0,0.1) !important;
+            cursor: default;
         }
 
-        /* --- EFECTO DE DOBLADO (CURL) --- */
+        /* --- EFECTO DE DOBLADO (CURL) DINÁMICO --- */
+        /* Zona invisible para detectar el mouse en las esquinas */
+        .corner-hitbox {
+            position: absolute; bottom: 0; width: 100px; height: 100px; z-index: 80; cursor: pointer;
+        }
+        .corner-hitbox.next { right: 0; }
+        .corner-hitbox.prev { left: 0; }
+
+        /* El doblez oculto por defecto */
         .curl {
             position: absolute; bottom: 0; width: 0; height: 0; z-index: 50;
-            transition: all 0.3s ease; cursor: pointer;
+            transition: all 0.2s ease-out; pointer-events: none;
         }
-        .curl-next {
-            right: 0; border-bottom: 50px solid #d5d5d5; border-left: 50px solid transparent;
-            box-shadow: -4px -4px 8px rgba(0,0,0,0.15);
-        }
-        .page-wrapper.right:hover .curl-next { border-bottom-width: 80px; border-left-width: 80px; }
+        .curl-next { right: 0; border-bottom: 0px solid #ddd; border-left: 0px solid transparent; }
+        .curl-prev { left: 0; border-bottom: 0px solid #ddd; border-right: 0px solid transparent; }
         
-        .curl-prev {
-            left: 0; border-bottom: 50px solid #d5d5d5; border-right: 50px solid transparent;
-            box-shadow: 4px -4px 8px rgba(0,0,0,0.15);
+        /* Aparece SOLO al pasar el mouse por la hitbox de la esquina */
+        .corner-hitbox.next:hover ~ .curl-next { 
+            border-bottom: 70px solid #ddd; border-left: 70px solid transparent; 
+            box-shadow: -5px -5px 10px rgba(0,0,0,0.2); 
         }
-        .page-wrapper.left:hover .curl-prev { border-bottom-width: 80px; border-right-width: 80px; }
+        .corner-hitbox.prev:hover ~ .curl-prev { 
+            border-bottom: 70px solid #ddd; border-right: 70px solid transparent; 
+            box-shadow: 5px -5px 10px rgba(0,0,0,0.2); 
+        }
 
         /* --- IMÁGENES ARRASTRABLES --- */
         .draggable-img {
@@ -270,7 +274,9 @@
                     </div>
                     <div id="content-left" class="page-content" contenteditable="true" oninput="saveContent()"></div>
                     <div class="page-num" id="num-left"></div>
-                    <div class="curl curl-prev" id="curl-left" onclick="turnPrev()" title="Página anterior"></div>
+                    <!-- Zonas Interactivas de Doblez -->
+                    <div class="corner-hitbox prev" onclick="turnPrev()" title="Página anterior"></div>
+                    <div class="curl curl-prev" id="curl-left"></div>
                 </div>
 
                 <!-- Página Derecha -->
@@ -280,7 +286,9 @@
                     </div>
                     <div id="content-right" class="page-content" contenteditable="true" oninput="saveContent()"></div>
                     <div class="page-num" id="num-right"></div>
-                    <div class="curl curl-next" id="curl-right" onclick="turnNext()" title="Página siguiente"></div>
+                    <!-- Zonas Interactivas de Doblez -->
+                    <div class="corner-hitbox next" onclick="turnNext()" title="Página siguiente"></div>
+                    <div class="curl curl-next" id="curl-right"></div>
                 </div>
             </div>
         </div>
@@ -313,13 +321,24 @@
         const headerRight = document.getElementById('header-right');
         const curlRight = document.getElementById('curl-right');
 
+        // Permitir hacer clic en cualquier parte de la hoja para enfocar el texto
+        document.querySelectorAll('.page-wrapper').forEach(wrap => {
+            wrap.addEventListener('click', (e) => {
+                if (e.target.classList.contains('page-wrapper') || e.target.classList.contains('page-content')) {
+                    const editor = wrap.querySelector('.page-content');
+                    if(editor && editor.contentEditable === 'true') {
+                        editor.focus();
+                    }
+                }
+            });
+        });
+
         // --- INICIALIZACIÓN ---
         function startApp() {
             notebook.config.name = document.getElementById('setupName').value || "Mi Libreta";
             notebook.config.color = document.getElementById('setupColor').value;
             document.documentElement.style.setProperty('--cover-color', notebook.config.color);
             
-            // Llenar con páginas iniciales
             for(let i=0; i<4; i++) notebook.pages.push({html: "", date: ""});
             
             modal.style.display = 'none';
@@ -351,7 +370,7 @@
             }
         }
 
-        // --- RENDERIZADO VISUAL SEGÚN EL ÍNDICE ---
+        // --- RENDERIZADO VISUAL ---
         function updateView() {
             // PORTADA CERRADA
             if (currentIndex === -2) {
@@ -363,7 +382,7 @@
                 
                 headerRight.style.display = 'none';
                 numRight.style.display = 'none';
-                curlRight.style.display = 'block'; 
+                
                 return;
             }
 
@@ -381,13 +400,11 @@
                 contentLeft.innerHTML = '';
                 headerLeft.style.display = 'none';
                 numLeft.style.display = 'none';
-                curlLeft.style.display = 'block'; // Volver a portada
             } else {
                 wrapLeft.className = 'page-wrapper left';
                 contentLeft.contentEditable = 'true';
                 headerLeft.style.display = 'flex';
                 numLeft.style.display = 'block';
-                curlLeft.style.display = 'block';
                 
                 let pLeft = notebook.pages[currentIndex - 1] || {html:"", date:""};
                 contentLeft.innerHTML = pLeft.html;
@@ -429,8 +446,13 @@
                 div.style.top = '10px';
                 div.innerHTML = `<img src="${e.target.result}" alt="img"><div class="resize-handle-area"></div>`;
                 
-                let target = (document.activeElement === contentLeft) ? contentLeft : contentRight;
-                if (target === contentLeft && currentIndex === 0) target = contentRight;
+                // Forzar pegado en la hoja correcta si no hay foco
+                let target = contentRight;
+                if (document.activeElement === contentLeft && currentIndex > 0) {
+                    target = contentLeft;
+                } else if (document.activeElement === contentRight) {
+                    target = contentRight;
+                }
                 
                 target.appendChild(div);
                 saveContent();
@@ -472,7 +494,7 @@
             if (draggingObj) { draggingObj = null; saveContent(); }
         });
 
-        // --- ANIMACIONES 3D FLIP INTEGRADAS Y REPARADAS ---
+        // --- ANIMACIONES 3D FLIP ---
         function turnNext() {
             if (isFlipping) return;
             isFlipping = true;
@@ -482,10 +504,8 @@
             const flipper = document.createElement('div');
             flipper.className = 'flip-page';
             
-            // FRENTE DE LA HOJA AL GIRAR (Página Derecha Actual)
             const frontHTML = wrapRight.outerHTML;
             
-            // ESPALDA DE LA HOJA AL GIRAR (Nueva Página Izquierda)
             let backHTML = "";
             if (currentIndex === -2) {
                 backHTML = `<div class="page-wrapper left cover-inside" style="width:100%; height:100%;"></div>`;
@@ -503,7 +523,7 @@
             book.appendChild(flipper);
 
             currentIndex += 2;
-            updateView(); // Cambia el fondo
+            updateView(); 
 
             setTimeout(() => { flipper.style.transform = 'rotateY(-180deg)'; }, 50);
             setTimeout(() => { flipper.remove(); isFlipping = false; }, 850);
@@ -518,10 +538,8 @@
             flipper.className = 'flip-page';
             flipper.style.transform = 'rotateY(-180deg)';
             
-            // ESPALDA DE LA HOJA AL GIRAR (Página Izquierda Actual)
             const backHTML = wrapLeft.outerHTML;
             
-            // FRENTE DE LA HOJA AL GIRAR (Antigua Página Derecha)
             let frontHTML = "";
             if (currentIndex === 0) {
                 frontHTML = `
@@ -575,7 +593,7 @@
                     if (data.config && data.pages) {
                         notebook = data;
                         document.documentElement.style.setProperty('--cover-color', notebook.config.color);
-                        currentIndex = -2; // Devuelve a la portada
+                        currentIndex = -2; 
                         appContainer.style.display = 'flex';
                         modal.style.display = 'none';
                         updateView();
