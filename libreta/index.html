@@ -224,6 +224,7 @@
 </head>
 <body>
 
+    <!-- Modal Inicial -->
     <div id="startup-modal">
         <div class="startup-box">
             <h2>Configura tu Libreta</h2>
@@ -236,6 +237,7 @@
         </div>
     </div>
 
+    <!-- Contenedor Principal -->
     <div id="app-container">
         <div class="toolbar">
             <button class="btn btn-color color-black active" onclick="setPenColor('#2c3e50', this)" title="Pluma Negra"></button>
@@ -307,22 +309,31 @@
         const dateLeft = document.getElementById('date-left');
         const numLeft = document.getElementById('num-left');
         const headerLeft = document.getElementById('header-left');
-        const curlLeft = document.getElementById('curl-left');
 
         const wrapRight = document.getElementById('page-right-wrap');
         const contentRight = document.getElementById('content-right');
         const dateRight = document.getElementById('date-right');
         const numRight = document.getElementById('num-right');
         const headerRight = document.getElementById('header-right');
-        const curlRight = document.getElementById('curl-right');
 
-        // Permitir hacer clic en cualquier parte de la hoja para enfocar el texto
+        // --- SISTEMA DE FOCO MAGNÉTICO (Evita que el cursor se bloquee por las imágenes) ---
         document.querySelectorAll('.page-wrapper').forEach(wrap => {
             wrap.addEventListener('click', (e) => {
+                // Si el usuario hace clic en el fondo blanco o en el margen...
                 if (e.target.classList.contains('page-wrapper') || e.target.classList.contains('page-content')) {
                     const editor = wrap.querySelector('.page-content');
                     if(editor && editor.contentEditable === 'true') {
                         editor.focus();
+                        
+                        // Forzar el cursor al final de lo escrito para que pueda seguir redactando
+                        try {
+                            const range = document.createRange();
+                            range.selectNodeContents(editor);
+                            range.collapse(false);
+                            const sel = window.getSelection();
+                            sel.removeAllRanges();
+                            sel.addRange(range);
+                        } catch(err) {}
                     }
                 }
             });
@@ -416,7 +427,7 @@
             }
         }
 
-        // --- INSERTAR Y MOVER IMÁGENES ENTRE PÁGINAS ---
+        // --- INSERCIÓN SEGURA DE IMÁGENES ---
         function insertImage(event) {
             if(currentIndex === -2) return alert("Abre la libreta primero para insertar imágenes.");
             const file = event.target.files[0];
@@ -424,20 +435,18 @@
 
             const reader = new FileReader();
             reader.onload = function(e) {
-                const div = document.createElement('div');
-                div.className = 'draggable-img';
-                div.contentEditable = 'false';
-                div.style.left = '10px';
-                div.style.top = '10px';
-                div.innerHTML = `<img src="${e.target.result}" alt="img"><div class="resize-handle-area"></div>`;
+                // Inyectamos un espacio en blanco para garantizar que el cursor pueda seguir operando
+                const imgHTML = `&nbsp;<div class="draggable-img" contenteditable="false" style="left:20px; top:20px;"><img src="${e.target.result}" alt="img"><div class="resize-handle-area"></div></div>&nbsp;`;
                 
-                // Si no hay foco claro, forzamos a la derecha para no fallar
                 let target = contentRight;
                 if (document.activeElement === contentLeft && currentIndex > 0) {
                     target = contentLeft;
                 }
                 
-                target.appendChild(div);
+                target.focus();
+                // Utilizamos el comando nativo para que el navegador no corrompa el flujo del texto
+                document.execCommand('insertHTML', false, imgHTML);
+                
                 saveContent();
             }
             reader.readAsDataURL(file);
@@ -463,13 +472,10 @@
                 const bookRect = book.getBoundingClientRect();
                 const bookCenter = bookRect.left + bookRect.width / 2;
                 
-                // Determinar dinámicamente sobre qué página está el cursor
                 let targetParent = (e.clientX < bookCenter) ? contentLeft : contentRight;
                 
-                // No permitir cruzar a la izquierda si estamos en la pasta dura interior
                 if (currentIndex === 0) targetParent = contentRight;
 
-                // Si cruza el centro, reparentarlo instantáneamente
                 if (targetParent !== draggingObj.parentElement) {
                     targetParent.appendChild(draggingObj);
                 }
@@ -478,7 +484,6 @@
                 let newLeft = e.clientX - parentRect.left - offsetX;
                 let newTop = e.clientY - parentRect.top - offsetY;
 
-                // Límites exteriores de la libreta completa
                 if (targetParent === contentLeft && newLeft < 0) newLeft = 0; 
                 if (targetParent === contentRight && currentIndex === 0 && newLeft < 0) newLeft = 0; 
                 
